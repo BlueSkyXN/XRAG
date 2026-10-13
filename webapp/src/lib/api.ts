@@ -39,13 +39,28 @@ export type SearchResult = {
   result_id?: string
   next_cursor?: string | null
   total?: { value: number | null; unit?: string }
+  trace?: TraceStep[]
   items: ResultItem[]
+}
+
+export type TraceStep = {
+  stage?: string
+  count?: number
+  duration_ms?: number
+  note?: string
 }
 
 export type LoginMode = 'key' | 'password'
 export type SearchMode = 'ask' | 'keyword' | 'semantic'
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -60,7 +75,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     payload = await response.json()
   } catch {
-    throw new ApiError('服务没有返回 JSON')
+    throw new ApiError('服务没有返回 JSON', response.status)
   }
   if (!response.ok) {
     const detail = payload as { error?: { code?: string; message?: string } | string }
@@ -68,7 +83,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const code = error && typeof error === 'object' ? error.code : response.status
     const message =
       error && typeof error === 'object' ? error.message : String(error ?? '请求失败')
-    throw new ApiError(`${code ?? response.status} · ${message}`)
+    throw new ApiError(`${code ?? response.status} · ${message}`, response.status)
   }
   return payload as T
 }
