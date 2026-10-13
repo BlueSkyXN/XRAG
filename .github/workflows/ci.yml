@@ -43,20 +43,29 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/xrag-data"
+          chmod 0777 "$RUNNER_TEMP/xrag-data"
           docker rm -f xrag-ci >/dev/null 2>&1 || true
-          docker run -d --name xrag-ci             -e ADMIN_USERNAME=ci             -e ADMIN_PASSWORD=ci-password-16chars             -p 7860:7860             -v "$RUNNER_TEMP/xrag-data:/data"             xrag:ci
+          docker run -d --name xrag-ci \
+            -e ADMIN_USERNAME=ci \
+            -e ADMIN_PASSWORD=ci-password-16chars \
+            -p 7860:7860 \
+            -v "$RUNNER_TEMP/xrag-data:/data" \
+            xrag:ci
+          dump() { docker logs xrag-ci || true; }
+          trap dump EXIT
           ok=0
           for _ in $(seq 1 40); do
-            if curl -fsS http://127.0.0.1:7860/healthz > "$RUNNER_TEMP/healthz.json" && grep -q '0.8.0-exp.1' "$RUNNER_TEMP/healthz.json"; then
+            if curl --connect-timeout 1 --max-time 2 -fsS http://127.0.0.1:7860/healthz > "$RUNNER_TEMP/healthz.json" \
+              && grep -q '0.8.0-exp.1' "$RUNNER_TEMP/healthz.json"; then
               ok=1
               break
             fi
             sleep 2
           done
           test "$ok" = 1
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/)" = 401
-          docker logs xrag-ci
+          test "$(curl --connect-timeout 1 --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/)" = 401
           docker rm -f xrag-ci >/dev/null
+          trap - EXIT
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
