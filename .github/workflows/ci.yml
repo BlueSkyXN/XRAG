@@ -21,6 +21,18 @@ jobs:
         with:
           go-version: "1.23.x"
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+      - run: npm ci
+        working-directory: webapp
+      - run: npm run build
+        working-directory: webapp
+      - run: npm audit --omit=dev
+        working-directory: webapp
+      - run: git diff --exit-code -- internal/server/web/next
       - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
       - run: CGO_ENABLED=1 go test ./...
       - run: bash scripts/static-check.sh
@@ -93,7 +105,10 @@ jobs:
             --exclude ".git/*" \
             --exclude ".github/*" \
             --exclude "local/*" \
-            --exclude "data/*"
+            --exclude "data/*" \
+            --exclude ".xrag/*" \
+            --exclude "bin/*" \
+            --exclude "webapp/node_modules/*"
           for _ in $(seq 1 30); do
             now="$(hf spaces info BlueSkyXN/XRAG --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("sha") or "") + " " + ((d.get("runtime") or {}).get("stage") or ""))')"
             case "$now" in

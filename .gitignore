@@ -1,3 +1,5 @@
 /data/
 /bin/
 /local/
+/.xrag
+/webapp/node_modules/

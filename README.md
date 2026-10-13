@@ -33,6 +33,8 @@ bash demo.sh
 
 浏览器打开 `http://127.0.0.1:8765`，输入终端显示的 API Key。脚本创建 `.xrag/`、导入合成示例并启动服务，不下载模型或数据库。需要 Go 1.23+、C 编译器、带 FTS5 的 SQLite 开发库与 make。停止服务按 Ctrl+C，当前数据保留。
 
+新版工作台第一阶段在 `http://127.0.0.1:8765/next/`：React + Tailwind + Radix 风格组件已迁移登录、导航和检索/原文阅读；其余功能仍使用经典界面。前端源码在 `webapp/`，运行 `make web` 重建并写入 `internal/server/web/next/`。发布包使用已提交的构建产物，不需要 Node。
+
 Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
 
 ## 2. 已有功能

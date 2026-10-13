@@ -1,4 +1,4 @@
-.PHONY: build test race vet clean
+.PHONY: build test race vet clean web web-dev
 build:
 	mkdir -p bin
 	CGO_ENABLED=1 go build -trimpath -o bin/xrag-server ./cmd/xrag-server
@@ -11,3 +11,7 @@ vet:
 	go vet ./...
 clean:
 	rm -rf bin
+web:
+	cd webapp && npm ci && npm run build
+web-dev:
+	cd webapp && npm run dev
