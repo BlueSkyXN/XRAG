@@ -24,8 +24,10 @@ for snippet in ("USER xrag", "EXPOSE 7860", "ENTRYPOINT", "127.0.0.1:8080"):
 for snippet in ("mountpoint -q /data", "ADMIN_PASSWORD", "htpasswd"):
     if snippet not in entrypoint:
         raise SystemExit(f"entrypoint.sh is missing: {snippet}")
-if "auth_basic off" not in nginx or "auth_basic \"XRAG\"" not in nginx:
+if "auth_basic off" not in nginx or 'auth_basic "XRAG"' not in nginx:
     raise SystemExit("nginx.conf must keep /healthz public and the application authenticated")
+if "proxy_pass http://127.0.0.1:8080/healthz;" not in nginx or 'return 200 "ok' in nginx:
+    raise SystemExit("public /healthz must proxy to the application, not a static nginx response")
 print("static contract: PASS")
 PY
 if [[ -d .git ]]; then git diff --check; fi

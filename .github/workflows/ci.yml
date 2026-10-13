@@ -2,6 +2,7 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 concurrency:
@@ -38,6 +39,24 @@ jobs:
           tags: xrag:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Smoke the built image
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xrag-data"
+          docker rm -f xrag-ci >/dev/null 2>&1 || true
+          docker run -d --name xrag-ci             -e ADMIN_USERNAME=ci             -e ADMIN_PASSWORD=ci-password-16chars             -p 7860:7860             -v "$RUNNER_TEMP/xrag-data:/data"             xrag:ci
+          ok=0
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:7860/healthz > "$RUNNER_TEMP/healthz.json" && grep -q '0.8.0-exp.1' "$RUNNER_TEMP/healthz.json"; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/)" = 401
+          docker logs xrag-ci
+          docker rm -f xrag-ci >/dev/null
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -54,6 +73,7 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           test -n "$HF_TOKEN"
+          before="$(hf spaces info BlueSkyXN/XRAG --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")')"
           hf upload BlueSkyXN/XRAG . \
             --repo-type space \
             --commit-message "Deploy ${GITHUB_SHA}" \
@@ -61,3 +81,20 @@ jobs:
             --exclude ".github/*" \
             --exclude "local/*" \
             --exclude "data/*"
+          for _ in $(seq 1 30); do
+            now="$(hf spaces info BlueSkyXN/XRAG --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("sha") or "") + " " + ((d.get("runtime") or {}).get("stage") or ""))')"
+            case "$now" in
+              "$before "*) sleep 5 ;;
+              *) break ;;
+            esac
+          done
+          hf spaces wait BlueSkyXN/XRAG --timeout 15m
+          ok=0
+          for _ in $(seq 1 30); do
+            if curl -fsS https://blueskyxn-xrag.hf.space/healthz | grep -q '0.8.0-exp.1'; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          test "$ok" = 1
