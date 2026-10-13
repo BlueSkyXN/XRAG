@@ -1,0 +1,24 @@
+standard = "3.0"
+project = "xrag"
+space = "BlueSkyXN/XRAG"
+
+project_class = "preview"
+target_role = "primary"
+sovereignty = "port"
+lane = "product"
+version_source = "commit"
+
+space_visibility = "protected"
+bucket_visibility = "private"
+
+env_file = "local/hfs-targets/production.env"
+local_only = ["HF_TOKEN", "GH_TOKEN"]
+secrets = ["ADMIN_PASSWORD"]
+variables = ["ADMIN_USERNAME"]
+
+deviations = [
+  "product = This Space runs the XRAG server itself. It is not a wrapper around an upstream image.",
+  "persistence = SQLite, content cache, and uploaded Markdown live under /data/xrag on a private bucket. Container-local Nginx state stays in /tmp.",
+  "edge-auth = Nginx Basic Auth protects the browser and API. /healthz is public liveness and does not read the database.",
+  "scope = M1 directory build, lexical search, and edition-pinned read only. Graph, Wiki, Client modes, and Recipe are not deployed.",
+]
