@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const Version = "0.7.0-demo.9"
+const Version = "0.8.0-exp.1"
 
 type Error struct {
 	Code      string `json:"code"`

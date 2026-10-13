@@ -19,11 +19,11 @@ Nginx Basic Auth 在 `7860`。`/healthz` 是公开存活检查。私有 Bucket `
 
 工作台仍使用 XRAG 自己的 API Key。启动后从 `/data/xrag` 的初始化输出或 `admin.key` 读取，不写进镜像。
 
-# XRAG 0.7.0-demo.9
+# XRAG 0.8.0-exp.1
 
-面向应用和 Agent 的知识构建、增强检索与有界调查工具。Server 准备并维护知识；Client 可以调用 Server、只读扫描本地 Markdown/TXT，或按登记格式直连 Qdrant/Neo4j。
+这是第一个正式实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
 
-**这是可运行开发版，不是完整生产发行。只使用全新数据目录（demo9），不承担旧软件迁移。**资料更新、历史引用与同版备份恢复保留。真实专业后端、商业模型、第三方 Agent 和目标平台仍有未验证项。
+它不是生产发行。磁盘格式仍使用 Demo.9 的 `store_schema=demo9`，响应里的 `schema_version` 仍是 `0.7-demo`。不迁移更早的数据目录。真实 Qdrant、Neo4j、商业模型和 S3/WeKnora 现场联调仍未完成。
 
 ## 1. 从无模型版本开始
 
@@ -31,7 +31,7 @@ Nginx Basic Auth 在 `7860`。`/healthz` 是公开存活检查。私有 Bucket `
 bash demo.sh
 ```
 
-浏览器打开 `http://127.0.0.1:8765`，输入终端显示的 API Key。脚本创建 `.xrag-demo/`、导入合成示例并启动服务，不下载模型或数据库。需要 Go 1.23+、C 编译器、带 FTS5 的 SQLite 开发库与 make。停止服务按 Ctrl+C，当前数据保留。
+浏览器打开 `http://127.0.0.1:8765`，输入终端显示的 API Key。脚本创建 `.xrag/`、导入合成示例并启动服务，不下载模型或数据库。需要 Go 1.23+、C 编译器、带 FTS5 的 SQLite 开发库与 make。停止服务按 Ctrl+C，当前数据保留。
 
 Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
 
@@ -52,7 +52,7 @@ S3/WeKnora/Qdrant/Neo4j/模型的适配代码和受控测试不等于真实部�
 
 ```bash
 ./bin/xrag profile add team --server http://127.0.0.1:8765 \
-  --key-file "$PWD/.xrag-demo/admin.key" --kb demo
+  --key-file "$PWD/.xrag/admin.key" --kb demo
 ./bin/xrag search keyword E203 --profile team
 ./bin/xrag +ask 日志 --profile team --graph --trace
 ./bin/xrag files tree --local ./examples/docs --kb demo
@@ -68,8 +68,8 @@ S3/WeKnora/Qdrant/Neo4j/模型的适配代码和受控测试不等于真实部�
 ## 4. 模块分别运行
 
 ```bash
-./bin/xrag-server serve --data .xrag-demo --workers off --web=false --mcp=false
-./bin/xrag-server worker --data .xrag-demo
+./bin/xrag-server serve --data .xrag --workers off --web=false --mcp=false
+./bin/xrag-server worker --data .xrag
 ```
 
 没有Worker时任务排队，直接查询已有资料仍可用。Web/MCP/Worker开关独立。无需全部组件一起启动。
@@ -86,7 +86,7 @@ HTTP端点 `/mcp` 根据Accept返回JSON或SSE。资源包括检索指南、当�
 
 ```bash
 python3 scripts/mcp_probe.py --url http://127.0.0.1:8765/mcp \
-  --key-file .xrag-demo/admin.key --report /tmp/mcp-probe.json
+  --key-file .xrag/admin.key --report /tmp/mcp-probe.json
 ```
 
 ## 6. 本轮文档

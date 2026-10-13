@@ -33,7 +33,7 @@ func main() {
 }
 func run() error {
 	if len(os.Args) < 2 {
-		fmt.Println("xrag-server init|serve|worker|backup|restore|prune|vector-gc|recover-projections  --data .xrag-demo\ninit --examples ./examples/docs; serve --config config.json --workers off")
+		fmt.Println("xrag-server init|serve|worker|backup|restore|prune|vector-gc|recover-projections  --data .xrag\ninit --examples ./examples/docs; serve --config config.json --workers off")
 		return nil
 	}
 	cmd := os.Args[1]
@@ -42,7 +42,7 @@ func run() error {
 		return nil
 	}
 	f := flag.NewFlagSet(cmd, flag.ContinueOnError)
-	data := f.String("data", ".xrag-demo", "data directory")
+	data := f.String("data", ".xrag", "data directory")
 	listen := f.String("listen", "127.0.0.1:8765", "listen address")
 	config := f.String("config", "", "provider configuration JSON")
 	mcpAuthFile := f.String("mcp-auth", "", "optional OAuth protected-resource configuration JSON")

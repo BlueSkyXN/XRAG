@@ -21,6 +21,7 @@ RUN apt-get update \
     && mkdir -p /data/xrag /tmp/xrag-nginx \
     && chown -R xrag:xrag /data /tmp/xrag-nginx
 COPY --from=build /out/xrag-server /out/xrag /usr/local/bin/
+COPY examples /usr/local/share/xrag/examples
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY entrypoint.sh /usr/local/bin/xrag-hfs-entrypoint
 RUN chmod 0755 /usr/local/bin/xrag-server /usr/local/bin/xrag /usr/local/bin/xrag-hfs-entrypoint \

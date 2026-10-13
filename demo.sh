@@ -10,7 +10,7 @@ if ! command -v cc >/dev/null; then
   exit 1
 fi
 make build
-DATA="${XRAG_DEMO_DATA:-.xrag-demo}"
+DATA="${XRAG_DEMO_DATA:-.xrag}"
 LISTEN="${XRAG_DEMO_LISTEN:-127.0.0.1:8765}"
 ./bin/xrag-server init --data "$DATA" --examples ./examples/docs
 printf '\n打开 http://%s\n输入以下本地 API Key：\n' "$LISTEN"

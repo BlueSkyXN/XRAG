@@ -61,7 +61,7 @@ def main(browser):
      if api('/healthz')[0]==200:break
     except OSError:pass
     time.sleep(.1)
-   ck('fresh Demo.7 actually starts',op('/healthz')['version']=='0.7.0-demo.9')
+   ck('fresh Demo.7 actually starts',op('/healthz')['version']=='0.8.0-exp.1')
    op('/v1/kbs/demo/sources',{'id':'git','kind':'git','root':str(repo),'git_ref':'main','mount':'git'});policy('github')
    status,j=hook('github','push','first');time.sleep(.15);ck('native GitHub notice only queues when workers off',status==202 and op('/v1/jobs/'+j['id'])['state']=='queued')
    status,dup=hook('github','push','first');ck('same native delivery returns existing job',status==202 and dup['id']==j['id'])

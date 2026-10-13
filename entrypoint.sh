@@ -29,6 +29,9 @@ test -w "${data_root}" || fail "XRAG data directory is not writable; run scripts
 printf '%s\n' "${ADMIN_PASSWORD}" | htpasswd -imc "${nginx_auth_file}" "${ADMIN_USERNAME}" >/dev/null
 chmod 0600 "${nginx_auth_file}"
 
+if [[ ! -f "${data_root}/xrag.sqlite" ]]; then
+  /usr/local/bin/xrag-server init --data "${data_root}" --examples /usr/local/share/xrag/examples/docs
+fi
 /usr/local/bin/xrag-server serve --data "${data_root}" --listen 127.0.0.1:8080 --workers embedded &
 app_pid=$!
 ready=0

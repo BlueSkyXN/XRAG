@@ -291,7 +291,7 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 			fs = append(fs, k)
 		}
 		sort.Strings(fs)
-		resp.Data = map[string]any{"version": Version, "origin_id": view.Origin, "documents": len(view.Documents), "chunks": n, "fields": fs, "semantic": e.Semantic != nil, "graph": e.Mode == "server" || e.Graph != nil, "graph_backend": "explicit-supports-demo (or configured Neo4j)", "keyword": map[string]any{"server": "SQLite FTS5 BM25, character/bigram fallback", "local": "scan heuristic", "direct": "Qdrant payload text filtering"}[e.Mode], "knowledge_write": e.Mode == "server", "investigation_in_core": false, "wiki_generation": "requires configured chat endpoint", "mode_limits": "MD/TXT; +ask retrieves, does not answer"}
+		resp.Data = map[string]any{"version": Version, "origin_id": view.Origin, "documents": len(view.Documents), "chunks": n, "fields": fs, "semantic": e.Semantic != nil, "graph": e.Mode == "server" || e.Graph != nil, "graph_backend": "explicit supports, or configured Neo4j", "keyword": map[string]any{"server": "SQLite FTS5 BM25, character/bigram fallback", "local": "scan heuristic", "direct": "Qdrant payload text filtering"}[e.Mode], "knowledge_write": e.Mode == "server", "investigation_in_core": false, "wiki_generation": "requires configured chat endpoint", "mode_limits": "MD/TXT; +ask retrieves, does not answer"}
 		resp.Total = Count(len(view.Documents), "files", basis)
 		return resp, nil
 	case "files.tree":

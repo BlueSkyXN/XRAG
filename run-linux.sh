@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-DATA="${XRAG_DEMO_DATA:-.xrag-demo}"
+DATA="${XRAG_DEMO_DATA:-.xrag}"
 LISTEN="${XRAG_DEMO_LISTEN:-127.0.0.1:8765}"
 ./bin/xrag-server init --data "$DATA" --examples ./examples/docs
 printf '\n打开 http://%s\nAPI Key：\n' "$LISTEN"
