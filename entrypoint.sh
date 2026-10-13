@@ -32,7 +32,7 @@ chmod 0600 "${nginx_auth_file}"
 if [[ ! -f "${data_root}/xrag.sqlite" ]]; then
   /usr/local/bin/xrag-server init --data "${data_root}" --examples /usr/local/share/xrag/examples/docs
 fi
-/usr/local/bin/xrag-server serve --data "${data_root}" --listen 127.0.0.1:8080 --workers embedded &
+XRAG_EDGE_LOGIN=1 /usr/local/bin/xrag-server serve --data "${data_root}" --listen 127.0.0.1:8080 --workers embedded &
 app_pid=$!
 ready=0
 for _ in $(seq 1 50); do

@@ -19,6 +19,6 @@ variables = ["ADMIN_USERNAME"]
 deviations = [
   "product = This Space runs the XRAG server itself. It is not a wrapper around an upstream image.",
   "persistence = SQLite, content cache, and uploaded Markdown live under /data/xrag on a private bucket. Container-local Nginx state stays in /tmp.",
-  "edge-auth = Nginx Basic Auth protects the browser and API. /healthz is public liveness and does not read the database.",
+  "edge-auth = Nginx Basic Auth is the only browser login. The workbench opens with that same username and password. /healthz is public liveness and does not read the database.",
   "scope = 0.8.0-exp.1 uses the Demo.9 implementation as its baseline. Real Qdrant, Neo4j, commercial models, and live S3/WeKnora are not bundled.",
 ]

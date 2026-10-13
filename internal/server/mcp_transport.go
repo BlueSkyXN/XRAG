@@ -21,6 +21,9 @@ func bearer(r *http.Request) string {
 }
 func (a *App) mcpPrincipal(r *http.Request) (store.Principal, *mcpauth.Identity, error) {
 	// MCP uses a header identity, not a browser session cookie.
+	if p, ok, e := a.edgePrincipal(r); ok || e != nil {
+		return p, nil, e
+	}
 	token := bearer(r)
 	if token != "" {
 		p, e := a.Store.Authenticate(r.Context(), token)

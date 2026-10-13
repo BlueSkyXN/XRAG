@@ -673,6 +673,23 @@ func (s *Store) CreateKey(ctx context.Context, name, role string, kbs []string) 
 	_, token, e := s.CreateManagedKey(ctx, name, role, kbs, 0)
 	return token, e
 }
+func (s *Store) PermanentAdmin(ctx context.Context) (Principal, error) {
+	p := Principal{}
+	e := s.DB.Do(ctx, func(c *db.Conn) error {
+		rs, e := c.Query("SELECT k.id,k.name,k.role,k.kbs FROM api_key k LEFT JOIN key_options o ON o.key_id=k.id WHERE k.role='admin' AND k.disabled=0 AND COALESCE(o.expires_at,0)=0 ORDER BY k.created LIMIT 1")
+		if e != nil {
+			return e
+		}
+		if len(rs) != 1 {
+			return core.Err("UNAUTHENTICATED", "no permanent administrator is available", 401)
+		}
+		p.ID = db.String(rs[0], "id")
+		p.Name = db.String(rs[0], "name")
+		p.Role = db.String(rs[0], "role")
+		return json.Unmarshal([]byte(db.String(rs[0], "kbs")), &p.KBs)
+	})
+	return p, e
+}
 func (s *Store) Authenticate(ctx context.Context, token string) (Principal, error) {
 	p := Principal{}
 	e := s.DB.Do(ctx, func(c *db.Conn) error {

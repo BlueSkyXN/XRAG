@@ -10,6 +10,7 @@ function productConnected(){
   for(const id of ['build-btn','upload-btn','estimate-btn']){const b=$('#'+id);b.disabled=!may('maintainer');b.title=may('maintainer')?'':'当前角色只读；此操作需要 Maintainer'}
   $('.source-register').hidden=!may('maintainer');$('#source-list').hidden=!may('maintainer');
 
+  $('#logout-btn').hidden=!!system.edge_login;
   $('#key-kbs').value=kb();
   $('#help-cli').textContent=`./bin/xrag profile add team \\\n  --server ${location.origin==='null'?'http://127.0.0.1:8765':location.origin} \\\n  --key-file /本机/保存的/key --kb ${kb()}\n\n./bin/xrag +ask "日志丢失" --profile team\n./bin/xrag mcp --profile team\n\n./bin/xrag overview --profile team\n./bin/xrag backup list --profile team`;
   if(!may('admin') && ['providers','keys','maintenance'].includes(settingsTab))settingsTab='capabilities';

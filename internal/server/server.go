@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -40,6 +41,8 @@ type App struct {
 	DisableWeb    bool
 	DisableMCP    bool
 	ConfigSource  string
+	EdgeUser      string
+	EdgePass      string
 	maintenanceMu sync.Mutex
 	mu            sync.Mutex
 	sessions      map[string]session
@@ -84,8 +87,28 @@ func decode(b []byte, out any) error {
 	}
 	return nil
 }
+func (a *App) edgePrincipal(r *http.Request) (store.Principal, bool, error) {
+	if a.EdgeUser == "" || a.EdgePass == "" {
+		return store.Principal{}, false, nil
+	}
+	user, pass, ok := r.BasicAuth()
+	if !ok {
+		return store.Principal{}, false, nil
+	}
+	if subtle.ConstantTimeCompare([]byte(user), []byte(a.EdgeUser)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(a.EdgePass)) != 1 {
+		return store.Principal{}, false, core.Err("UNAUTHENTICATED", "username or password is wrong", 401)
+	}
+	p, e := a.Store.PermanentAdmin(r.Context())
+	if e != nil {
+		return store.Principal{}, false, e
+	}
+	return p, true, nil
+}
 func (a *App) principal(r *http.Request) (store.Principal, error) {
-	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if p, ok, e := a.edgePrincipal(r); ok || e != nil {
+		return p, e
+	}
+	token := bearer(r)
 	if token == "" {
 		if c, e := r.Cookie("xrag_session"); e == nil {
 			a.mu.Lock()
@@ -326,7 +349,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				plugins[id] = map[string]any{"kind": spec.Kind, "version": spec.Version, "protocol": spec.Protocol}
 			}
 		}
-		write(w, 200, map[string]any{"plugins": plugins, "version": core.Version, "origin_id": a.Store.Origin, "identity": p, "workers": a.Workers, "storage": "SQLite / same-machine Demo", "keyword": "FTS5 BM25 + character/bigram fallback", "graph_backend": func() string {
+		write(w, 200, map[string]any{"plugins": plugins, "version": core.Version, "origin_id": a.Store.Origin, "identity": p, "edge_login": a.EdgeUser != "", "workers": a.Workers, "storage": "SQLite / same-machine Demo", "keyword": "FTS5 BM25 + character/bigram fallback", "graph_backend": func() string {
 			if a.Builder.Config.Neo4j != nil {
 				return "neo4j-query-api"
 			}

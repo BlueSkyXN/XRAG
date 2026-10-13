@@ -510,3 +510,42 @@ func TestProductCLIKeyJSONScopeDoesNotFallBackToProfile(t *testing.T) {
 		t.Fatal("explicit empty scope widened to default profile")
 	}
 }
+
+func TestEdgeLoginUsesTheSameUsernameAndPassword(t *testing.T) {
+	h := productSetup(t)
+	if status, _ := h.request(t, "GET", "/v1/system", nil, ""); status != 401 {
+		t.Fatal(status)
+	}
+	h.app.EdgeUser = "xrag"
+	h.app.EdgePass = "correct-password"
+	check := func(user, pass string) (int, []byte) {
+		t.Helper()
+		req, e := http.NewRequest("GET", h.url+"/v1/system", nil)
+		must(t, e)
+		req.SetBasicAuth(user, pass)
+		res, e := http.DefaultClient.Do(req)
+		must(t, e)
+		defer res.Body.Close()
+		b, e := io.ReadAll(res.Body)
+		must(t, e)
+		return res.StatusCode, b
+	}
+	if status, _ := check("xrag", "wrong-password"); status != 401 {
+		t.Fatal(status)
+	}
+	if status, _ := check("other", "correct-password"); status != 401 {
+		t.Fatal(status)
+	}
+	status, b := check("xrag", "correct-password")
+	if status != 200 {
+		t.Fatal(status, string(b))
+	}
+	body := object(t, b)
+	if body["edge_login"] != true || body["identity"].(map[string]any)["role"] != "admin" {
+		t.Fatal(string(b))
+	}
+	status, b = h.request(t, "GET", "/v1/system", nil, h.key)
+	if status != 200 || object(t, b)["identity"].(map[string]any)["role"] != "admin" {
+		t.Fatal(status, string(b))
+	}
+}

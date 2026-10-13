@@ -287,6 +287,13 @@ func run() error {
 	if *config != "" {
 		app.ConfigSource = "external_file"
 	}
+	if os.Getenv("XRAG_EDGE_LOGIN") == "1" {
+		app.EdgeUser = os.Getenv("ADMIN_USERNAME")
+		app.EdgePass = os.Getenv("ADMIN_PASSWORD")
+		if app.EdgeUser == "" || app.EdgePass == "" {
+			return fmt.Errorf("XRAG_EDGE_LOGIN requires ADMIN_USERNAME and ADMIN_PASSWORD")
+		}
+	}
 	srv := &http.Server{Addr: *listen, Handler: app, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 120 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	errc := make(chan error, 1)
 	go func() {
