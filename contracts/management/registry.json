@@ -1,0 +1,63 @@
+[
+  {
+    "path": "/v1/kbs/{kb}/sources",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "note": "GET items保持兼容，新增details含policy/status；POST可kind=git并带git_ref"
+  },
+  {
+    "path": "/v1/kbs/{kb}/sources/{source}/policy",
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "input": "source-policy.schema.json"
+  },
+  {
+    "path": "/v1/hooks/{kb}/{source}",
+    "methods": [
+      "POST"
+    ],
+    "input": "hook.schema.json",
+    "auth": "custom HMAC v1; not XRAG Bearer key"
+  },
+  {
+    "path": "/v1/jobs/{id}/details",
+    "methods": [
+      "GET"
+    ],
+    "note": "files/triggers/usage，加limits与truncated"
+  },
+  {
+    "path": "/v1/queries",
+    "methods": [
+      "GET"
+    ],
+    "note": "有界历史摘要"
+  },
+  {
+    "path": "/v1/queries/{id}",
+    "methods": [
+      "GET"
+    ],
+    "note": "历史过程，不重新执行"
+  },
+  {
+    "path": "/v1/eval/sets",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "input": "eval-set.schema.json"
+  },
+  {
+    "path": "/v1/eval/runs",
+    "methods": [
+      "POST"
+    ],
+    "input": "eval-run.schema.json",
+    "note": "202 Job；用原有 /v1/jobs/{id} 查询和取消"
+  }
+]

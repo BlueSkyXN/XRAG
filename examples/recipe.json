@@ -1,0 +1,20 @@
+{
+  "version": "xrag.recipe/v1",
+  "name": "keyword-then-read",
+  "steps": [
+    {
+      "action": "search.keyword",
+      "arguments": {
+        "q": "$input",
+        "limit": 3
+      }
+    },
+    {
+      "action": "files.read",
+      "arguments": {
+        "ref": "$last.ref",
+        "length": 3000
+      }
+    }
+  ]
+}

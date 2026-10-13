@@ -1,0 +1,10 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "type":"object","additionalProperties":false,
+ "required":["resource","issuer","introspection_endpoint","client_id","client_secret_ref","subjects"],
+ "properties":{
+  "resource":{"type":"string","format":"uri"},"issuer":{"type":"string","format":"uri"},"introspection_endpoint":{"type":"string","format":"uri"},
+  "client_id":{"type":"string","minLength":1,"maxLength":300},"client_secret_ref":{"type":"string","pattern":"^(env:|file:).+"},"allow_loopback_http":{"type":"boolean","default":false},
+  "subjects":{"type":"object","minProperties":1,"maxProperties":1000,"additionalProperties":{"type":"object","required":["role","kbs"],"additionalProperties":false,"properties":{"name":{"type":"string"},"role":{"enum":["reader","contributor","maintainer"]},"kbs":{"type":"array","minItems":1,"items":{"type":"string"}}}}}
+ }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "XRAG Demo.5 source-edit",
+  "type": "object",
+  "properties": {
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "disabled": {
+      "type": "boolean"
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confirm": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "expected_revision"
+  ],
+  "additionalProperties": false
+}

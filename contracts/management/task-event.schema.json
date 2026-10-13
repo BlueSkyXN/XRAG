@@ -1,0 +1,6 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "type":"object","required":["event","data"],"additionalProperties":false,
+ "properties":{"event":{"enum":["task","done","error","reconnect"]},"data":{"type":"object"}},
+ "allOf":[{"if":{"properties":{"event":{"const":"task"}}},"then":{"properties":{"data":{"required":["job","stream_semantics"],"properties":{"job":{"type":"object","required":["id","state"]},"stream_semantics":{"const":"current_snapshot"},"checkpoint_resume":{"const":"explicit_only"}}}}}}]
+}

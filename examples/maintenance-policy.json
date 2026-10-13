@@ -1,0 +1,14 @@
+{
+  "expected_revision": 0,
+  "policy": {
+    "enabled": false,
+    "backup_every_seconds": 86400,
+    "backup_keep": 7,
+    "records_every_seconds": 86400,
+    "records_keep_days": 30,
+    "batch_size": 200,
+    "content_every_seconds": 0,
+    "content_keep_days": 30,
+    "content_external": false
+  }
+}

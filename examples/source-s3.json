@@ -1,0 +1,13 @@
+{
+  "id": "object-docs",
+  "kind": "s3",
+  "root": "http://127.0.0.1:9000",
+  "mount": "objects",
+  "remote": {
+    "region": "us-east-1",
+    "bucket": "docs-bucket",
+    "prefix": "manuals/",
+    "access_key": "env:S3_ACCESS_KEY",
+    "secret_key": "env:S3_SECRET_KEY"
+  }
+}

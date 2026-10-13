@@ -1,0 +1,66 @@
+[
+  {
+    "path": "/v1/kbs/{kb}/sync-targets",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "input": "sync-target-create.schema.json",
+    "role": "Maintainer",
+    "note": "registration only; no automatic writeback"
+  },
+  {
+    "path": "/v1/knowledge/{id}/revisions",
+    "methods": [
+      "GET"
+    ],
+    "role": "Contributor",
+    "note": "immutable revisions; not exposed as public search"
+  },
+  {
+    "path": "/v1/knowledge/{id}/regenerate",
+    "methods": [
+      "POST"
+    ],
+    "input": "wiki-regenerate.schema.json",
+    "role": "Maintainer",
+    "note": "202 Job; current publication unchanged"
+  },
+  {
+    "path": "/v1/knowledge/{id}/sync",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "input": "knowledge-sync.schema.json",
+    "role": "Maintainer",
+    "note": "GET latest receipts per target, POST explicit current published revision"
+  },
+  {
+    "path": "/v1/knowledge/{id}/archive",
+    "methods": [
+      "POST"
+    ],
+    "input": "knowledge-archive.schema.json",
+    "role": "Maintainer",
+    "note": "remove current publication, preserve allowed old references"
+  },
+  {
+    "path": "/v1/kbs/{kb}/wiki",
+    "methods": [
+      "POST"
+    ],
+    "input": "wiki-generate.schema.json",
+    "role": "Maintainer",
+    "note": "existing route now supports optional path and single_pass"
+  },
+  {
+    "path": "/v1/kbs/{kb}/sources",
+    "methods": [
+      "POST"
+    ],
+    "input": "source-create.schema.json",
+    "role": "Maintainer",
+    "note": "existing route adds S3-compatible and WeKnora parsed-text export"
+  }
+]

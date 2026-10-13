@@ -1,0 +1,84 @@
+{
+  "type": "object",
+  "properties": {
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "backup_every_seconds": {
+          "anyOf": [
+            {
+              "const": 0
+            },
+            {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 604800
+            }
+          ]
+        },
+        "backup_keep": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 15
+        },
+        "records_every_seconds": {
+          "anyOf": [
+            {
+              "const": 0
+            },
+            {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 604800
+            }
+          ]
+        },
+        "records_keep_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 36500
+        },
+        "batch_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "content_every_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 604800
+        },
+        "content_keep_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 36500
+        },
+        "content_external": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "backup_every_seconds",
+        "backup_keep",
+        "records_every_seconds",
+        "records_keep_days",
+        "batch_size"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "expected_revision",
+    "policy"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -1,0 +1,13 @@
+{
+  "target": {
+    "id": "git-push",
+    "kind": "git",
+    "root": "/absolute/server/repository",
+    "prefix": "xrag-knowledge",
+    "branch": "xrag/knowledge",
+    "push": true,
+    "remote_url": "https://git.example/group/repository.git",
+    "auto_sync": false
+  },
+  "confirm": true
+}

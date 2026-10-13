@@ -1,0 +1,11 @@
+{
+  "id": "existing-knowledge",
+  "kind": "weknora",
+  "root": "http://127.0.0.1:8080",
+  "mount": "imported",
+  "remote": {
+    "knowledge_base": "REPLACE_WITH_KB_ID",
+    "api_key": "env:WEKNORA_API_KEY",
+    "auth_header": "X-API-Key"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "expected_revision": 0,
+  "config": {
+    "chat": {
+      "url": "https://model.example/v1",
+      "key": "env:XRAG_CHAT_KEY",
+      "model": "replace-with-your-actual-model"
+    }
+  }
+}

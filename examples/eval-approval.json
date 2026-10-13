@@ -1,0 +1,15 @@
+{
+  "expected_revision": 0,
+  "case": {
+    "id": "replace-with-case-id",
+    "question": "日志错误 E203 的处理说明在哪里？",
+    "expected": [
+      {
+        "path": "manual/02-errors.md",
+        "anchor": "E203"
+      }
+    ],
+    "expected_empty": false
+  },
+  "note": "由维护者确认预期资料，示例路径需要改成实际路径"
+}

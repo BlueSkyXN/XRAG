@@ -1,0 +1,1 @@
+{"embedding":{"url":"http://127.0.0.1:8000/v1","model":"REPLACE_MODEL","dimension":1024,"revision":"declared-r1","key":"env:EMBED_API_KEY"}}

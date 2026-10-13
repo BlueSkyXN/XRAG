@@ -1,0 +1,25 @@
+{
+  "expected_revision": 0,
+  "settings": {
+    "providers": {
+      "external": [
+        {
+          "id": "peer-a",
+          "url": "https://xrag-a.example",
+          "key": "env:XRAG_PEER_A",
+          "kbs": [
+            "docs"
+          ]
+        },
+        {
+          "id": "peer-b",
+          "url": "https://xrag-b.example",
+          "key": "env:XRAG_PEER_B",
+          "kbs": [
+            "manual"
+          ]
+        }
+      ]
+    }
+  }
+}

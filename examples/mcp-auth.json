@@ -1,0 +1,14 @@
+{
+  "resource": "https://xrag.example.com/mcp",
+  "issuer": "https://identity.example.com",
+  "introspection_endpoint": "https://identity.example.com/oauth2/introspect",
+  "client_id": "xrag-resource-server",
+  "client_secret_ref": "env:XRAG_INTROSPECTION_SECRET",
+  "subjects": {
+    "REPLACE_WITH_ACTUAL_SUBJECT_ID": {
+      "name": "Knowledge reader",
+      "role": "reader",
+      "kbs": ["demo"]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "kb": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "anchor": {
+      "type": "string",
+      "maxLength": 2000
+    }
+  },
+  "required": [
+    "kb",
+    "path"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

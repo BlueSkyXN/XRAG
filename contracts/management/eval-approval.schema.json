@@ -1,0 +1,90 @@
+{
+  "type": "object",
+  "properties": {
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "case": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "expected": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "anchor": {
+                "type": "string",
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "expected_empty": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "question"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "expected"
+          ],
+          "properties": {
+            "expected": {
+              "minItems": 1
+            },
+            "expected_empty": {
+              "const": false
+            }
+          }
+        },
+        {
+          "required": [
+            "expected_empty"
+          ],
+          "properties": {
+            "expected_empty": {
+              "const": true
+            },
+            "expected": {
+              "maxItems": 0
+            }
+          }
+        }
+      ]
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 8000
+    }
+  },
+  "required": [
+    "expected_revision",
+    "case"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

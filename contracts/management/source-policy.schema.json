@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "every_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 604800
+    },
+    "watch_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3600
+    },
+    "debounce_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 300
+    },
+    "hook_secret_ref": {
+      "type": "string"
+    },
+    "schedule": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "native_watch": {
+      "type": "boolean"
+    },
+    "hook_provider": {
+      "type": "string",
+      "enum": [
+        "custom",
+        "github",
+        "gitlab",
+        "gitea"
+      ]
+    },
+    "hook_repository": {
+      "type": "string",
+      "maxLength": 250
+    },
+    "hook_ref": {
+      "type": "string",
+      "maxLength": 256
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

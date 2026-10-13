@@ -1,0 +1,17 @@
+{
+  "target": {
+    "id": "s3-output",
+    "name": "知识写回",
+    "kind": "s3",
+    "root": "https://s3.example",
+    "prefix": "xrag-knowledge",
+    "auto_sync": false,
+    "remote": {
+      "bucket": "knowledge",
+      "region": "us-east-1",
+      "access_key": "env:S3_ACCESS_KEY",
+      "secret_key": "env:S3_SECRET_KEY"
+    }
+  },
+  "confirm": true
+}

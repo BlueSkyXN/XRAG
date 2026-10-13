@@ -1,0 +1,9 @@
+{
+  "kb": "demo",
+  "name": "日志问题回归集",
+  "family": "logs-v1",
+  "purpose": "development",
+  "draft_ids": [
+    "edraft_replace"
+  ]
+}

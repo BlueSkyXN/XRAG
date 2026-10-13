@@ -1,0 +1,9 @@
+{
+  "target": {
+    "id": "docs-out",
+    "kind": "path",
+    "root": "/REPLACE/WITH/EXISTING/DIRECTORY",
+    "prefix": "xrag-knowledge"
+  },
+  "confirm": true
+}

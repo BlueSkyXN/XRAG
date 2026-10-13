@@ -1,0 +1,15 @@
+{
+  "bindings": {
+    "demo": {
+      "qdrant": {
+        "url": "http://127.0.0.1:6333"
+      },
+      "neo4j": {
+        "url": "http://127.0.0.1:7474",
+        "database": "neo4j",
+        "user": "neo4j",
+        "password": "env:NEO4J_PASSWORD"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+[
+  {
+    "path": "/v1/maintenance/policy",
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "input": "maintenance-policy.schema.json"
+  },
+  {
+    "path": "/v1/maintenance/runs",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "input": "maintenance-run.schema.json"
+  },
+  {
+    "path": "/v1/maintenance/records",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/v1/feedback/{id}/test-case",
+    "methods": [
+      "POST"
+    ],
+    "input": "feedback-test-case.schema.json"
+  },
+  {
+    "path": "/v1/eval/drafts",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/v1/eval/drafts/{id}/approve",
+    "methods": [
+      "POST"
+    ],
+    "input": "eval-approval.schema.json"
+  },
+  {
+    "path": "/v1/eval/sets/from-drafts",
+    "methods": [
+      "POST"
+    ],
+    "input": "eval-from-drafts.schema.json"
+  },
+  {
+    "path": "/v1/eval/sets/{id}",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/v1/queries/{id}/diagnose",
+    "methods": [
+      "POST"
+    ],
+    "input": "query-diagnose.schema.json"
+  }
+]

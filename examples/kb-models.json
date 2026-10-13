@@ -1,0 +1,35 @@
+{
+  "expected_revision": 0,
+  "settings": {
+    "providers": {
+      "embedding": {
+        "url": "https://models.example/v1",
+        "key": "env:XRAG_MODEL_KEY",
+        "model": "your-embedding-model",
+        "dimension": 1024,
+        "revision": "your-pinned-revision"
+      },
+      "chat": {
+        "url": "https://models.example/v1",
+        "key": "env:XRAG_MODEL_KEY",
+        "model": "your-chat-model"
+      }
+    },
+    "graph": {
+      "mode": "llm",
+      "entity_types": [
+        "产品",
+        "组件"
+      ],
+      "relation_types": [
+        "使用",
+        "包含"
+      ],
+      "optional": false
+    },
+    "budget": {
+      "max_calls_per_run": 100,
+      "max_tokens_per_run": 2000000
+    }
+  }
+}

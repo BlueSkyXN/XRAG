@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kb": {
+      "type": "string",
+      "minLength": 1
+    },
+    "root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mount": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": [
+        "path",
+        "builtin",
+        "git",
+        "s3",
+        "weknora"
+      ]
+    },
+    "git_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "remote": {
+      "type": "object",
+      "properties": {
+        "region": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "access_key": {
+          "type": "string",
+          "pattern": "^(env|file):.+$"
+        },
+        "secret_key": {
+          "type": "string",
+          "pattern": "^(env|file):.+$"
+        },
+        "session_token": {
+          "type": "string",
+          "pattern": "^(env|file):.+$"
+        },
+        "anonymous": {
+          "type": "boolean"
+        },
+        "knowledge_base": {
+          "type": "string",
+          "minLength": 1
+        },
+        "api_key": {
+          "type": "string",
+          "pattern": "^(env|file):.+$"
+        },
+        "auth_header": {
+          "enum": [
+            "X-API-Key",
+            "Authorization"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "id",
+    "root",
+    "mount",
+    "kind"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "s3",
+              "weknora"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "remote"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "weknora"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "remote": {
+            "required": [
+              "knowledge_base",
+              "api_key"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "s3"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "remote": {
+            "required": [
+              "bucket"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

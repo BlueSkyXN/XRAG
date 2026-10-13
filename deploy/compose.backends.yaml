@@ -1,0 +1,23 @@
+# External backends only. Never started by XRAG itself.
+# Set explicit, reviewed image tags or digests before use; no floating latest tag.
+services:
+  qdrant:
+    image: ${QDRANT_IMAGE:?Set QDRANT_IMAGE to a reviewed qdrant/qdrant tag or digest}
+    ports:
+      - "127.0.0.1:6333:6333"
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Set a test Qdrant API key}
+    volumes:
+      - qdrant-test:/qdrant/storage
+  neo4j:
+    image: ${NEO4J_IMAGE:?Set NEO4J_IMAGE to a reviewed neo4j Community tag or digest with Query API v2}
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?Set a test Neo4j password}
+    volumes:
+      - neo4j-test:/data
+volumes:
+  qdrant-test:
+  neo4j-test:

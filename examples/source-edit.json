@@ -1,0 +1,11 @@
+{
+  "expected_revision": 0,
+  "include": [
+    "**/*.md",
+    "**/*.txt"
+  ],
+  "exclude": [
+    "archive/**"
+  ],
+  "disabled": false
+}

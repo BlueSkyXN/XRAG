@@ -1,0 +1,11 @@
+{
+  "embedding": {
+    "url": "https://embedding.example/v1",
+    "key": "env:EMBEDDING_API_KEY",
+    "model": "REPLACE_WITH_YOUR_MODEL",
+    "dimension": 1024,
+    "revision": "REPLACE_WITH_DECLARED_REVISION"
+  },
+  "qdrant": {"url": "http://127.0.0.1:6333", "key": "env:QDRANT_API_KEY"},
+  "neo4j": {"url": "http://127.0.0.1:7474", "database": "neo4j", "user": "neo4j", "password": "env:NEO4J_PASSWORD"}
+}

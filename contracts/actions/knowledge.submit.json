@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kb": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "body_md": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "case",
+        "fact",
+        "rule",
+        "procedure"
+      ]
+    },
+    "refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "applies_to": {
+      "type": "string"
+    },
+    "not_applies_to": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kb",
+    "title",
+    "body_md",
+    "refs"
+  ]
+}

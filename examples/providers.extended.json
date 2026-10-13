@@ -1,0 +1,7 @@
+{
+  "embedding":{"url":"http://127.0.0.1:8000/v1","model":"REPLACE_EMBED_MODEL","dimension":1024,"revision":"declared-r1","key":"env:EMBED_API_KEY"},
+  "qdrant":{"url":"http://127.0.0.1:6333","key":"env:QDRANT_API_KEY"},
+  "neo4j":{"url":"http://127.0.0.1:7474","database":"neo4j","user":"neo4j","password":"env:NEO4J_PASSWORD"},
+  "chat":{"url":"http://127.0.0.1:8000/v1","model":"REPLACE_CHAT_MODEL","key":"env:CHAT_API_KEY"},
+  "rerank":{"url":"http://127.0.0.1:8001/v1","model":"REPLACE_RERANK_MODEL","key":"env:RERANK_API_KEY"}
+}

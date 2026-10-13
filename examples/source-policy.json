@@ -1,0 +1,6 @@
+{
+  "every_seconds": 60,
+  "watch_seconds": 0,
+  "debounce_seconds": 10,
+  "hook_secret_ref": ""
+}

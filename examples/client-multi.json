@@ -1,0 +1,40 @@
+{
+  "default_profile": "backend",
+  "profiles": {
+    "backend": {
+      "profile_id": "p_backend",
+      "type": "direct",
+      "default_kbs": [
+        "docs",
+        "manual"
+      ],
+      "bindings": [
+        {
+          "kb": "docs",
+          "qdrant": {
+            "url": "http://127.0.0.1:6333",
+            "key": "env:QDRANT_READ_KEY"
+          },
+          "physical_collection": "COPY_FROM_ACTUAL_DESCRIPTOR",
+          "embedding": {
+            "url": "https://models.example/v1",
+            "key": "env:XRAG_MODEL_KEY",
+            "model": "your-model",
+            "dimension": 1024
+          },
+          "origin_id": "COPY_FROM_SERVER_ORIGIN"
+        },
+        {
+          "kb": "manual",
+          "neo4j": {
+            "url": "http://127.0.0.1:7474",
+            "database": "neo4j",
+            "user": "reader",
+            "password": "env:NEO4J_PASSWORD"
+          },
+          "origin_id": "COPY_FROM_SAME_SERVER_ORIGIN"
+        }
+      ]
+    }
+  }
+}

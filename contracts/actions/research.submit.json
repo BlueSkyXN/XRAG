@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kb",
+    "goal"
+  ],
+  "properties": {
+    "kb": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "path": {
+      "type": "string"
+    },
+    "max_steps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "max_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 600
+    }
+  }
+}

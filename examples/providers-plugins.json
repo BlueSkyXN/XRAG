@@ -1,0 +1,22 @@
+{
+  "plugins": {
+    "commonmark": {
+      "kind": "parser",
+      "version": "markdown-it4.2.0-pyyaml6.0.3-v1",
+      "protocol": "xrag.parser/v1",
+      "command": [
+        "python3",
+        "/absolute/path/xrag-demo-0.7.0-demo.5/plugins/commonmark/parse.py"
+      ]
+    },
+    "explicit-extractor": {
+      "kind": "extractor",
+      "version": "explicit-v1",
+      "protocol": "xrag.extract/v1",
+      "command": [
+        "python3",
+        "/absolute/path/xrag-demo-0.7.0-demo.5/examples/extract_explicit.py"
+      ]
+    }
+  }
+}

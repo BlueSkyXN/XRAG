@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "target": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kb": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "path",
+            "git",
+            "s3"
+          ]
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch": {
+          "type": "string",
+          "pattern": "^xrag/.+"
+        },
+        "auto_sync": {
+          "type": "boolean"
+        },
+        "push": {
+          "type": "boolean"
+        },
+        "remote_url": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "object",
+          "properties": {
+            "region": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bucket": {
+              "type": "string",
+              "minLength": 1
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "access_key": {
+              "type": "string",
+              "pattern": "^(env|file):.+$"
+            },
+            "secret_key": {
+              "type": "string",
+              "pattern": "^(env|file):.+$"
+            },
+            "session_token": {
+              "type": "string",
+              "pattern": "^(env|file):.+$"
+            },
+            "anonymous": {
+              "type": "boolean"
+            },
+            "knowledge_base": {
+              "type": "string",
+              "minLength": 1
+            },
+            "api_key": {
+              "type": "string",
+              "pattern": "^(env|file):.+$"
+            },
+            "auth_header": {
+              "enum": [
+                "X-API-Key",
+                "Authorization"
+              ]
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "root"
+      ],
+      "additionalProperties": false
+    },
+    "confirm": {
+      "const": true
+    }
+  },
+  "required": [
+    "target",
+    "confirm"
+  ],
+  "additionalProperties": false
+}

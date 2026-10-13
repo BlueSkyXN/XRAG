@@ -1,0 +1,371 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "XRAG Demo.5 provider-settings",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "expected_revision",
+    "config"
+  ],
+  "properties": {
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "embedding": {
+          "type": "object",
+          "required": [
+            "url",
+            "model",
+            "dimension"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "key": {
+              "type": "string",
+              "anyOf": [
+                {
+                  "const": ""
+                },
+                {
+                  "pattern": "^(env|file):\\S.*$"
+                }
+              ]
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dimension": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "revision": {
+              "type": "string"
+            },
+            "doc_prefix": {
+              "type": "string"
+            },
+            "query_prefix": {
+              "type": "string"
+            }
+          }
+        },
+        "chat": {
+          "type": "object",
+          "required": [
+            "url",
+            "model"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "key": {
+              "type": "string",
+              "anyOf": [
+                {
+                  "const": ""
+                },
+                {
+                  "pattern": "^(env|file):\\S.*$"
+                }
+              ]
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dimension": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8192
+            },
+            "revision": {
+              "type": "string"
+            },
+            "doc_prefix": {
+              "type": "string"
+            },
+            "query_prefix": {
+              "type": "string"
+            }
+          }
+        },
+        "rerank": {
+          "type": "object",
+          "required": [
+            "url",
+            "model"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "key": {
+              "type": "string",
+              "anyOf": [
+                {
+                  "const": ""
+                },
+                {
+                  "pattern": "^(env|file):\\S.*$"
+                }
+              ]
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dimension": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8192
+            },
+            "revision": {
+              "type": "string"
+            },
+            "doc_prefix": {
+              "type": "string"
+            },
+            "query_prefix": {
+              "type": "string"
+            }
+          }
+        },
+        "qdrant": {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "key": {
+              "type": "string",
+              "anyOf": [
+                {
+                  "const": ""
+                },
+                {
+                  "pattern": "^(env|file):\\S.*$"
+                }
+              ]
+            },
+            "model": {
+              "type": "string"
+            },
+            "dimension": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8192
+            },
+            "revision": {
+              "type": "string"
+            },
+            "doc_prefix": {
+              "type": "string"
+            },
+            "query_prefix": {
+              "type": "string"
+            }
+          }
+        },
+        "neo4j": {
+          "type": "object",
+          "required": [
+            "url",
+            "database",
+            "user",
+            "password"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "database": {
+              "type": "string"
+            },
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string",
+              "anyOf": [
+                {
+                  "const": ""
+                },
+                {
+                  "pattern": "^(env|file):\\S.*$"
+                }
+              ]
+            }
+          }
+        },
+        "graph": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "",
+                "explicit",
+                "llm",
+                "plugin"
+              ]
+            },
+            "plugin": {
+              "type": "string"
+            },
+            "model": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "key": {
+                  "type": "string",
+                  "anyOf": [
+                    {
+                      "const": ""
+                    },
+                    {
+                      "pattern": "^(env|file):\\S.*$"
+                    }
+                  ]
+                },
+                "model": {
+                  "type": "string"
+                },
+                "dimension": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 8192
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "doc_prefix": {
+                  "type": "string"
+                },
+                "query_prefix": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "url"
+              ],
+              "additionalProperties": false
+            },
+            "entity_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "relation_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "max_entities": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "max_relations": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 500
+            },
+            "optional": {
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "optional_vectors": {
+          "type": "boolean"
+        },
+        "external": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "key": {
+                "type": "string",
+                "anyOf": [
+                  {
+                    "const": ""
+                  },
+                  {
+                    "pattern": "^(env|file):\\S.*$"
+                  }
+                ]
+              },
+              "kbs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "disabled": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "kbs"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "dependentRequired": {
+        "qdrant": [
+          "embedding"
+        ]
+      }
+    }
+  }
+}

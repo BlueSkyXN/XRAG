@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "XRAG Demo.3 feedback-resolution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "expected_revision"
+  ],
+  "properties": {
+    "status": {
+      "enum": [
+        "open",
+        "resolved",
+        "dismissed"
+      ]
+    },
+    "resolution": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "action": "kb.discover",
+    "path": "/v1/discover",
+    "cli": "kb discover",
+    "tool": "kb_discover",
+    "group": "core",
+    "description": "查看实际配置和资料能力，不调用模型",
+    "input": "kb_discover.json"
+  },
+  {
+    "action": "search.keyword",
+    "path": "/v1/search/keyword",
+    "cli": "search keyword",
+    "tool": "search_keyword",
+    "group": "core",
+    "description": "关键词与编号检索；total 是文本块数，不是业务实体数",
+    "input": "search_keyword.json"
+  },
+  {
+    "action": "search.semantic",
+    "path": "/v1/search/semantic",
+    "cli": "search semantic",
+    "tool": "search_semantic",
+    "group": "core",
+    "description": "使用已配置模型；无模型时不可用，Top K 没有总数",
+    "input": "search_semantic.json"
+  },
+  {
+    "action": "files.tree",
+    "path": "/v1/files/tree",
+    "cli": "files tree",
+    "tool": "files_tree",
+    "group": "files",
+    "description": "列出已发布文件，支持保存范围",
+    "input": "files_tree.json"
+  },
+  {
+    "action": "files.grep",
+    "path": "/v1/files/grep",
+    "cli": "files grep",
+    "tool": "files_grep",
+    "group": "files",
+    "description": "RE2 文本匹配，返回命中文本块",
+    "input": "files_grep.json"
+  },
+  {
+    "action": "files.read",
+    "path": "/v1/files/read",
+    "cli": "files read",
+    "tool": "files_read",
+    "group": "core",
+    "description": "按 ref 读取固定版本；path 读取当前发布文件",
+    "input": "files_read.json"
+  },
+  {
+    "action": "graph.entity",
+    "path": "/v1/graph/entity",
+    "cli": "graph entity",
+    "tool": "graph_entity",
+    "group": "graph",
+    "description": "按名称查实体；同名不等于已消歧",
+    "input": "graph_entity.json"
+  },
+  {
+    "action": "graph.neighbors",
+    "path": "/v1/graph/neighbors",
+    "cli": "graph neighbors",
+    "tool": "graph_neighbors",
+    "group": "core",
+    "description": "沿关系查邻居；within 同时限制关系出处",
+    "input": "graph_neighbors.json"
+  },
+  {
+    "action": "graph.path",
+    "path": "/v1/graph/path",
+    "cli": "graph path",
+    "tool": "graph_path",
+    "group": "graph",
+    "description": "有界路径；保留实际方向，连通不是因果",
+    "input": "graph_path.json"
+  },
+  {
+    "action": "graph.chunks",
+    "path": "/v1/graph/chunks",
+    "cli": "graph chunks",
+    "tool": "graph_chunks",
+    "group": "graph",
+    "description": "读取实体的原始提及片段",
+    "input": "graph_chunks.json"
+  },
+  {
+    "action": "+ask",
+    "path": "/v1/ask",
+    "cli": "+ask",
+    "tool": "ask",
+    "group": "core",
+    "description": "固定检索组合，返回资料而非生成答案",
+    "input": "plus_ask.json"
+  },
+  {
+    "action": "+context",
+    "path": "/v1/context",
+    "cli": "+context",
+    "tool": "context",
+    "group": "graph",
+    "description": "实体、关系、出处组合，不生成答案",
+    "input": "plus_context.json"
+  },
+  {
+    "action": "handles.describe",
+    "path": "/v1/handles/describe",
+    "cli": "handle show",
+    "tool": "handle_describe",
+    "group": "utility",
+    "description": "查看范围，不重新查询",
+    "input": "handles_describe.json"
+  },
+  {
+    "action": "results.page",
+    "path": "/v1/results/page",
+    "cli": "results page",
+    "tool": "results_page",
+    "group": "core",
+    "description": "读取缓存结果下一页，不重复搜索",
+    "input": "results_page.json"
+  },
+  {
+    "action": "scope.expand",
+    "path": "/v1/scopes/expand",
+    "cli": "scope expand",
+    "tool": "scope_expand",
+    "group": "utility",
+    "description": "显式扩大到同 KB 中相关实体提及块；不是 within 的默认行为",
+    "input": "scope_expand.json"
+  },
+  {
+    "action": "search.external",
+    "path": "/v1/search/external",
+    "cli": "search external",
+    "tool": "search_external",
+    "group": "external",
+    "description": "Search explicitly configured external knowledge services; live results retain their provider binding.",
+    "input": "search_external.json"
+  }
+]

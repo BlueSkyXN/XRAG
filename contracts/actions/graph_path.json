@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.path",
+  "type": "object",
+  "properties": {
+    "kbs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "maxItems": 50
+    },
+    "within": {
+      "type": "string",
+      "minLength": 1
+    },
+    "filters": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "eq",
+              "in",
+              "prefix"
+            ]
+          },
+          "value": {}
+        },
+        "required": [
+          "field",
+          "op",
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "max_chars": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200000
+    },
+    "save_scope": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "required",
+        "none"
+      ]
+    },
+    "trace": {
+      "type": "boolean"
+    },
+    "require_complete": {
+      "type": "boolean"
+    },
+    "from_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "in",
+        "out",
+        "both"
+      ]
+    },
+    "max_hops": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "max_expansions": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    }
+  },
+  "required": [
+    "from_id",
+    "to_id"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,103 @@
+[
+  {
+    "path": "/v1/overview",
+    "methods": [
+      "GET"
+    ],
+    "role": "reader",
+    "request_or_result": "overview"
+  },
+  {
+    "path": "/v1/settings/providers",
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "role": "admin",
+    "request_or_result": "provider-settings"
+  },
+  {
+    "path": "/v1/keys",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "role": "admin",
+    "request_or_result": "key-create"
+  },
+  {
+    "path": "/v1/keys/{id}",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "role": "admin",
+    "request_or_result": "rename or confirm"
+  },
+  {
+    "path": "/v1/feedback",
+    "methods": [
+      "GET"
+    ],
+    "role": "reader (own) / maintainer (KB)",
+    "request_or_result": "page/status"
+  },
+  {
+    "path": "/v1/feedback/{id}",
+    "methods": [
+      "PATCH"
+    ],
+    "role": "maintainer",
+    "request_or_result": "feedback-resolution"
+  },
+  {
+    "path": "/v1/kbs/{kb}/export",
+    "methods": [
+      "GET"
+    ],
+    "role": "maintainer",
+    "request_or_result": "ZIP, published only"
+  },
+  {
+    "path": "/v1/backups",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "role": "admin",
+    "request_or_result": "confirm"
+  },
+  {
+    "path": "/v1/backups/{id}/download",
+    "methods": [
+      "GET"
+    ],
+    "role": "admin",
+    "request_or_result": "binary SQLite"
+  },
+  {
+    "path": "/v1/backups/{id}",
+    "methods": [
+      "DELETE"
+    ],
+    "role": "admin",
+    "request_or_result": "confirm"
+  },
+  {
+    "path": "/v1/maintenance/cache",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "role": "admin",
+    "request_or_result": "confirm on POST"
+  },
+  {
+    "path": "/v1/session",
+    "methods": [
+      "DELETE"
+    ],
+    "role": "session holder",
+    "request_or_result": "logout"
+  }
+]

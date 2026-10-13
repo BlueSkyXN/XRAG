@@ -2,184 +2,344 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"os"
-
-	"github.com/BlueSkyXN/XRAG/core/types"
-	"github.com/BlueSkyXN/XRAG/server/engine"
-	"github.com/BlueSkyXN/XRAG/server/httpapi"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+	"github.com/BlueSkyXN/XRAG/adapters"
+	"github.com/BlueSkyXN/XRAG/core"
+	"github.com/BlueSkyXN/XRAG/internal/automation"
+	"github.com/BlueSkyXN/XRAG/internal/build"
+	"github.com/BlueSkyXN/XRAG/internal/housekeeping"
+	"github.com/BlueSkyXN/XRAG/internal/maintenance"
+	"github.com/BlueSkyXN/XRAG/internal/mcpauth"
+	"github.com/BlueSkyXN/XRAG/internal/server"
+	"github.com/BlueSkyXN/XRAG/internal/store"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(2)
-	}
-	if err := run(os.Args[1], os.Args[2:]); err != nil {
-		if f := types.As(err); f != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", f.Error())
-		} else {
-			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		}
+	if e := run(); e != nil {
+		fmt.Fprintln(os.Stderr, e)
 		os.Exit(1)
 	}
 }
-
-func run(cmd string, args []string) error {
-	switch cmd {
-	case "init":
-		fs := flag.NewFlagSet(cmd, flag.ExitOnError)
-		dir := fs.String("data", "data", "data directory")
-		_ = fs.Parse(args)
-		eng, err := engine.Open(*dir)
+func run() error {
+	if len(os.Args) < 2 {
+		fmt.Println("xrag-server init|serve|worker|backup|restore|prune|vector-gc|recover-projections  --data .xrag-demo\ninit --examples ./examples/docs; serve --config config.json --workers off")
+		return nil
+	}
+	cmd := os.Args[1]
+	if cmd == "version" {
+		fmt.Println(core.Version)
+		return nil
+	}
+	f := flag.NewFlagSet(cmd, flag.ContinueOnError)
+	data := f.String("data", ".xrag-demo", "data directory")
+	listen := f.String("listen", "127.0.0.1:8765", "listen address")
+	config := f.String("config", "", "provider configuration JSON")
+	mcpAuthFile := f.String("mcp-auth", "", "optional OAuth protected-resource configuration JSON")
+	examples := f.String("examples", "", "copy initial MD/TXT examples")
+	webEnabled := f.Bool("web", true, "serve the bundled workbench")
+	mcpEnabled := f.Bool("mcp", true, "serve MCP endpoint")
+	workers := f.String("workers", "embedded", "embedded or off")
+	buildKB := f.String("build", "", "explicitly enqueue a build when starting")
+	targetsFile := f.String("targets", "", "explicit recovery backend bindings JSON")
+	dest := f.String("out", "", "new backup SQLite path")
+	from := f.String("from", "", "SQLite snapshot to restore into a NEW data directory")
+	keepDays := f.Int("keep-days", 30, "offline prune: minimum days since retirement")
+	cleanupExternal := f.Bool("external", false, "offline prune: explicitly delete recorded external projections before local history")
+	dropModel := f.Bool("drop-model-cache", false, "offline prune: also drop rebuildable model cache (may cause future model calls)")
+	confirm := f.Bool("confirm", false, "explicitly confirm restore or offline pruning")
+	scan := f.Duration("scan-every", 0, "explicit periodic incremental scan interval; no filesystem watcher implied")
+	if e := f.Parse(os.Args[2:]); e != nil {
+		return e
+	}
+	if *workers != "embedded" && *workers != "off" {
+		return fmt.Errorf("--workers must be embedded or off")
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if cmd == "restore" {
+		if !*confirm || *from == "" {
+			return fmt.Errorf("restore requires --from SNAPSHOT --data NEW_DIRECTORY --confirm")
+		}
+		var explicitData bool
+		f.Visit(func(v *flag.Flag) {
+			if v.Name == "data" {
+				explicitData = true
+			}
+		})
+		if !explicitData {
+			return fmt.Errorf("restore requires an explicit NEW --data directory")
+		}
+		v, e := maintenance.Restore(ctx, *from, *data)
+		if e != nil {
+			return e
+		}
+		fmt.Println(core.JSON(v))
+		return nil
+	}
+	if cmd == "prune" || cmd == "vector-gc" || cmd == "recover-projections" {
+		if st, e := os.Stat(filepath.Join(*data, "xrag.sqlite")); e != nil || !st.Mode().IsRegular() {
+			return fmt.Errorf("prune requires an existing data directory")
+		}
+	}
+	unlock, e := maintenance.RuntimeLock(*data, cmd == "prune" || cmd == "vector-gc" || cmd == "recover-projections")
+	if e != nil {
+		return e
+	}
+	defer unlock()
+	s, e := store.Open(*data)
+	if e != nil {
+		return e
+	}
+	defer s.Close()
+	logger := log.New(os.Stderr, "xrag ", log.LstdFlags)
+	cfg, e := adapters.ReadConfig(*config)
+	if e == nil && *config == "" {
+		setting, err := s.ProviderSetting(ctx)
 		if err != nil {
 			return err
 		}
-		return eng.Close()
-	case "kb":
-		return kb(args)
-	case "source":
-		return source(args)
-	case "build":
-		return build(args)
-	case "keyword", "tree", "grep", "read", "page":
-		return query(cmd, args)
-	case "http":
-		return serve(args)
-	default:
-		usage()
-		return types.Fail("INVALID_ARGUMENT", "unknown command", 400)
+		cfg, e = adapters.ParseConfig(setting.Data)
 	}
-}
-
-func kb(args []string) error {
-	if len(args) == 0 || args[0] != "add" {
-		return types.Fail("INVALID_ARGUMENT", "use: kb add", 400)
+	if e != nil {
+		return e
 	}
-	fs := flag.NewFlagSet("kb", flag.ExitOnError)
-	dir := fs.String("data", "data", "data directory")
-	id := fs.String("id", "", "knowledge base id")
-	name := fs.String("name", "", "display name")
-	_ = fs.Parse(args[1:])
-	eng, err := engine.Open(*dir)
-	if err != nil {
+	if cmd == "recover-projections" {
+		if *targetsFile == "" {
+			return fmt.Errorf("recover-projections --data RESTORED_DIRECTORY --targets FILE [--confirm]")
+		}
+		raw, er := os.ReadFile(*targetsFile)
+		if er != nil {
+			return er
+		}
+		if len(raw) > 65536 {
+			return fmt.Errorf("recovery target file exceeds 64 KiB")
+		}
+		targets, er := build.DecodeRecoveryTargets(raw)
+		if er != nil {
+			return er
+		}
+		result, er := (&build.Builder{Store: s}).RecoverProjections(ctx, targets, *confirm)
+		fmt.Println(core.JSON(result))
+		return er
+	}
+	if cmd == "serve" || cmd == "worker" {
+		if er := s.CheckRecoveryComplete(ctx); er != nil {
+			return er
+		}
+	}
+	if cmd == "vector-gc" {
+		result, err := (&build.Builder{Store: s, Config: cfg}).CollectVectorGenerations(ctx, *keepDays, *confirm)
+		fmt.Println(core.JSON(result))
 		return err
 	}
-	defer eng.Close()
-	if *name == "" {
-		*name = *id
+	if cmd == "prune" {
+		if *confirm && !*cleanupExternal && (cfg.Qdrant != nil || cfg.Neo4j != nil) {
+			return fmt.Errorf("offline prune cannot clean configured external projections; preview only")
+		}
+		// Also reject a legacy API instance which does not yet hold runtime.lock.
+		l, err := os.OpenFile(filepath.Join(s.Dir, "server.lock"), os.O_CREATE|os.O_RDWR, 0600)
+		if err != nil {
+			return err
+		}
+		defer l.Close()
+		if err = syscall.Flock(int(l.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+			return fmt.Errorf("stop the API before pruning")
+		}
+		defer syscall.Flock(int(l.Fd()), syscall.LOCK_UN)
+		var result store.PruneReport
+		if *cleanupExternal {
+			result, err = (&build.Builder{Store: s, Config: cfg}).PruneExternal(ctx, *keepDays, *confirm, *dropModel)
+		} else {
+			result, err = s.PruneHistory(ctx, *keepDays, *confirm, *dropModel)
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Println(core.JSON(result))
+		return nil
 	}
-	return eng.CreateKB(context.Background(), *id, *name)
-}
-
-func source(args []string) error {
-	if len(args) == 0 || args[0] != "add" {
-		return types.Fail("INVALID_ARGUMENT", "use: source add", 400)
-	}
-	fs := flag.NewFlagSet("source", flag.ExitOnError)
-	dir := fs.String("data", "data", "data directory")
-	kb := fs.String("kb", "", "knowledge base id")
-	id := fs.String("id", "", "source id")
-	mount := fs.String("mount", "", "path mount")
-	root := fs.String("path", "", "directory to scan")
-	_ = fs.Parse(args[1:])
-	eng, err := engine.Open(*dir)
-	if err != nil {
-		return err
-	}
-	defer eng.Close()
-	return eng.AddPathSource(context.Background(), *kb, *id, *mount, *root)
-}
-
-func build(args []string) error {
-	fs := flag.NewFlagSet("build", flag.ExitOnError)
-	dir := fs.String("data", "data", "data directory")
-	kb := fs.String("kb", "", "knowledge base id")
-	_ = fs.Parse(args)
-	eng, err := engine.Open(*dir)
-	if err != nil {
-		return err
-	}
-	defer eng.Close()
-	summary, err := eng.Build(context.Background(), *kb, engine.Options{})
-	if err != nil {
-		return err
-	}
-	return printJSON(summary)
-}
-
-func query(cmd string, args []string) error {
-	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
-	dir := fs.String("data", "data", "data directory")
-	kb := fs.String("kb", "", "knowledge base id")
-	q := fs.String("q", "", "query or pattern")
-	ref := fs.String("ref", "", "xr1 ref")
-	result := fs.String("result", "", "frozen result id")
-	limit := fs.Int("limit", 10, "page size")
-	offset := fs.Int("offset", 0, "page offset")
-	_ = fs.Parse(args)
-	eng, err := engine.Open(*dir)
-	if err != nil {
-		return err
-	}
-	defer eng.Close()
-	ctx := context.Background()
-	page := engine.Page{Limit: *limit, Offset: *offset}
-	var resp types.Response
+	builder := &build.Builder{Store: s, Config: cfg, Logger: logger}
 	switch cmd {
-	case "keyword":
-		resp, err = eng.Keyword(ctx, *kb, *q, page)
-	case "tree":
-		resp, err = eng.Tree(ctx, *kb)
-	case "grep":
-		resp, err = eng.Grep(ctx, *kb, *q)
-	case "read":
-		resp, err = eng.Read(ctx, *ref)
-	case "page":
-		resp, err = eng.Page(ctx, *result, page)
+	case "init":
+		n, e := s.CountKeys(ctx)
+		if e != nil {
+			return e
+		}
+		if n == 0 {
+			token, e := s.CreateKey(ctx, "initial-admin", "admin", nil)
+			if e != nil {
+				return e
+			}
+			if e = os.WriteFile(filepath.Join(s.Dir, "admin.key"), []byte(token+"\n"), 0600); e != nil {
+				return e
+			}
+			if e = s.CreateKB(ctx, "demo", "演示知识库"); e != nil {
+				return e
+			}
+			if *examples != "" {
+				dst := filepath.Join(s.Dir, "sources", "demo")
+				if e = copyExamples(*examples, dst); e != nil {
+					return e
+				}
+				if e = s.AddSource(ctx, store.Source{KB: "demo", ID: "manual", Root: dst, Mount: "manual", Kind: "path"}); e != nil {
+					return e
+				}
+			}
+			fmt.Println("Initialized " + s.Dir + "\nKey file: " + filepath.Join(s.Dir, "admin.key"))
+		} else {
+			fmt.Println("Already initialized; no data or keys were replaced.")
+		}
+		return nil
+	case "backup":
+		if *dest == "" {
+			return fmt.Errorf("--out required")
+		}
+		if e = s.Backup(ctx, *dest); e != nil {
+			return e
+		}
+		fmt.Println("Database backup written. Source files/config need a separate backup: " + *dest)
+		return nil
+	case "serve", "worker":
+	default:
+		return fmt.Errorf("unknown server command %s", cmd)
 	}
-	if err != nil {
-		return err
+	// One API process per data directory; workers coordinate using SQLite jobs and per-KB running uniqueness.
+	var lock *os.File
+	if cmd == "serve" {
+		lock, e = os.OpenFile(filepath.Join(s.Dir, "server.lock"), os.O_CREATE|os.O_RDWR, 0600)
+		if e != nil {
+			return e
+		}
+		defer lock.Close()
+		if e = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); e != nil {
+			return fmt.Errorf("another API server is using this data directory")
+		}
+		defer syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
 	}
-	return printJSON(resp)
-}
-
-func serve(args []string) error {
-	fs := flag.NewFlagSet("http", flag.ExitOnError)
-	dir := fs.String("data", "data", "data directory")
-	addr := fs.String("addr", "127.0.0.1:8080", "listen address")
-	_ = fs.Parse(args)
-	eng, err := engine.Open(*dir)
-	if err != nil {
-		return err
+	wg := &sync.WaitGroup{}
+	if cmd == "worker" || *workers == "embedded" {
+		wg.Add(1)
+		go builder.Loop(ctx, wg)
+		wg.Add(1)
+		go (&housekeeping.Controller{Store: s, Logger: logger}).Loop(ctx, wg)
 	}
-	defer eng.Close()
-	server := &http.Server{Addr: *addr, Handler: (&httpapi.Server{Engine: eng}).Handler()}
-	return server.ListenAndServe()
+	defer func() { stop(); wg.Wait() }()
+	if cmd == "serve" {
+		wg.Add(1)
+		go (&automation.Controller{Builder: builder}).Loop(ctx, wg)
+	}
+	if *buildKB != "" {
+		if _, e = s.Enqueue(ctx, *buildKB, "build", "server-start", "", map[string]any{"mode": "incremental"}); e != nil {
+			return e
+		}
+	}
+	if *scan > 0 && cmd == "serve" {
+		if *scan < 10*time.Second {
+			return fmt.Errorf("--scan-every minimum is 10s")
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			t := time.NewTicker(*scan)
+			defer t.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+					rs, e := s.KBs(ctx)
+					if e != nil {
+						continue
+					}
+					for _, r := range rs {
+						_, _ = s.Enqueue(ctx, r["id"].(string), "build", "scheduled", "", map[string]any{"mode": "incremental"})
+					}
+				}
+			}
+		}()
+	}
+	if cmd == "worker" {
+		logger.Print("worker started; no HTTP listener")
+		<-ctx.Done()
+		return nil
+	}
+	app := server.New(s, builder, logger)
+	app.MCPAuth, e = mcpauth.Read(*mcpAuthFile)
+	if e != nil {
+		return e
+	}
+	app.MCPTransport.Lifetime = ctx
+	app.Workers = *workers == "embedded"
+	app.DisableWeb = !*webEnabled
+	app.DisableMCP = !*mcpEnabled
+	app.ConfigSource = "managed"
+	if *config != "" {
+		app.ConfigSource = "external_file"
+	}
+	srv := &http.Server{Addr: *listen, Handler: app, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 120 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
+	errc := make(chan error, 1)
+	go func() {
+		logger.Printf("API + Studio http://%s | workers=%s | models only when configured", *listen, *workers)
+		errc <- srv.ListenAndServe()
+	}()
+	select {
+	case e := <-errc:
+		if e != http.ErrServerClosed {
+			return e
+		}
+	case <-ctx.Done():
+		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		return srv.Shutdown(c)
+	}
+	return nil
 }
-
-func printJSON(v any) error {
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	return enc.Encode(v)
-}
-
-func usage() {
-	fmt.Fprintf(os.Stderr, `xrag-server is the M1 server: directory build, published lexical search, and edition-pinned read.
-
-  xrag-server init -data data
-  xrag-server kb add -data data -id demo -name Demo
-  xrag-server source add -data data -kb demo -id docs -path ./corpus
-  xrag-server build -data data -kb demo
-  xrag-server keyword -data data -kb demo -q E203
-  xrag-server read -data data -ref xr1:...
-  xrag-server grep -data data -kb demo -q E203
-  xrag-server tree -data data -kb demo
-  xrag-server page -data data -result rs_... -offset 10
-
-Graph, Wiki, Client modes, and Recipe are not part of this build.
-`)
+func copyExamples(src, dst string) error {
+	src, e := filepath.Abs(src)
+	if e != nil {
+		return e
+	}
+	return filepath.Walk(src, func(p string, st os.FileInfo, e error) error {
+		if e != nil {
+			return e
+		}
+		rel, e := filepath.Rel(src, p)
+		if e != nil {
+			return e
+		}
+		if st.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+		out := filepath.Join(dst, rel)
+		if st.IsDir() {
+			return os.MkdirAll(out, 0700)
+		}
+		ext := strings.ToLower(filepath.Ext(p))
+		if ext != ".md" && ext != ".txt" {
+			return nil
+		}
+		in, e := os.Open(p)
+		if e != nil {
+			return e
+		}
+		defer in.Close()
+		f, e := os.OpenFile(out, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		if e != nil {
+			return e
+		}
+		defer f.Close()
+		_, e = io.Copy(f, in)
+		return e
+	})
 }

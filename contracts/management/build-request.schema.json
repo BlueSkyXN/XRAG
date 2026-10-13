@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "XRAG Demo.5 build-request",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "enum": [
+        "incremental",
+        "full",
+        "vectors_only",
+        "graph_only"
+      ]
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

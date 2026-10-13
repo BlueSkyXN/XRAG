@@ -1,0 +1,10 @@
+{
+  "target": {
+    "id": "git-out",
+    "kind": "git",
+    "root": "/REPLACE/WITH/LOCAL/GIT/REPOSITORY",
+    "prefix": "xrag-knowledge",
+    "branch": "xrag/knowledge"
+  },
+  "confirm": true
+}

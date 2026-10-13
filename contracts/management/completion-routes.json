@@ -1,0 +1,65 @@
+{
+  "version": "0.7.0-demo.5",
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/v1/kbs/{kb}",
+      "purpose": "show knowledge base"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/kbs/{kb}",
+      "purpose": "rename"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/kbs/{kb}",
+      "purpose": "withdraw and reserve ID"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/kbs/{kb}/settings",
+      "purpose": "read KB options"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/kbs/{kb}/settings",
+      "purpose": "save per-KB options with revision"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/kbs/{kb}/usage",
+      "purpose": "durable model attempts and totals"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/kbs/{kb}/sources/{source}",
+      "purpose": "read source"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/kbs/{kb}/sources/{source}",
+      "purpose": "enable, disable, include/exclude"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/kbs/{kb}/sources/{source}",
+      "purpose": "retire source"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/search/external",
+      "purpose": "peer retrieval"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/knowledge-submit",
+      "purpose": "opt-in MCP draft equivalent"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/feedback-submit",
+      "purpose": "opt-in MCP feedback equivalent"
+    }
+  ]
+}

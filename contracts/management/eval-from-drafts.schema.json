@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "kb": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "family": {
+      "type": "string"
+    },
+    "purpose": {
+      "enum": [
+        "development",
+        "holdout"
+      ]
+    },
+    "draft_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "kb",
+    "name",
+    "family",
+    "purpose",
+    "draft_ids"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

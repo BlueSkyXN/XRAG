@@ -1,0 +1,29 @@
+{
+  "expected_revision": 0,
+  "settings": {
+    "parser": "builtin",
+    "chunk_max_chars": 1200,
+    "dictionary": [
+      "知识工程",
+      "故障恢复"
+    ],
+    "fields": {
+      "product": "string",
+      "revision_number": "number"
+    },
+    "graph": {
+      "mode": "explicit",
+      "include": [
+        "manual/**"
+      ],
+      "exclude": [
+        "archive/**"
+      ]
+    },
+    "budget": {
+      "max_calls_per_run": 100,
+      "max_tokens_per_run": 500000,
+      "max_tokens_per_day": 5000000
+    }
+  }
+}

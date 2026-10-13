@@ -1,0 +1,54 @@
+{
+  "type": "object",
+  "properties": {
+    "confirm": {
+      "const": true
+    },
+    "backup": {
+      "type": "boolean"
+    },
+    "records": {
+      "type": "boolean"
+    },
+    "content": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "confirm"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "required": [
+        "backup"
+      ],
+      "properties": {
+        "backup": {
+          "const": true
+        }
+      }
+    },
+    {
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "const": true
+        }
+      }
+    },
+    {
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "const": true
+        }
+      }
+    }
+  ]
+}

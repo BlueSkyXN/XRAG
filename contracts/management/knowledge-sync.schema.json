@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confirm": {
+      "const": true
+    }
+  },
+  "required": [
+    "target_id",
+    "revision",
+    "confirm"
+  ],
+  "additionalProperties": false
+}

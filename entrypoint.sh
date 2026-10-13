@@ -29,11 +29,11 @@ test -w "${data_root}" || fail "XRAG data directory is not writable; run scripts
 printf '%s\n' "${ADMIN_PASSWORD}" | htpasswd -imc "${nginx_auth_file}" "${ADMIN_USERNAME}" >/dev/null
 chmod 0600 "${nginx_auth_file}"
 
-/usr/local/bin/xrag-server http -data "${data_root}" -addr 127.0.0.1:8080 &
+/usr/local/bin/xrag-server serve --data "${data_root}" --listen 127.0.0.1:8080 --workers embedded &
 app_pid=$!
 ready=0
 for _ in $(seq 1 50); do
-  if curl -fsS http://127.0.0.1:8080/health >/dev/null; then
+  if curl -fsS http://127.0.0.1:8080/healthz >/dev/null; then
     ready=1
     break
   fi

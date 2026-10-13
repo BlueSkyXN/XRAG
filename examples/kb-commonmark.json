@@ -1,0 +1,8 @@
+{
+  "expected_revision": 0,
+  "settings": {
+    "parser": "commonmark",
+    "parser_plugin": "commonmark",
+    "chunk_max_chars": 1200
+  }
+}

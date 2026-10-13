@@ -1,0 +1,14 @@
+{
+  "kb": "demo",
+  "name": "日志留出题集",
+  "family": "logs-v1",
+  "purpose": "holdout",
+  "cases": [
+    {
+      "id": "h1",
+      "question": "明确不存在的演示编号 NO_SUCH_CODE 是否有记录？",
+      "expected": [],
+      "expected_empty": true
+    }
+  ]
+}

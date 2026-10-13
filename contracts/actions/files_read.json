@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "files.read",
+  "type": "object",
+  "properties": {
+    "kbs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "maxItems": 50
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "length": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    }
+  },
+  "required": [],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "required": [
+        "ref"
+      ],
+      "not": {
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "required": [
+        "path",
+        "kbs"
+      ],
+      "not": {
+        "required": [
+          "ref"
+        ]
+      }
+    }
+  ]
+}

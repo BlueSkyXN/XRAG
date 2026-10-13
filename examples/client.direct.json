@@ -1,0 +1,14 @@
+{
+  "default_profile":"direct",
+  "profiles":{
+    "direct":{
+      "profile_id":"direct-demo-explicit",
+      "type":"direct",
+      "default_kbs":["demo"],
+      "physical_collection":"REPLACE_WITH_DEMO_PHYSICAL_COLLECTION",
+      "qdrant":{"url":"http://127.0.0.1:6333","key":"env:QDRANT_READ_KEY"},
+      "neo4j":{"url":"http://127.0.0.1:7474","database":"neo4j","user":"reader","password":"env:NEO4J_READ_PASSWORD"},
+      "embedding":{"url":"http://127.0.0.1:8000/v1","model":"REPLACE_EMBED_MODEL","dimension":1024,"revision":"declared-r1","key":"env:EMBED_API_KEY"}
+    }
+  }
+}

@@ -10,60 +10,111 @@ pinned: false
 license: gpl-3.0
 ---
 
-# XRAG
+# 部署
 
-XRAG 的 M1 服务：把目录里的 Markdown/TXT 按文件版发布，再做关键词检索和固定引用读取。图、Wiki、三种 Client 和 Recipe 不在这个部署里。
+Protected Space：<https://huggingface.co/spaces/BlueSkyXN/XRAG>
+应用：<https://blueskyxn-xrag.hf.space>
 
-## Space
+Nginx Basic Auth 在 `7860`。`/healthz` 是公开存活检查。私有 Bucket `BlueSkyXN/xrag-data` 挂在 `/data`，服务数据在 `/data/xrag`。登录用户名 `xrag`，密码在本机 `local/hfs-targets/production.env`。
 
-- GitHub：<https://github.com/BlueSkyXN/XRAG>
-- Hugging Face Space：<https://huggingface.co/spaces/BlueSkyXN/XRAG>
-- 应用：<https://blueskyxn-xrag.hf.space>
-- 形态：Docker、Protected、`cpu-basic`
-- 端口：`7860`
-- 持久化：私有 Bucket `BlueSkyXN/xrag-data` 读写挂载到 `/data`
+工作台仍使用 XRAG 自己的 API Key。启动后从 `/data/xrag` 的初始化输出或 `admin.key` 读取，不写进镜像。
 
-浏览器和 API 都经过 Nginx Basic Auth。`/healthz` 只用于平台存活检查，不读取数据库。
+# XRAG 0.7.0-demo.9
 
-```text
-Variable: ADMIN_USERNAME
-Secret:   ADMIN_PASSWORD
-```
+面向应用和 Agent 的知识构建、增强检索与有界调查工具。Server 准备并维护知识；Client 可以调用 Server、只读扫描本地 Markdown/TXT，或按登记格式直连 Qdrant/Neo4j。
 
-`ADMIN_PASSWORD` 至少 16 个字符。明文只在启动时生成 `/tmp` 里的口令摘要，不写入镜像、Git 或 Bucket。本机的部署值放在被 Git 忽略的 `local/hfs-targets/production.env`。
+**这是可运行开发版，不是完整生产发行。只使用全新数据目录（demo9），不承担旧软件迁移。**资料更新、历史引用与同版备份恢复保留。真实专业后端、商业模型、第三方 Agent 和目标平台仍有未验证项。
 
-```text
-standard:       HFS v3.0
-project_class:  preview
-target_role:    primary
-sovereignty:    port
-lane:           product
-version_source: commit
-visibility:     protected Space / private bucket
-```
-
-首次挂载 Bucket 后写入目录种子：
+## 1. 从无模型版本开始
 
 ```bash
-./scripts/prepare-bucket-prefix.sh --apply
+bash demo.sh
 ```
 
-## 本地
+浏览器打开 `http://127.0.0.1:8765`，输入终端显示的 API Key。脚本创建 `.xrag-demo/`、导入合成示例并启动服务，不下载模型或数据库。需要 Go 1.23+、C 编译器、带 FTS5 的 SQLite 开发库与 make。停止服务按 Ctrl+C，当前数据保留。
+
+Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
+
+## 2. 已有功能
+
+| 领域 | 主要能力 |
+|---|---|
+| 建知识 | MD/TXT、目录、Git、S3/WeKnora适配；字段/词典/解析器；增量/完整/向量/图专项构建 |
+| 查资料 | 精确与关键词、语义、原文grep/阅读、范围与分页、关系/路径、固定组合/外部peer |
+| 沉淀 | 草稿、修订、发布；文档/图/聚合依据；Wiki生成再生成/链接；目录/Git/S3写回 |
+| 调查 | 有界Research、有限Recipe、任务状态、取消、固定预算/范围/期限、检查点及明确续跑 |
+| 运行 | Key、配置、反馈/题集/诊断、自动SQLite备份、记录轮转、在线内容批次清理、离线整集合回收 |
+| 接入 | API/CLI，MCP JSON/SSE/stdio、tools/resources/prompts、可选外部OAuth资源服务 |
+
+S3/WeKnora/Qdrant/Neo4j/模型的适配代码和受控测试不等于真实部署已通过。当前文本在SQLite/Qdrant，Neo4j存关系和块标识，不另存原文。
+
+## 3. Client
 
 ```bash
-go test ./...
-bash scripts/static-check.sh
-go run ./cmd/xrag-server init -data data
-go run ./cmd/xrag-server kb add -data data -id demo -name Demo
-go run ./cmd/xrag-server source add -data data -kb demo -id docs -path ./corpus
-go run ./cmd/xrag-server build -data data -kb demo
-go run ./cmd/xrag-server keyword -data data -kb demo -q E203
+./bin/xrag profile add team --server http://127.0.0.1:8765 \
+  --key-file "$PWD/.xrag-demo/admin.key" --kb demo
+./bin/xrag search keyword E203 --profile team
+./bin/xrag +ask 日志 --profile team --graph --trace
+./bin/xrag files tree --local ./examples/docs --kb demo
+./bin/xrag recipe run --profile team --data @examples/recipe-run.json --wait
+# Research 需要配置 Chat：
+./bin/xrag research run --profile team --data @examples/research-task.json
+./bin/xrag jobs watch JOB_ID --profile team --timeout 10m
+./bin/xrag research resume JOB_ID --profile team --wait
 ```
 
-`go run ./cmd/xrag-server http -data data` 在 `127.0.0.1:8080` 提供同一套 API。Space 里这个端口只给本机 Nginx 使用。
+`+ask` 仍为固定检索组合；Research 根据结果选择下一步；Recipe执行明确的只读步骤。它们不自动发布知识或执行业务动作。续跑不会增加旧任务时间/预算，也不会自动重放未知收费调用。
 
-查询只读已发布文件版。来源改动在构建完成前不会进入检索，旧 `xr1:` 引用仍读原来的内容和行号。
+## 4. 模块分别运行
 
-## License
+```bash
+./bin/xrag-server serve --data .xrag-demo --workers off --web=false --mcp=false
+./bin/xrag-server worker --data .xrag-demo
+```
 
-GPL-3.0。
+没有Worker时任务排队，直接查询已有资料仍可用。Web/MCP/Worker开关独立。无需全部组件一起启动。
+
+## 5. MCP 接入
+
+```bash
+./bin/xrag mcp --profile team --toolsets core,graph,files,utility,research
+```
+
+HTTP端点 `/mcp` 根据Accept返回JSON或SSE。资源包括检索指南、当前身份可见的目录和固定引用；提示用于教Agent怎样组合操作。
+
+明确支持所述 2025-11-25/2025-06-18/2025-03-26 能力，未实现 2026-07-28 新线全部行为。GET独立推送流/协议会话/Tasks等没有冒充支持。默认API Key；可选 `--mcp-auth examples/mcp-auth.json` 接已部署的外部授权服务器。
+
+```bash
+python3 scripts/mcp_probe.py --url http://127.0.0.1:8765/mcp \
+  --key-file .xrag-demo/admin.key --report /tmp/mcp-probe.json
+```
+
+## 6. 本轮文档
+
+- [Demo.9 操作说明](docs/DEMO9_OPERATIONS.md)：协议、OAuth角色、任务状态和续跑规则。
+- [66项功能表](docs/FEATURE_MATRIX.md)、[当前范围](docs/STATUS.md)、[阶段完成情况](docs/COMPLETION.md)。
+- [专业连接说明](docs/CONNECTIONS.md)、[真实联调说明](docs/LIVE_INTEGRATION.md)。
+- [数据恢复](docs/DATA_RECOVERY.md)、[历史整理](docs/HISTORY_MAINTENANCE.md)、[Demo.8投影恢复](docs/DEMO8_OPERATIONS.md)。
+- [实际测试报告](checks/REPORT.md)。历史批次文档仅说明当时增量，以当前STATUS和新操作说明为准。
+
+## 7. 还没有完成的内容
+
+真实 Qdrant+Neo4j+模型+direct 联合运行、真实 S3/WeKnora/商业 IdP/第三方 Agent、真实业务效果；复杂大库下推/实际容量、孤儿产物发现、供应商级联合快照；全平台 Server/Docker/真实代理与浏览器部署。不能用几百项本机/受控测试替代这些工作。
+
+## 8. 开发检查
+
+```bash
+make build && make test && make race && make vet
+# 仅开发测试/选择CommonMark时需要这些依赖：
+python3 -m pip install -r plugins/commonmark/requirements.txt
+python3 scripts/check_management.py
+python3 scripts/smoke_demo9.py --browser
+python3 scripts/package.py --out /tmp/xrag-release
+python3 scripts/package_clients.py --out /tmp/xrag-release
+```
+
+`--browser` 另需Playwright/Chromium，Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试。
+
+## 9. 许可与数据
+
+见 [LICENSE_NOTICE.md](LICENSE_NOTICE.md)。本次不替用户决定许可证，不修改本机仓库。包里没有模型权重、字体、运行数据或真实凭据。

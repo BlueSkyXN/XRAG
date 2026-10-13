@@ -1,0 +1,8 @@
+{
+  "schedule": "*/15 * * * *",
+  "timezone": "Asia/Shanghai",
+  "native_watch": false,
+  "every_seconds": 0,
+  "watch_seconds": 0,
+  "debounce_seconds": 10
+}
