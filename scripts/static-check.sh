@@ -21,11 +21,13 @@ nginx = (root / "nginx.conf").read_text(encoding="utf-8")
 for snippet in ("USER xrag", "EXPOSE 7860", "ENTRYPOINT", "127.0.0.1:8080"):
     if snippet not in dockerfile and snippet not in entrypoint:
         raise SystemExit(f"runtime contract missing: {snippet}")
-for snippet in ("mountpoint -q /data", "ADMIN_PASSWORD", "htpasswd"):
+for snippet in ("mountpoint -q /data", "ADMIN_PASSWORD", "XRAG_EDGE_LOGIN"):
     if snippet not in entrypoint:
         raise SystemExit(f"entrypoint.sh is missing: {snippet}")
-if "auth_basic off" not in nginx or 'auth_basic "XRAG"' not in nginx:
-    raise SystemExit("nginx.conf must keep /healthz public and the application authenticated")
+if "auth_basic" in nginx or "htpasswd" in entrypoint:
+    raise SystemExit("browser login must be the application page, not a second basic-auth dialog")
+if 'id="password-form"' not in (root / "internal/server/web/index.html").read_text(encoding="utf-8"):
+    raise SystemExit("login page is missing the username and password form")
 if "proxy_pass http://127.0.0.1:8080/healthz;" not in nginx or 'return 200 "ok' in nginx:
     raise SystemExit("public /healthz must proxy to the application, not a static nginx response")
 print("static contract: PASS")

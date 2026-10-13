@@ -511,41 +511,44 @@ func TestProductCLIKeyJSONScopeDoesNotFallBackToProfile(t *testing.T) {
 	}
 }
 
-func TestEdgeLoginUsesTheSameUsernameAndPassword(t *testing.T) {
+func TestPasswordPageCreatesEdgeSession(t *testing.T) {
 	h := productSetup(t)
-	if status, _ := h.request(t, "GET", "/v1/system", nil, ""); status != 401 {
-		t.Fatal(status)
+	n, b := h.request(t, "GET", "/v1/login", nil, "")
+	if n != 200 || object(t, b)["mode"] != "key" {
+		t.Fatal(n, string(b))
+	}
+	n, _ = h.request(t, "POST", "/v1/session", map[string]any{"username": "xrag", "password": "correct-password"}, "")
+	if n != 401 {
+		t.Fatal(n)
 	}
 	h.app.EdgeUser = "xrag"
 	h.app.EdgePass = "correct-password"
-	check := func(user, pass string) (int, []byte) {
-		t.Helper()
-		req, e := http.NewRequest("GET", h.url+"/v1/system", nil)
-		must(t, e)
-		req.SetBasicAuth(user, pass)
-		res, e := http.DefaultClient.Do(req)
-		must(t, e)
-		defer res.Body.Close()
-		b, e := io.ReadAll(res.Body)
-		must(t, e)
-		return res.StatusCode, b
+	n, b = h.request(t, "GET", "/v1/login", nil, "")
+	if n != 200 || object(t, b)["mode"] != "password" {
+		t.Fatal(n, string(b))
 	}
-	if status, _ := check("xrag", "wrong-password"); status != 401 {
-		t.Fatal(status)
+	n, _ = h.request(t, "POST", "/v1/session", map[string]any{"username": "xrag", "password": "wrong-password"}, "")
+	if n != 401 {
+		t.Fatal(n)
 	}
-	if status, _ := check("other", "correct-password"); status != 401 {
-		t.Fatal(status)
+	req, e := http.NewRequest("POST", h.url+"/v1/session", strings.NewReader(core.JSON(map[string]any{"username": "xrag", "password": "correct-password"})))
+	must(t, e)
+	req.Header.Set("Content-Type", "application/json")
+	res, e := http.DefaultClient.Do(req)
+	must(t, e)
+	res.Body.Close()
+	if res.StatusCode != 200 || len(res.Cookies()) != 1 {
+		t.Fatal(res.StatusCode, len(res.Cookies()))
 	}
-	status, b := check("xrag", "correct-password")
-	if status != 200 {
-		t.Fatal(status, string(b))
-	}
-	body := object(t, b)
-	if body["edge_login"] != true || body["identity"].(map[string]any)["role"] != "admin" {
-		t.Fatal(string(b))
-	}
-	status, b = h.request(t, "GET", "/v1/system", nil, h.key)
-	if status != 200 || object(t, b)["identity"].(map[string]any)["role"] != "admin" {
-		t.Fatal(status, string(b))
+	req, e = http.NewRequest("GET", h.url+"/v1/system", nil)
+	must(t, e)
+	req.AddCookie(res.Cookies()[0])
+	res, e = http.DefaultClient.Do(req)
+	must(t, e)
+	body, e := io.ReadAll(res.Body)
+	res.Body.Close()
+	must(t, e)
+	if res.StatusCode != 200 || object(t, body)["identity"].(map[string]any)["role"] != "admin" {
+		t.Fatal(res.StatusCode, string(body))
 	}
 }

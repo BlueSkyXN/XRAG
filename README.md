@@ -15,9 +15,9 @@ license: gpl-3.0
 Protected Space：<https://huggingface.co/spaces/BlueSkyXN/XRAG>
 应用：<https://blueskyxn-xrag.hf.space>
 
-Nginx Basic Auth 在 `7860`。`/healthz` 是公开存活检查。私有 Bucket `BlueSkyXN/xrag-data` 挂在 `/data`，服务数据在 `/data/xrag`。登录用户名 `xrag`，密码在本机 `local/hfs-targets/production.env`。
+打开应用先看到登录页。用户名 `xrag`，密码在本机 `local/hfs-targets/production.env`。`/healthz` 是公开存活检查。私有 Bucket `BlueSkyXN/xrag-data` 挂在 `/data`，服务数据在 `/data/xrag`。
 
-浏览器只使用上面这一套用户名和密码，通过后直接进入工作台。API Key 仍只留给本机 CLI 和 MCP，不作为网页登录。
+登录页只有这一套用户名和密码。API Key 仍只留给本机 CLI 和 MCP。
 
 # XRAG 0.8.0-exp.1
 

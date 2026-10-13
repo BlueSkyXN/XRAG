@@ -63,7 +63,11 @@ jobs:
             sleep 2
           done
           test "$ok" = 1
-          test "$(curl --connect-timeout 1 --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/)" = 401
+          test "$(curl --connect-timeout 1 --max-time 2 -s -o "$RUNNER_TEMP/home.html" -w '%{http_code}' http://127.0.0.1:7860/)" = 200
+          grep -q 'id="password-form"' "$RUNNER_TEMP/home.html"
+          grep -q '用户名' "$RUNNER_TEMP/home.html"
+          test "$(curl --connect-timeout 1 --max-time 2 -s http://127.0.0.1:7860/v1/login)" = '{"mode":"password"}'
+          test "$(curl --connect-timeout 1 --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/v1/system)" = 401
           docker rm -f xrag-ci >/dev/null
           trap - EXIT
 

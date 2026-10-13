@@ -3,8 +3,6 @@ set -euo pipefail
 
 readonly data_root="/data/xrag"
 readonly nginx_home="/tmp/xrag-nginx"
-readonly nginx_auth_file="${nginx_home}/htpasswd"
-
 fail() {
   printf '[xrag-hfs] ERROR: %s\n' "$*" >&2
   exit 1
@@ -25,9 +23,6 @@ fi
 umask 077
 mkdir -p "${data_root}/corpus" "${nginx_home}/client_body" "${nginx_home}/proxy" "${nginx_home}/fastcgi" "${nginx_home}/uwsgi" "${nginx_home}/scgi"
 test -w "${data_root}" || fail "XRAG data directory is not writable; run scripts/prepare-bucket-prefix.sh --apply"
-
-printf '%s\n' "${ADMIN_PASSWORD}" | htpasswd -imc "${nginx_auth_file}" "${ADMIN_USERNAME}" >/dev/null
-chmod 0600 "${nginx_auth_file}"
 
 if [[ ! -f "${data_root}/xrag.sqlite" ]]; then
   /usr/local/bin/xrag-server init --data "${data_root}" --examples /usr/local/share/xrag/examples/docs

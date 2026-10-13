@@ -32,6 +32,7 @@ var static embed.FS
 type session struct {
 	Token   string
 	Expires time.Time
+	Edge    bool
 }
 type App struct {
 	Store         *store.Store
@@ -87,32 +88,22 @@ func decode(b []byte, out any) error {
 	}
 	return nil
 }
-func (a *App) edgePrincipal(r *http.Request) (store.Principal, bool, error) {
-	if a.EdgeUser == "" || a.EdgePass == "" {
-		return store.Principal{}, false, nil
+func (a *App) passwordMatches(user, pass string) bool {
+	if a.EdgeUser == "" || a.EdgePass == "" || user == "" {
+		return false
 	}
-	user, pass, ok := r.BasicAuth()
-	if !ok {
-		return store.Principal{}, false, nil
-	}
-	if subtle.ConstantTimeCompare([]byte(user), []byte(a.EdgeUser)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(a.EdgePass)) != 1 {
-		return store.Principal{}, false, core.Err("UNAUTHENTICATED", "username or password is wrong", 401)
-	}
-	p, e := a.Store.PermanentAdmin(r.Context())
-	if e != nil {
-		return store.Principal{}, false, e
-	}
-	return p, true, nil
+	return subtle.ConstantTimeCompare([]byte(user), []byte(a.EdgeUser)) == 1 && subtle.ConstantTimeCompare([]byte(pass), []byte(a.EdgePass)) == 1
 }
 func (a *App) principal(r *http.Request) (store.Principal, error) {
-	if p, ok, e := a.edgePrincipal(r); ok || e != nil {
-		return p, e
-	}
 	token := bearer(r)
 	if token == "" {
 		if c, e := r.Cookie("xrag_session"); e == nil {
 			a.mu.Lock()
 			ss, ok := a.sessions[c.Value]
+			if ok && time.Now().Before(ss.Expires) && ss.Edge {
+				a.mu.Unlock()
+				return a.Store.PermanentAdmin(r.Context())
+			}
 			if ok && time.Now().Before(ss.Expires) {
 				token = ss.Token
 			} else {
@@ -231,6 +222,14 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		write(w, 200, map[string]any{"status": "ok", "version": core.Version})
 		return
 	}
+	if r.URL.Path == "/v1/login" && r.Method == "GET" {
+		mode := "key"
+		if a.EdgeUser != "" {
+			mode = "password"
+		}
+		write(w, 200, map[string]any{"mode": mode})
+		return
+	}
 	if r.URL.Path == "/v1/session" && r.Method == "POST" {
 		b, e := body(r, 8192)
 		if e != nil {
@@ -238,13 +237,26 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var input struct {
-			Key string `json:"key"`
+			Key      string `json:"key"`
+			Username string `json:"username"`
+			Password string `json:"password"`
 		}
 		if e = decode(b, &input); e != nil {
 			a.fail(w, e)
 			return
 		}
-		p, e := a.Store.Authenticate(r.Context(), input.Key)
+		var p store.Principal
+		edge := false
+		if input.Username != "" || input.Password != "" {
+			if !a.passwordMatches(input.Username, input.Password) {
+				a.fail(w, core.Err("UNAUTHENTICATED", "username or password is wrong", 401))
+				return
+			}
+			p, e = a.Store.PermanentAdmin(r.Context())
+			edge = true
+		} else {
+			p, e = a.Store.Authenticate(r.Context(), input.Key)
+		}
 		if e != nil {
 			a.fail(w, e)
 			return
@@ -254,7 +266,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if len(a.sessions) > 1000 {
 			a.sessions = map[string]session{}
 		}
-		a.sessions[sid] = session{input.Key, time.Now().Add(8 * time.Hour)}
+		a.sessions[sid] = session{Token: input.Key, Expires: time.Now().Add(8 * time.Hour), Edge: edge}
 		a.mu.Unlock()
 		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: sid, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: 28800})
 		write(w, 200, p)
