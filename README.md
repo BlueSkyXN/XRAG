@@ -33,7 +33,9 @@ bash demo.sh
 
 浏览器打开 `http://127.0.0.1:8765`，输入终端显示的 API Key。脚本创建 `.xrag/`、导入合成示例并启动服务，不下载模型或数据库。需要 Go 1.23+、C 编译器、带 FTS5 的 SQLite 开发库与 make。停止服务按 Ctrl+C，当前数据保留。
 
-新版工作台第一阶段在 `http://127.0.0.1:8765/next/`：React + Tailwind + Radix 风格组件已迁移登录、导航和检索/原文阅读；其余功能仍使用经典界面。前端源码在 `webapp/`，运行 `make web` 重建并写入 `internal/server/web/next/`。发布包使用已提交的构建产物，不需要 Node。
+工作台在 `/`，取代原来的经典界面，按“查找 / 建设 / 沉淀 / 评估 / 系统”组织全部页面，导航按 Reader/Contributor/Maintainer/Admin 角色显示。检索页把一次查询拆成执行过程、结果路线（关键词/语义/图）、四种完整性，并给出等价的 CLI、HTTP 与 MCP 调用；原文按引用固定的文件版本读取，标出引用行。`⌘K` 列出动作注册表里的全部动作。
+
+前端源码在 `webapp/`（React + Tailwind + Radix），`make web` 重建并写入 `internal/server/web/`；开发时 `make web-dev` 启动 Vite（端口 5173，`/v1` 代理到 8765）。发布包使用已提交的构建产物，不需要 Node。只用系统字体，不打包字体文件。
 
 Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
 
@@ -111,11 +113,12 @@ make build && make test && make race && make vet
 python3 -m pip install -r plugins/commonmark/requirements.txt
 python3 scripts/check_management.py
 python3 scripts/smoke_demo9.py --browser
+python3 scripts/smoke_workbench.py --browser
 python3 scripts/package.py --out /tmp/xrag-release
 python3 scripts/package_clients.py --out /tmp/xrag-release
 ```
 
-`--browser` 另需Playwright/Chromium，Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试。
+`--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行。
 
 ## 9. 许可与数据
 

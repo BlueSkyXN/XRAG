@@ -2,19 +2,32 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
+const apiTarget = 'http://127.0.0.1:8765'
+
+// 代理会把 Host 改成后端地址；Origin 同步改写，否则服务端的跨源写入检查会拒绝登录和所有写操作。
+const backend = { target: apiTarget, changeOrigin: true, headers: { Origin: apiTarget } }
+
 export default defineConfig({
-  base: '/next/',
+  base: '/',
   plugins: [react(), tailwindcss()],
+  // 预先打包这些依赖，避免开发时中途重建依赖导致页面里出现两份 React
+  optimizeDeps: {
+    include: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-slot', '@radix-ui/react-tabs', 'lucide-react']
+  },
   build: {
-    outDir: '../internal/server/web/next',
+    // Server 用 go:embed 打包这个目录；它只放构建产物，每次构建整体替换。
+    outDir: '../internal/server/web',
     emptyOutDir: true,
-    sourcemap: false
+    sourcemap: false,
+    chunkSizeWarningLimit: 900
   },
   server: {
     port: 5173,
     strictPort: true,
     proxy: {
-      '/v1': 'http://127.0.0.1:8765'
+      '/v1': backend,
+      '/mcp': backend,
+      '/healthz': backend
     }
   }
 })

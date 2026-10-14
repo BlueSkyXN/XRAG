@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -393,14 +394,14 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 					items = items[:200]
 					trace = append(trace, Step{Stage: "keyword_candidate_window", Count: len(items), Note: "hybrid retrieval uses at most 200 lexical candidates; not an exhaustive result"})
 				}
-				routes := [][]Item{items}
+				routes := [][]Item{tagRoute(items, "keyword")}
 				if e.Semantic != nil {
 					rs, er := e.Semantic.Search(ctx, subsetView(view, chunks), q.Q)
 					if er != nil {
 						resp.Coverage.ExecutionPartial = true
 						resp.Notes = append(resp.Notes, "semantic branch unavailable: "+AsError(er).Code)
 					} else {
-						sem := appendRanks(rs, e.Semantic.Label())
+						sem := tagRoute(appendRanks(rs, e.Semantic.Label()), "semantic")
 						routes = append(routes, sem)
 						trace = append(trace, Step{Stage: "semantic", Count: len(sem), IDs: itemIDs(sem, 30)})
 					}
@@ -426,7 +427,7 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 						}
 					}
 					sortItems(g)
-					routes = append(routes, g)
+					routes = append(routes, tagRoute(g, "graph"))
 					resp.Strategy["graph"] = true
 					trace = append(trace, Step{Stage: "graph_supplement", Count: len(g)})
 				}
@@ -441,7 +442,7 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 					if er != nil {
 						return resp, er
 					}
-					routes = append(routes, ext)
+					routes = append(routes, tagRoute(ext, "external"))
 					resp.Strategy["external"] = true
 					resp.Coverage.Consistency = "mixed_live"
 					trace = append(trace, Step{Stage: "external", Count: len(ext)})
@@ -762,6 +763,26 @@ func itemIDs(items []Item, n int) []string {
 	}
 	return out
 }
+
+// tagRoute records which +ask branch produced each candidate, so a fused result can
+// say whether keyword, semantic, graph or external retrieval found it.
+func tagRoute(items []Item, route string) []Item {
+	out := make([]Item, len(items))
+	for i, it := range items {
+		it.Routes = []string{route}
+		out[i] = it
+	}
+	return out
+}
+func mergeRoutes(a, b []string) []string {
+	out := append([]string{}, a...)
+	for _, r := range b {
+		if !slices.Contains(out, r) {
+			out = append(out, r)
+		}
+	}
+	return out
+}
 func Fuse(routes [][]Item) []Item {
 	m := map[string]Item{}
 	for _, r := range routes {
@@ -771,6 +792,8 @@ func Fuse(routes [][]Item) []Item {
 			if !ok {
 				old = it
 				old.Score = 0
+			} else {
+				old.Routes = mergeRoutes(old.Routes, it.Routes)
 			}
 			old.Score += 1 / (60 + float64(i+1))
 			old.Ranking = "rrf"
@@ -999,10 +1022,50 @@ func (e *Engine) read(ctx context.Context, q Request, owner string, resp Respons
 		n := end
 		next = &n
 	}
-	resp.Data = ReadData{Ref: EncodeRef(ref), KB: ref.KB, Path: ref.Path, Edition: ref.Edition, Text: string(rs[q.Offset:end]), Offset: q.Offset, Length: end - q.Offset, TotalChars: len(rs), NextOffset: next, Freshness: fresh, Availability: "available", FileHash: ref.FileHash, Kind: kind}
+	if q.ContextLines < 0 || q.ContextLines > 500 {
+		return resp, Err("INVALID_ARGUMENT", "context_lines must be between 0 and 500", 400)
+	}
+	data := ReadData{Ref: EncodeRef(ref), KB: ref.KB, Path: ref.Path, Edition: ref.Edition, Text: string(rs[q.Offset:end]), Offset: q.Offset, Length: end - q.Offset, TotalChars: len(rs), NextOffset: next, Freshness: fresh, Availability: "available", FileHash: ref.FileHash, Kind: kind}
+	if q.ContextLines > 0 {
+		if ch != nil {
+			data.Window = lineWindow(d.Body, ch.LineStart, ch.LineEnd, q.ContextLines)
+		} else if ref.RangeStart != nil && ref.RangeEnd != nil {
+			start, end := rangeLines(d.Body, *ref.RangeStart, *ref.RangeEnd)
+			data.Window = lineWindow(d.Body, start, end, q.ContextLines)
+		}
+	}
+	resp.Data = data
 	resp.Total = Count(1, "files", "reference")
 	resp.Coverage = Coverage{DisplayTruncated: next != nil, Consistency: consistency(e.Mode), ScopeBasis: "enumerated"}
 	return resp, nil
+}
+
+// lineWindow cuts whole lines around a cited range from the edition body. It returns nil
+// when the body is not stored with the chunk (direct backends) or the range does not fit.
+func lineWindow(body string, start, end, context int) *ReadWindow {
+	if body == "" || start < 1 || end < start {
+		return nil
+	}
+	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	if len(lines) > 1 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+	if end > len(lines) {
+		return nil
+	}
+	lo, hi := max(1, start-context), min(len(lines), end+context)
+	return &ReadWindow{LineStart: lo, LineEnd: hi, CiteStart: start, CiteEnd: end, TotalLines: len(lines), Text: strings.Join(lines[lo-1:hi], "\n")}
+}
+
+// rangeLines converts a saved rune range (files.grep matches) to 1-based line numbers.
+func rangeLines(body string, lo, hi int) (int, int) {
+	rr := []rune(body)
+	if lo < 0 || hi < lo || hi > len(rr) {
+		return 0, 0
+	}
+	last := max(lo, hi-1)
+	start := 1 + strings.Count(string(rr[:lo]), "\n")
+	return start, start + strings.Count(string(rr[lo:last]), "\n")
 }
 func (e *Engine) supports(ctx context.Context, v View, ch map[string]Chunk) ([]Support, error) {
 	ss := []Support{}

@@ -206,6 +206,7 @@ func (s *Store) HydrateItems(ctx context.Context, items []core.Item) ([]core.Ite
 			got.Kind = it.Kind
 			got.Score = it.Score
 			got.Ranking = it.Ranking
+			got.Routes = it.Routes
 			out[i] = got
 		}
 		return nil

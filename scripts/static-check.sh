@@ -26,7 +26,10 @@ for snippet in ("mountpoint -q /data", "ADMIN_PASSWORD", "XRAG_EDGE_LOGIN"):
         raise SystemExit(f"entrypoint.sh is missing: {snippet}")
 if "auth_basic" in nginx or "htpasswd" in entrypoint:
     raise SystemExit("browser login must be the application page, not a second basic-auth dialog")
-if 'id="password-form"' not in (root / "internal/server/web/index.html").read_text(encoding="utf-8"):
+web = root / "internal/server/web"
+if 'id="root"' not in (web / "index.html").read_text(encoding="utf-8"):
+    raise SystemExit("internal/server/web must hold the built workbench; run make web")
+if not any('password-form' in p.read_text(encoding="utf-8") for p in (web / "assets").glob("*.js")):
     raise SystemExit("login page is missing the username and password form")
 if "proxy_pass http://127.0.0.1:8080/healthz;" not in nginx or 'return 200 "ok' in nginx:
     raise SystemExit("public /healthz must proxy to the application, not a static nginx response")

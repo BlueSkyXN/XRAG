@@ -1,5 +1,16 @@
+# Local runtime data and build tools
 /data/
 /bin/
 /local/
 /.xrag
+/.xrag-*/
 /webapp/node_modules/
+
+# Generated test reports, screenshots and caches
+/checks/
+/.playwright-mcp/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# internal/server/web/ is intentionally versioned for go:embed and Docker builds.
