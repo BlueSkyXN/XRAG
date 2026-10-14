@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1.7
-# The Space builds this file as-is. The deploy workflow rewrites the default
-# of XRAG_IMAGE to the pinned digest before uploading; CI smokes override it
-# with --build-arg XRAG_IMAGE=xrag:ci.
+# This file is always built from a flat render (see render.sh): the three Space
+# files sit next to each other in the build context, exactly like in the Space
+# repo. Never build it straight from the repository root.
 ARG XRAG_IMAGE=ghcr.io/blueskyxn/xrag:main
 FROM ${XRAG_IMAGE}
-COPY deploy/hf/entrypoint.sh /usr/local/bin/xrag-hf-entrypoint
-RUN chmod 0755 /usr/local/bin/xrag-hf-entrypoint
+COPY --chmod=0755 entrypoint.sh /usr/local/bin/xrag-hf-entrypoint
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/xrag-hf-entrypoint"]

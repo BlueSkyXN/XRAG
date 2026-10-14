@@ -24,24 +24,25 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE: ghcr.io/blueskyxn/xrag
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      DIGEST: ${{ inputs.image_digest }}
+      SPACE: ${{ inputs.space }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Validate the digest input
+      - name: Validate the inputs
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "image_digest must match sha256:<64 hex chars>"; exit 1; }
+          [[ "$SPACE" =~ ^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$ ]] || { echo "space must be owner/name"; exit 1; }
+
+      - name: Read the commit from the image
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
           test -n "$HF_TOKEN"
-          digest="${{ inputs.image_digest }}"
-          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "image_digest must match sha256:<64 hex chars>"; exit 1; }
-          echo "DIGEST=$digest" >> "$GITHUB_ENV"
-
-      - name: Read the commit from the image
-        run: |
-          set -euo pipefail
-          revision="$(docker buildx imagetools inspect "${IMAGE}@${DIGEST}" --format '{{ json .Image.Config.Labels }}' \
-            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("org.opencontainers.image.revision", ""))')"
+          revision="$(bash deploy/hf/image-revision.sh "${IMAGE}@${DIGEST}")"
           test -n "$revision" || { echo "image has no org.opencontainers.image.revision label"; exit 1; }
           echo "REVISION=$revision" >> "$GITHUB_ENV"
 
@@ -49,9 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           render="$(mktemp -d)"
-          cp deploy/hf/README.md deploy/hf/Dockerfile deploy/hf/entrypoint.sh "$render/"
-          sed -i "s|^ARG XRAG_IMAGE=.*|ARG XRAG_IMAGE=${IMAGE}@${DIGEST}|" "$render/Dockerfile"
-          grep -q "@${DIGEST}" "$render/Dockerfile" || { echo "failed to pin the digest"; exit 1; }
+          bash deploy/hf/render.sh "${IMAGE}@${DIGEST}" "$render"
           echo "RENDER_DIR=$render" >> "$GITHUB_ENV"
 
       - uses: actions/setup-python@v5
@@ -60,51 +59,73 @@ jobs:
       - run: pip install --disable-pip-version-check "huggingface_hub[cli]"
 
       - name: Record the Space commit before the upload
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
-          before="$(hf spaces info "${{ inputs.space }}" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")')"
+          before="$(hf spaces info "$SPACE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")')"
           echo "SPACE_BEFORE=$before" >> "$GITHUB_ENV"
 
       - name: Upload the rendered files to the Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
-          hf upload "${{ inputs.space }}" "$RENDER_DIR" \
+          hf upload "$SPACE" "$RENDER_DIR" \
             --repo-type space \
             --commit-message "Deploy ${IMAGE}@${DIGEST} (${REVISION})" \
             --delete "*"
 
-      - name: Wait for the Space to rebuild
-        run: hf spaces wait "${{ inputs.space }}" --timeout 15m
-
-      - name: Verify the live commit matches the image
+      - name: Wait for the Space commit to change, then for the rebuild
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
-          host="${{ inputs.space }}"
-          owner="${host%%/*}"
-          name="${host##*/}"
-          url="https://${owner,,}-${name,,}.hf.space/healthz"
+          for _ in $(seq 1 60); do
+            now="$(hf spaces info "$SPACE" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("sha") or "") + " " + ((d.get("runtime") or {}).get("stage") or ""))')"
+            case "$now" in
+              "$SPACE_BEFORE "*) sleep 5 ;;
+              *) break ;;
+            esac
+          done
+          case "$(hf spaces info "$SPACE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")')" in
+            "$SPACE_BEFORE") echo "Space commit did not change after the upload"; exit 1 ;;
+          esac
+          hf spaces wait "$SPACE" --timeout 15m
+
+      - name: Verify the live commit matches the image
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          host="$(hf spaces info "$SPACE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("host") or "")')"
+          test -n "$host" || { echo "hf spaces info returned no host"; exit 1; }
+          url="${host%/}/healthz"
+          echo "polling $url"
           ok=0
-          for _ in $(seq 1 30); do
-            if curl -fsS --max-time 5 "$url" | grep -q "\"commit\":\"${REVISION}\""; then
+          for _ in $(seq 1 60); do
+            if curl -fsS --max-time 10 "$url" | grep -q "\"commit\":\"${REVISION}\""; then
               ok=1
               break
             fi
             sleep 10
           done
           if [ "$ok" != 1 ]; then
-            curl -fsS --max-time 5 "$url" || true
+            curl -fsS --max-time 10 "$url" || true
             echo "live /healthz does not report ${REVISION}"
             exit 1
           fi
 
       - name: Write the deploy summary
         if: always()
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
-          after="$(hf spaces info "${{ inputs.space }}" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")' || echo unknown)"
+          after="$(hf spaces info "$SPACE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")' || echo unknown)"
           {
             echo "## HF deploy"
-            echo "- Space: \`${{ inputs.space }}\`"
+            echo "- Space: \`${SPACE}\`"
             echo "- Image digest: \`${DIGEST}\`"
             echo "- Commit: \`${REVISION}\`"
             echo "- Space commit before: \`${SPACE_BEFORE:-unknown}\`"

@@ -4,6 +4,8 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${root}"
 bash -n docker/entrypoint.sh
 bash -n deploy/hf/entrypoint.sh
+bash -n deploy/hf/render.sh
+bash -n deploy/hf/image-revision.sh
 bash -n scripts/prepare-bucket-prefix.sh
 ROOT="${root}" python3 - <<'PY'
 import os, pathlib, tomllib
@@ -37,6 +39,13 @@ if "must be 1000" not in hf_entrypoint:
 hf_dockerfile = (root / "deploy/hf/Dockerfile").read_text(encoding="utf-8")
 if "ARG XRAG_IMAGE=" not in hf_dockerfile or "${XRAG_IMAGE}" not in hf_dockerfile:
     raise SystemExit("deploy/hf/Dockerfile must build FROM the XRAG image via ARG")
+if "deploy/hf/" in hf_dockerfile:
+    raise SystemExit("deploy/hf/Dockerfile is built from a flat render; it must not reference deploy/hf/ paths")
+if "COPY --chmod=0755 entrypoint.sh" not in hf_dockerfile:
+    raise SystemExit("deploy/hf/Dockerfile must COPY the flattened entrypoint with --chmod (no RUN chmod under USER xrag)")
+for script in ("deploy/hf/render.sh", "deploy/hf/image-revision.sh"):
+    if not (root / script).stat().st_mode & 0o111:
+        raise SystemExit(f"{script} must be executable")
 web = root / "internal/server/web"
 if 'id="root"' not in (web / "index.html").read_text(encoding="utf-8"):
     raise SystemExit("internal/server/web must hold the built workbench; run make web")
@@ -45,5 +54,5 @@ if not any('password-form' in p.read_text(encoding="utf-8") for p in (web / "ass
 print("static contract: PASS")
 PY
 if [[ -d .git ]]; then git diff --check; fi
-if command -v shellcheck >/dev/null 2>&1; then shellcheck docker/entrypoint.sh deploy/hf/entrypoint.sh scripts/static-check.sh scripts/prepare-bucket-prefix.sh; fi
+if command -v shellcheck >/dev/null 2>&1; then shellcheck docker/entrypoint.sh deploy/hf/entrypoint.sh deploy/hf/render.sh deploy/hf/image-revision.sh scripts/static-check.sh scripts/prepare-bucket-prefix.sh; fi
 printf 'static checks: PASS\n'

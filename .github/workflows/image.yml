@@ -131,6 +131,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Verify the pushed digest reports this commit
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          revision="$(bash deploy/hf/image-revision.sh "${IMAGE_NAME}@${{ steps.push.outputs.digest }}")"
+          echo "revision label: $revision"
+          test "$revision" = "$GITHUB_SHA"
+
       - name: Write the digest to the job summary
         if: github.event_name != 'pull_request'
         run: |
@@ -157,8 +165,11 @@ jobs:
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Build the HF layer on top (plain docker build so it sees xrag:ci)
-        run: docker build -f deploy/hf/Dockerfile --build-arg XRAG_IMAGE=xrag:ci -t xrag-hf:ci .
+      - name: Build the HF layer from the rendered Space files
+        run: |
+          set -euo pipefail
+          bash deploy/hf/render.sh xrag:ci "$RUNNER_TEMP/hf" >/dev/null
+          docker build -t xrag-hf:ci "$RUNNER_TEMP/hf"
 
       - name: Smoke - mounted data, password login, Secure cookie behind the proxy
         run: |

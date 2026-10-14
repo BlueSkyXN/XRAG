@@ -1,7 +1,7 @@
 # 未发版（0.8.0-exp.1 之后）
 
 ## HF 部署
-- Space 改为运行 GHCR 镜像：`deploy/hf/`（README、Dockerfile、HF 入口）是 Space 文件的唯一来源，`deploy-hf` workflow 手动触发、输入 digest 部署，以线上 `/healthz` 的 `commit` 与镜像一致作为成功标准；HF 入口检查 UID 与 `/data` 挂载、按 `PORT` 监听。
+- Space 改为运行 GHCR 镜像：`deploy/hf/`（README、Dockerfile、HF 入口、`render.sh` 渲染脚本）是 Space 文件的唯一来源；`deploy-hf` workflow 手动触发、输入 digest 部署（输入经 env 传入并校验格式，先等 Space 提交变化再等待重建，线上地址取自 `hf spaces info` 的 `host`），以线上 `/healthz` 的 `commit` 与镜像一致作为成功标准；每次 `main` 推送镜像后 CI 用 `image-revision.sh` 读回 revision 并断言与提交一致。HF 入口检查 UID 与 `/data` 挂载、按 `PORT` 监听。
 - 新增 `XRAG_TRUST_FORWARDED_PROTO=1`：信任前置代理的 `X-Forwarded-Proto`，HF 边缘终止 TLS 时会话 cookie 正确带 `Secure`；默认关闭。
 
 ## 部署与镜像
