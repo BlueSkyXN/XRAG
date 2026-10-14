@@ -46,15 +46,27 @@ type App struct {
 	ConfigSource  string
 	EdgeUser      string
 	EdgePass      string
-	maintenanceMu sync.Mutex
-	mu            sync.Mutex
-	sessions      map[string]session
-	MCPAuth       *mcpauth.Verifier
-	MCPTransport  mcp.HTTPTransport
+	// TrustForwardedProto honors X-Forwarded-Proto: https when the process
+	// sits behind a TLS-terminating proxy (HF Spaces). Off by default.
+	TrustForwardedProto bool
+	maintenanceMu       sync.Mutex
+	mu                  sync.Mutex
+	sessions            map[string]session
+	MCPAuth             *mcpauth.Verifier
+	MCPTransport        mcp.HTTPTransport
 }
 
 func New(s *store.Store, b *build.Builder, logger *log.Logger) *App {
 	return &App{Store: s, Builder: b, Logger: logger, sessions: map[string]session{}}
+}
+
+// secureCookie reports whether the session cookie should carry Secure. Direct
+// TLS or an explicitly trusted X-Forwarded-Proto both count as https.
+func (a *App) secureCookie(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return a.TrustForwardedProto && r.Header.Get("X-Forwarded-Proto") == "https"
 }
 func write(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -291,7 +303,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		a.sessions[sid] = session{Token: input.Key, Expires: time.Now().Add(8 * time.Hour), Edge: edge}
 		a.mu.Unlock()
-		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: sid, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: 28800})
+		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: sid, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: a.secureCookie(r), MaxAge: 28800})
 		write(w, 200, p)
 		return
 	}
@@ -301,7 +313,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			delete(a.sessions, c.Value)
 			a.mu.Unlock()
 		}
-		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil})
+		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: a.secureCookie(r)})
 		write(w, 200, map[string]any{"logged_out": true})
 		return
 	}

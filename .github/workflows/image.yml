@@ -109,6 +109,85 @@ jobs:
           docker rm -f xrag-ci >/dev/null
           trap - EXIT
 
+      - name: Build the HF layer from the rendered Space files
+        run: |
+          set -euo pipefail
+          bash deploy/hf/render.sh xrag:ci "$RUNNER_TEMP/hf" >/dev/null
+          # The default (docker driver) builder sees the xrag:ci image loaded
+          # above; the docker-container builder from setup-buildx does not.
+          docker buildx build --builder default --load -t xrag-hf:ci "$RUNNER_TEMP/hf"
+
+      - name: Smoke - mounted data, password login, Secure cookie behind the proxy
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xrag-data"
+          chmod 0777 "$RUNNER_TEMP/xrag-data"
+          docker rm -f xrag-hf-ci >/dev/null 2>&1 || true
+          docker run -d --name xrag-hf-ci \
+            -e ADMIN_USERNAME=ci \
+            -e ADMIN_PASSWORD=ci-password-16chars \
+            -e PORT=8765 \
+            -p 7861:8765 \
+            -v "$RUNNER_TEMP/xrag-data:/data" \
+            xrag-hf:ci
+          dump() { docker logs xrag-hf-ci || true; }
+          trap dump EXIT
+          ok=0
+          for _ in $(seq 1 40); do
+            if curl --connect-timeout 1 --max-time 2 -fsS http://127.0.0.1:7861/healthz > "$RUNNER_TEMP/healthz.json" \
+              && grep -q "\"commit\":\"${GITHUB_SHA}\"" "$RUNNER_TEMP/healthz.json"; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          test "$(curl --connect-timeout 1 --max-time 2 -s http://127.0.0.1:7861/v1/login)" = '{"mode":"password"}'
+          curl --connect-timeout 1 --max-time 5 -s -D "$RUNNER_TEMP/headers.txt" \
+            -H 'Content-Type: application/json' \
+            -H 'X-Forwarded-Proto: https' \
+            -d '{"username":"ci","password":"ci-password-16chars"}' \
+            -o /dev/null http://127.0.0.1:7861/v1/session
+          grep -i '^set-cookie: xrag_session=' "$RUNNER_TEMP/headers.txt" | grep -q '; Secure' \
+            || { echo 'session cookie is missing Secure behind the trusted proxy'; exit 1; }
+          docker rm -f xrag-hf-ci >/dev/null
+          trap - EXIT
+
+      - name: Smoke - refuse to start without a mounted /data
+        run: |
+          set -euo pipefail
+          docker rm -f xrag-hf-ci >/dev/null 2>&1 || true
+          output="$(docker run --rm xrag-hf:ci 2>&1 || true)"
+          echo "$output"
+          echo "$output" | grep -q '\[xrag-hf\] ERROR:' \
+            || { echo 'HF layer must fail with an [xrag-hf] ERROR without a mounted /data'; exit 1; }
+          echo "$output" | grep -Eq 'mounted persistent volume|runtime UID' \
+            || { echo 'failure message must name the violated HF contract'; exit 1; }
+
+      - name: Smoke - PORT changes the listen port
+        run: |
+          set -euo pipefail
+          docker rm -f xrag-hf-ci >/dev/null 2>&1 || true
+          mkdir -p "$RUNNER_TEMP/xrag-data2"
+          chmod 0777 "$RUNNER_TEMP/xrag-data2"
+          docker run -d --name xrag-hf-ci \
+            -e PORT=9000 \
+            -p 7862:9000 \
+            -v "$RUNNER_TEMP/xrag-data2:/data" \
+            xrag-hf:ci
+          dump() { docker logs xrag-hf-ci || true; }
+          trap dump EXIT
+          ok=0
+          for _ in $(seq 1 40); do
+            if curl --connect-timeout 1 --max-time 2 -fsS http://127.0.0.1:7862/healthz >/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          docker rm -f xrag-hf-ci >/dev/null
+          trap - EXIT
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -130,6 +209,14 @@ jobs:
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify the pushed digest reports this commit
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          revision="$(bash deploy/hf/image-revision.sh "${IMAGE_NAME}@${{ steps.push.outputs.digest }}")"
+          echo "revision label: $revision"
+          test "$revision" = "$GITHUB_SHA"
 
       - name: Write the digest to the job summary
         if: github.event_name != 'pull_request'
