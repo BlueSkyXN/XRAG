@@ -2,7 +2,7 @@ import * as React from 'react'
 import { cn } from '../lib/utils'
 
 const control =
-  'w-full rounded-md border border-line-strong bg-bg text-[13px] text-fg outline-none transition-colors placeholder:text-faint focus:border-dim disabled:cursor-not-allowed disabled:opacity-50'
+  'w-full rounded-md border border-line-strong bg-field text-[13px] text-fg outline-none transition-colors placeholder:text-faint focus:border-dim disabled:cursor-not-allowed disabled:opacity-50'
 
 const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { mono?: boolean }>(
   ({ className, mono, ...props }, ref) => <input ref={ref} className={cn(control, 'h-8 px-2.5', mono && 'font-mono', className)} {...props} />

@@ -31,6 +31,8 @@
   --color-focus: #8fb4ff;
   --color-scrim: #00000099;
   --color-shadow: #00000080;
+  --color-field: #0c0e11;
+  --color-nav-active: #181c22;
   --color-page-icon-light: #ffffff;
   --color-page-icon-dark: #3a2a00;
 
@@ -97,6 +99,8 @@
     --color-focus: #0b69d4;
     --color-scrim: #1d1d1f40;
     --color-shadow: #1d1d1f1f;
+    --color-field: #ffffff;
+    --color-nav-active: #ffffff;
     color-scheme: light;
   }
 

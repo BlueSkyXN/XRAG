@@ -72,7 +72,7 @@ export function FeedbackProvider({ children, onExpire }: { children: ReactNode; 
                     autoFocus
                     value={typed}
                     onChange={event => setTyped(event.target.value)}
-                    className="h-8 w-full rounded-md border border-line-strong bg-bg px-2.5 font-mono text-[13px] outline-none focus:border-dim"
+                    className="h-8 w-full rounded-md border border-line-strong bg-field px-2.5 font-mono text-[13px] outline-none focus:border-dim"
                   />
                 </label>
               )}

@@ -59,7 +59,7 @@ function Rail({ current, expanded, onToggle }: { current: PageId; expanded: bool
                   className={cn(
                     'text-faint transition-colors hover:bg-raised hover:text-fg',
                     expanded ? 'flex h-8 items-center gap-2.5 overflow-hidden rounded-md px-1.5 text-[13px] text-fg-soft' : 'group relative grid h-10 w-11 place-items-center rounded-lg',
-                    current === page.id && 'bg-raised text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
+                    current === page.id && 'bg-nav-active text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
                   )}
                 >
                   <NavIcon page={page} />
@@ -126,7 +126,7 @@ function MobileNav({ current, open, onOpenChange }: { current: PageId; open: boo
                       onOpenChange(false)
                     }}
                     aria-current={current === page.id ? 'page' : undefined}
-                    className={cn('flex h-9 items-center gap-2.5 rounded-md px-2 text-[13px] text-fg-soft hover:bg-raised', current === page.id && 'bg-raised text-fg')}
+                    className={cn('flex h-9 items-center gap-2.5 rounded-md px-2 text-[13px] text-fg-soft hover:bg-raised', current === page.id && 'bg-nav-active text-fg')}
                   >
                     <NavIcon page={page} />
                     {page.label}
