@@ -1,11 +1,19 @@
 # syntax=docker/dockerfile:1.7
 
+FROM node:22-bookworm-slim AS web
+WORKDIR /webapp
+COPY webapp/package.json webapp/package-lock.json ./
+RUN npm ci
+COPY webapp ./
+RUN npm run build -- --outDir /dist
+
 FROM golang:1.23-bookworm AS build
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc libc6-dev libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY . .
+COPY --from=web /dist /src/internal/server/web/dist
 ARG GIT_SHA=dev
 RUN CGO_ENABLED=1 go build -trimpath -ldflags "-X github.com/BlueSkyXN/XRAG/core.Commit=${GIT_SHA}" -o /out/xrag-server ./cmd/xrag-server \
     && CGO_ENABLED=0 go build -trimpath -ldflags "-X github.com/BlueSkyXN/XRAG/core.Commit=${GIT_SHA}" -o /out/xrag ./cmd/xrag

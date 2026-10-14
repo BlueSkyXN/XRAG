@@ -15,8 +15,8 @@ export default defineConfig({
     include: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-slot', '@radix-ui/react-tabs', 'lucide-react']
   },
   build: {
-    // Server 用 go:embed 打包这个目录；它只放构建产物，每次构建整体替换。
-    outDir: '../internal/server/web',
+    // Server 用 go:embed 打包 dist/；产物不进 Git（web/README.md 保证目录非空，embed 才能编译）。
+    outDir: '../internal/server/web/dist',
     emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 900
