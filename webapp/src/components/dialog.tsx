@@ -15,12 +15,12 @@ type ContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Conten
 const DialogContent = React.forwardRef<React.ComponentRef<typeof DialogPrimitive.Content>, ContentProps>(
   ({ className, children, side = 'center', ...props }, ref) => (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/60 animate-fade-in" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-scrim animate-fade-in" />
       <DialogPrimitive.Content
         ref={ref}
         aria-describedby={undefined}
         className={cn(
-          'fixed z-50 flex flex-col border border-line-strong bg-panel text-fg shadow-2xl shadow-black/60 outline-none',
+          'fixed z-50 flex flex-col border border-line-strong bg-panel text-fg shadow-2xl shadow-shadow outline-none',
           side === 'center' && 'left-1/2 top-[12vh] max-h-[80vh] w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 rounded-xl animate-fade-in',
           side === 'sheet' && 'inset-y-0 right-0 w-[min(760px,100vw)] rounded-none border-y-0 border-r-0',
           side === 'left' && 'inset-y-0 left-0 w-[min(300px,86vw)] rounded-none border-y-0 border-l-0',

@@ -14,7 +14,7 @@ const MenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       align={align}
-      className={cn('z-50 min-w-52 rounded-lg border border-line-strong bg-raised p-1 shadow-xl shadow-black/50 animate-fade-in', className)}
+      className={cn('z-50 min-w-52 rounded-lg border border-line-strong bg-raised p-1 shadow-xl shadow-shadow animate-fade-in', className)}
       {...props}
     />
   </MenuPrimitive.Portal>

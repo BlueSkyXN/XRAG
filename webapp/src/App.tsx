@@ -3,6 +3,7 @@ import { api, ActionSpec, KnowledgeBase, SystemInfo } from './lib/api'
 import { FeedbackProvider } from './lib/feedback'
 import { navigate, useLocation } from './lib/router'
 import { roleLabels, SessionProvider, useSession } from './lib/session'
+import { ThemeProvider } from './lib/theme'
 import { Login } from './shell/login'
 import { Shell } from './shell/shell'
 import { pageById, PageId } from './shell/nav'
@@ -101,14 +102,16 @@ export default function App() {
   }, [])
 
   return (
-    <FeedbackProvider onExpire={expire}>
-      {phase === 'loading' && <p className="grid h-dvh place-items-center text-[13px] text-dim">正在连接 XRAG 服务…</p>}
-      {phase === 'login' && <Login onDone={load} />}
-      {phase === 'ready' && boot && (
-        <SessionProvider key={boot.system.identity.id} initial={boot} onLogout={expire}>
-          <Workbench />
-        </SessionProvider>
-      )}
-    </FeedbackProvider>
+    <ThemeProvider>
+      <FeedbackProvider onExpire={expire}>
+        {phase === 'loading' && <p className="grid h-dvh place-items-center text-[13px] text-dim">正在连接 XRAG 服务…</p>}
+        {phase === 'login' && <Login onDone={load} />}
+        {phase === 'ready' && boot && (
+          <SessionProvider key={boot.system.identity.id} initial={boot} onLogout={expire}>
+            <Workbench />
+          </SessionProvider>
+        )}
+      </FeedbackProvider>
+    </ThemeProvider>
   )
 }

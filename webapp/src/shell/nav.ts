@@ -1,3 +1,4 @@
+import { createContext } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { BookOpen, ChartColumn, Compass, FolderTree, KeyRound, LayoutGrid, ListChecks, MessageSquareText, Search, SlidersHorizontal, Waypoints } from 'lucide-react'
 import type { Role } from '../lib/api'
@@ -29,6 +30,9 @@ export const pages: PageDef[] = [
 ]
 
 export const pageById = Object.fromEntries(pages.map(p => [p.id, p])) as Record<PageId, PageDef>
+
+/** PageHeader 根据当前页面显示多彩标识；默认值只为独立预览/测试兜底。 */
+export const CurrentPageContext = createContext<PageId>('search')
 
 /** 动作注册表里的动作在网页上由哪个页面承担。 */
 export function pageForAction(action: string): string {

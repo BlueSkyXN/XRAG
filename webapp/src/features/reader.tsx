@@ -60,7 +60,7 @@ function Lines({ text, first, cite, terms, numbered = true, scrollRoot }: LinesP
           <div
             key={no}
             ref={cite && no === cite[0] ? citeRef : undefined}
-            className={cn('grid grid-cols-[3rem_minmax(0,1fr)] gap-3 pr-4', cited && 'bg-white/[0.035] shadow-[inset_2px_0_0_var(--color-fg)]')}
+            className={cn('grid grid-cols-[3rem_minmax(0,1fr)] gap-3 pr-4', cited && 'bg-fg/[0.04] shadow-[inset_2px_0_0_var(--color-fg)]')}
           >
             <span aria-hidden="true" className={cn('select-none text-right font-mono text-[11.5px] leading-[26px] tabular-nums', cited ? 'text-fg' : 'text-faint')}>
               {numbered ? no : ''}

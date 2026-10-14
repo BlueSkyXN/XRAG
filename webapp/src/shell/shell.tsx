@@ -1,5 +1,5 @@
-import { ReactNode, useEffect, useState } from 'react'
-import { Check, ChevronDown, Command, LogOut, Menu as MenuIcon, Plus, RefreshCw } from 'lucide-react'
+import { ReactNode, useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { Check, ChevronDown, Command, LogOut, Menu as MenuIcon, Monitor, Moon, Palette as PaletteIcon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Sun } from 'lucide-react'
 import { Button } from '../components/button'
 import { Dot, Kbd } from '../components/badge'
 import { Dialog, DialogContent, DialogTitle } from '../components/dialog'
@@ -7,8 +7,9 @@ import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } fr
 import { linkHandler, navigate } from '../lib/router'
 import { roleLabels, useSession } from '../lib/session'
 import { useRun } from '../lib/feedback'
+import { useTheme, type ThemePreference } from '../lib/theme'
 import { cn } from '../lib/utils'
-import { PageDef, PageId, pages } from './nav'
+import { CurrentPageContext, PageDef, PageId, pages } from './nav'
 import { Palette } from './palette'
 
 function useVisiblePages() {
@@ -16,34 +17,89 @@ function useVisiblePages() {
   return pages.filter(p => may(p.min))
 }
 
-function Rail({ current }: { current: PageId }) {
-  const visible = useVisiblePages()
+function NavIcon({ page, className }: { page: PageDef; className?: string }) {
+  const Icon = page.icon
   return (
-    <nav aria-label="工作台" className="hidden w-[60px] shrink-0 flex-col items-center gap-0.5 border-r py-2.5 md:flex">
-      {visible.map((page, index) => {
-        const Icon = page.icon
-        const newGroup = index > 0 && visible[index - 1].group !== page.group
-        return (
-          <div key={page.id} className="contents">
-            {newGroup && (page.group === '系统' ? <span className="flex-1" /> : <hr className="my-1.5 w-6 border-line" />)}
-            <a
-              href={`/${page.id}`}
-              onClick={linkHandler(`/${page.id}`)}
-              aria-label={page.label}
-              aria-current={current === page.id ? 'page' : undefined}
-              className={cn(
-                'group relative grid h-10 w-11 place-items-center rounded-lg text-faint transition-colors hover:bg-raised hover:text-fg',
-                current === page.id && 'bg-raised text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
-              )}
-            >
-              <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
-              <span className="pointer-events-none absolute left-[52px] z-30 hidden whitespace-nowrap rounded-md border border-line-strong bg-raised px-2 py-1 text-xs text-fg shadow-lg group-hover:block group-focus-visible:block">
-                {page.label}
-              </span>
-            </a>
+    <span
+      aria-hidden="true"
+      className={cn('nav-icon shrink-0', className)}
+      data-icon-tone={page.id === 'sources' ? 'dark' : 'light'}
+      style={{ '--hue': `var(--hue-${page.id})` } as CSSProperties}
+    >
+      <Icon className="h-4 w-4" strokeWidth={1.6} />
+    </span>
+  )
+}
+
+function Rail({ current, expanded, onToggle }: { current: PageId; expanded: boolean; onToggle: () => void }) {
+  const visible = useVisiblePages()
+  const groups = [...new Set(visible.map(p => p.group))]
+  return (
+    <nav aria-label="工作台" className={cn('hidden shrink-0 flex-col border-r py-2.5 transition-[width] md:flex', expanded ? 'w-[208px]' : 'w-[60px] items-center gap-0.5')}>
+      {groups.map((group, groupIndex) => (
+        <div key={group} className={expanded ? cn('w-full', group === '系统' && 'mt-auto') : 'contents'}>
+          {expanded ? (
+            <p className="px-3 pb-1 pt-2 text-[11.5px] text-faint">{group}</p>
+          ) : (
+            <>
+              {groupIndex > 0 && group !== '系统' && <hr className="my-1.5 w-6 border-line" />}
+              {group === '系统' && <span className="flex-1" />}
+            </>
+          )}
+          <div className={expanded ? 'flex w-full flex-col gap-0.5 px-2' : 'contents'}>
+            {visible
+              .filter(p => p.group === group)
+              .map((page: PageDef) => (
+                <a
+                  key={page.id}
+                  href={`/${page.id}`}
+                  onClick={linkHandler(`/${page.id}`)}
+                  aria-label={page.label}
+                  aria-current={current === page.id ? 'page' : undefined}
+                  className={cn(
+                    'text-faint transition-colors hover:bg-raised hover:text-fg',
+                    expanded ? 'flex h-8 items-center gap-2.5 overflow-hidden rounded-md px-1.5 text-[13px] text-fg-soft' : 'group relative grid h-10 w-11 place-items-center rounded-lg',
+                    current === page.id && 'bg-raised text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
+                  )}
+                >
+                  <NavIcon page={page} />
+                  <span className={expanded ? 'truncate' : 'sr-only'}>{page.label}</span>
+                  {!expanded && (
+                    <span className="pointer-events-none absolute left-[52px] z-30 hidden whitespace-nowrap rounded-md border border-line-strong bg-raised px-2 py-1 text-xs text-fg shadow-lg group-hover:block group-focus-visible:block">
+                      {page.label}
+                    </span>
+                  )}
+                </a>
+              ))}
           </div>
-        )
-      })}
+        </div>
+      ))}
+      <div className={cn('shrink-0', expanded && 'w-full px-2')}>
+        <hr className={cn('border-line', expanded ? 'mb-1' : 'my-1.5 w-6')} />
+        <Button
+          variant="ghost"
+          size={expanded ? 'sm' : 'icon'}
+          className={expanded ? 'w-full justify-start' : 'group relative h-10 w-11'}
+          aria-expanded={expanded}
+          aria-label={expanded ? '收起侧栏' : '展开侧栏'}
+          onClick={onToggle}
+        >
+          {expanded ? (
+            <>
+              <PanelLeftClose />
+              <span className="truncate">收起侧栏</span>
+              <Kbd className="ml-auto">⌘B</Kbd>
+            </>
+          ) : (
+            <>
+              <PanelLeftOpen />
+              <span className="pointer-events-none absolute left-[52px] z-30 hidden whitespace-nowrap rounded-md border border-line-strong bg-raised px-2 py-1 text-xs text-fg shadow-lg group-hover:block group-focus-visible:block">
+                展开侧栏 ⌘B
+              </span>
+            </>
+          )}
+        </Button>
+      </div>
     </nav>
   )
 }
@@ -61,29 +117,56 @@ function MobileNav({ current, open, onOpenChange }: { current: PageId; open: boo
               <p className="px-2 pb-1 text-[11.5px] text-faint">{group}</p>
               {visible
                 .filter(p => p.group === group)
-                .map((page: PageDef) => {
-                  const Icon = page.icon
-                  return (
-                    <a
-                      key={page.id}
-                      href={`/${page.id}`}
-                      onClick={event => {
-                        linkHandler(`/${page.id}`)(event)
-                        onOpenChange(false)
-                      }}
-                      aria-current={current === page.id ? 'page' : undefined}
-                      className={cn('flex h-9 items-center gap-2.5 rounded-md px-2 text-[13px] text-fg-soft hover:bg-raised', current === page.id && 'bg-raised text-fg')}
-                    >
-                      <Icon className="h-4 w-4 text-dim" strokeWidth={1.6} />
-                      {page.label}
-                    </a>
-                  )
-                })}
+                .map((page: PageDef) => (
+                  <a
+                    key={page.id}
+                    href={`/${page.id}`}
+                    onClick={event => {
+                      linkHandler(`/${page.id}`)(event)
+                      onOpenChange(false)
+                    }}
+                    aria-current={current === page.id ? 'page' : undefined}
+                    className={cn('flex h-9 items-center gap-2.5 rounded-md px-2 text-[13px] text-fg-soft hover:bg-raised', current === page.id && 'bg-raised text-fg')}
+                  >
+                    <NavIcon page={page} />
+                    {page.label}
+                  </a>
+                ))}
             </div>
           ))}
         </nav>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function ThemeSwitcher() {
+  const { preference, system, setPreference } = useTheme()
+  const options: { value: ThemePreference; label: string; icon: typeof Monitor }[] = [
+    { value: 'system', label: '跟随系统', icon: Monitor },
+    { value: 'dark', label: '深色', icon: Moon },
+    { value: 'light', label: '浅色', icon: Sun },
+    { value: 'light-color', label: '浅色多彩', icon: PaletteIcon }
+  ]
+  const ActiveIcon = options.find(option => option.value === preference)?.icon ?? Monitor
+  return (
+    <Menu>
+      <MenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="主题">
+          <ActiveIcon />
+        </Button>
+      </MenuTrigger>
+      <MenuContent align="end">
+        <MenuLabel>主题</MenuLabel>
+        {options.map(option => (
+          <MenuItem key={option.value} onSelect={() => setPreference(option.value)}>
+            <Check className={cn(option.value === preference ? 'opacity-100' : 'opacity-0')} />
+            {option.label}
+            {option.value === 'system' && <span className="ml-auto pl-3 text-xs text-faint">系统{system === 'dark' ? '深色' : '浅色'}</span>}
+          </MenuItem>
+        ))}
+      </MenuContent>
+    </Menu>
   )
 }
 
@@ -164,6 +247,7 @@ function TopBar({ onMenu, onPalette }: { onMenu: () => void; onPalette: () => vo
           {system.workers ? '后台任务运行中' : '后台任务未启用'}
         </span>
         <span className="hidden font-mono lg:inline">{system.version}</span>
+        <ThemeSwitcher />
         <Menu>
           <MenuTrigger asChild>
             <button type="button" className="flex h-7 items-center gap-1.5 rounded-md px-1.5 hover:bg-raised" aria-label="账号">
@@ -198,30 +282,87 @@ function TopBar({ onMenu, onPalette }: { onMenu: () => void; onPalette: () => vo
   )
 }
 
+function initialSidebar() {
+  try {
+    const saved = localStorage.getItem('xrag.sidebar')
+    if (saved === 'expanded' || saved === 'collapsed') return saved === 'expanded'
+  } catch {
+    // 隐私模式下按视口宽度决定。
+  }
+  return matchMedia('(min-width: 1280px)').matches
+}
+
+function useSidebar() {
+  const [expanded, setExpanded] = useState(initialSidebar)
+  const [manual, setManual] = useState<'expanded' | 'collapsed' | null>(() => {
+    try {
+      const saved = localStorage.getItem('xrag.sidebar')
+      return saved === 'expanded' || saved === 'collapsed' ? saved : null
+    } catch {
+      return null
+    }
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.sidebar = expanded ? 'expanded' : 'collapsed'
+  }, [expanded])
+
+  useEffect(() => {
+    if (manual) return
+    const query = matchMedia('(min-width: 1280px)')
+    const update = () => setExpanded(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [manual])
+
+  const toggle = useCallback(() => {
+    setExpanded(open => {
+      const next = !open
+      const saved = next ? 'expanded' : 'collapsed'
+      setManual(saved)
+      try {
+        localStorage.setItem('xrag.sidebar', saved)
+      } catch {
+        // 隐私模式下不持久化。
+      }
+      return next
+    })
+  }, [])
+
+  return { expanded, toggle }
+}
+
 export function Shell({ current, children }: { current: PageId; children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const { expanded, toggle } = useSidebar()
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      const key = event.key.toLowerCase()
+      if ((event.metaKey || event.ctrlKey) && key === 'k') {
         event.preventDefault()
         setPaletteOpen(open => !open)
+      } else if ((event.metaKey || event.ctrlKey) && key === 'b' && !event.shiftKey && !event.altKey) {
+        event.preventDefault()
+        toggle()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [toggle])
 
   return (
-    <div className="flex h-dvh flex-col">
-      <TopBar onMenu={() => setMenuOpen(true)} onPalette={() => setPaletteOpen(true)} />
-      <div className="flex min-h-0 flex-1">
-        <Rail current={current} />
-        <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+    <CurrentPageContext.Provider value={current}>
+      <div className="flex h-dvh flex-col" style={{ '--page-hue': `var(--hue-${current})` } as CSSProperties}>
+        <TopBar onMenu={() => setMenuOpen(true)} onPalette={() => setPaletteOpen(true)} />
+        <div className="flex min-h-0 flex-1">
+          <Rail current={current} expanded={expanded} onToggle={toggle} />
+          <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+        </div>
+        <MobileNav current={current} open={menuOpen} onOpenChange={setMenuOpen} />
+        <Palette open={paletteOpen} onOpenChange={setPaletteOpen} sidebarExpanded={expanded} onToggleSidebar={toggle} />
       </div>
-      <MobileNav current={current} open={menuOpen} onOpenChange={setMenuOpen} />
-      <Palette open={paletteOpen} onOpenChange={setPaletteOpen} />
-    </div>
+    </CurrentPageContext.Provider>
   )
 }

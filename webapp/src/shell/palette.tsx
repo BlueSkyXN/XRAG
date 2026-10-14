@@ -3,6 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Kbd } from '../components/badge'
 import { navigate } from '../lib/router'
 import { useSession } from '../lib/session'
+import { useTheme, type ThemePreference } from '../lib/theme'
 import { cn } from '../lib/utils'
 import { pageForAction, pages } from './nav'
 
@@ -24,8 +25,19 @@ const groupNames: Record<string, string> = {
   external: '外部 · external'
 }
 
-export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function Palette({
+  open,
+  onOpenChange,
+  sidebarExpanded,
+  onToggleSidebar
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  sidebarExpanded: boolean
+  onToggleSidebar: () => void
+}) {
   const { actions, kbs, kb, setKb, may, caps } = useSession()
+  const { preference, setPreference } = useTheme()
   const [text, setText] = useState('')
   const [active, setActive] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
@@ -43,7 +55,33 @@ export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange: (
       if (action === 'search.external' && !caps.external) return '未登记外部检索服务'
       return undefined
     }
+    const themeEntries: Entry[] = (['system', 'dark', 'light', 'light-color'] as ThemePreference[]).map(value => {
+      const labels: Record<ThemePreference, string> = {
+        system: '跟随系统',
+        dark: '深色',
+        light: '浅色',
+        'light-color': '浅色多彩'
+      }
+      return {
+        key: `theme:${value}`,
+        group: '外观',
+        name: `主题：${labels[value]}`,
+        desc: '切换工作台主题',
+        tag: value === preference ? '当前' : undefined,
+        run: () => setPreference(value)
+      }
+    })
+    const sidebarEntry: Entry = {
+      key: 'sidebar:toggle',
+      group: '外观',
+      name: sidebarExpanded ? '收起侧栏' : '展开侧栏',
+      desc: '切换桌面侧栏宽度',
+      tag: '⌘B',
+      run: onToggleSidebar
+    }
     const list: Entry[] = [
+      sidebarEntry,
+      ...themeEntries,
       ...actions.map(a => ({
         key: `action:${a.action}`,
         group: groupNames[a.group] ?? a.group,
@@ -67,7 +105,7 @@ export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange: (
     ]
     const needle = text.trim().toLowerCase()
     return needle ? list.filter(e => `${e.name} ${e.desc} ${e.tag ?? ''}`.toLowerCase().includes(needle)) : list
-  }, [actions, pages, kbs, kb, text, caps, may, setKb])
+  }, [actions, pages, kbs, kb, text, caps, may, setKb, preference, setPreference, sidebarExpanded, onToggleSidebar])
 
   useEffect(() => {
     listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })
@@ -94,10 +132,10 @@ export function Palette({ open, onOpenChange }: { open: boolean; onOpenChange: (
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/60" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-scrim" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-[12vh] z-50 w-[min(660px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-line-strong bg-panel shadow-2xl shadow-black/60 animate-fade-in outline-none"
+          className="fixed left-1/2 top-[12vh] z-50 w-[min(660px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-line-strong bg-panel shadow-2xl shadow-shadow animate-fade-in outline-none"
         >
           <DialogPrimitive.Title className="sr-only">命令面板</DialogPrimitive.Title>
           <input
