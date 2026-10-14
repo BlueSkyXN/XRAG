@@ -36,6 +36,28 @@ jobs:
           [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "image_digest must match sha256:<64 hex chars>"; exit 1; }
           [[ "$SPACE" =~ ^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$ ]] || { echo "space must be owner/name"; exit 1; }
 
+      - name: Check the image package is public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Spaces pull GHCR without credentials; a private package breaks the
+          # Space build. The registry's anonymous token endpoint cannot be used
+          # as a probe (it denies anonymous tokens even for public packages),
+          # so ask the Packages API for the visibility field instead.
+          code="$(gh api -i /user/packages/container/xrag 2>/dev/null | head -1 | awk '{print $2}')"
+          if [ "$code" != 200 ]; then
+            echo "Cannot read package ghcr.io/blueskyxn/xrag (HTTP ${code})."
+            echo "It must exist and be public before deploying: push happens on main, then"
+            echo "Package settings -> Change visibility -> Public (confirm via the emailed link)."
+            exit 1
+          fi
+          visibility="$(gh api /user/packages/container/xrag --jq .visibility)"
+          test "$visibility" = "public" || {
+            echo "ghcr.io/blueskyxn/xrag is ${visibility}, not public; Spaces cannot pull it."
+            exit 1
+          }
+
       - name: Read the commit from the image
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
