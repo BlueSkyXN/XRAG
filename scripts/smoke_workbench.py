@@ -153,6 +153,8 @@ def browser_checks(base, key, op):
         palette = p.get_by_role('dialog')
         palette.get_by_text('search keyword').first.wait_for(timeout=5000)
         ck('command palette lists registry actions', palette.get_by_text('files grep').count() >= 1, None, 'browser')
+        first_entry = palette.locator('[data-index="0"]').inner_text()
+        ck('command palette highlights an action first, not appearance', '侧栏' not in first_entry and '主题' not in first_entry, first_entry, 'browser')
         p.get_by_label('搜索命令').fill('主题：浅色多彩')
         palette.get_by_text('主题：浅色多彩').first.click()
         ck('command palette switches themes', p.evaluate("document.documentElement.dataset.theme") == 'light-color', None, 'browser')

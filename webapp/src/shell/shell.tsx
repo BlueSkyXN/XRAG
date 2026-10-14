@@ -282,52 +282,43 @@ function TopBar({ onMenu, onPalette }: { onMenu: () => void; onPalette: () => vo
   )
 }
 
-function initialSidebar() {
+type SidebarState = 'expanded' | 'collapsed'
+
+function savedSidebar(): SidebarState | null {
   try {
     const saved = localStorage.getItem('xrag.sidebar')
-    if (saved === 'expanded' || saved === 'collapsed') return saved === 'expanded'
+    return saved === 'expanded' || saved === 'collapsed' ? saved : null
   } catch {
-    // 隐私模式下按视口宽度决定。
+    return null
   }
-  return matchMedia('(min-width: 1280px)').matches
 }
 
+/** 手动选过就用记住的值；没选过时按视口宽度，跨过 1280px 自动切换。 */
 function useSidebar() {
-  const [expanded, setExpanded] = useState(initialSidebar)
-  const [manual, setManual] = useState<'expanded' | 'collapsed' | null>(() => {
-    try {
-      const saved = localStorage.getItem('xrag.sidebar')
-      return saved === 'expanded' || saved === 'collapsed' ? saved : null
-    } catch {
-      return null
-    }
-  })
+  const [manual, setManual] = useState(savedSidebar)
+  const [wide, setWide] = useState(() => matchMedia('(min-width: 1280px)').matches)
+  const expanded = manual ? manual === 'expanded' : wide
+
+  useEffect(() => {
+    const query = matchMedia('(min-width: 1280px)')
+    const update = () => setWide(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.sidebar = expanded ? 'expanded' : 'collapsed'
   }, [expanded])
 
-  useEffect(() => {
-    if (manual) return
-    const query = matchMedia('(min-width: 1280px)')
-    const update = () => setExpanded(query.matches)
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [manual])
-
   const toggle = useCallback(() => {
-    setExpanded(open => {
-      const next = !open
-      const saved = next ? 'expanded' : 'collapsed'
-      setManual(saved)
-      try {
-        localStorage.setItem('xrag.sidebar', saved)
-      } catch {
-        // 隐私模式下不持久化。
-      }
-      return next
-    })
-  }, [])
+    const next: SidebarState = expanded ? 'collapsed' : 'expanded'
+    setManual(next)
+    try {
+      localStorage.setItem('xrag.sidebar', next)
+    } catch {
+      // 隐私模式下不持久化。
+    }
+  }, [expanded])
 
   return { expanded, toggle }
 }
@@ -354,7 +345,7 @@ export function Shell({ current, children }: { current: PageId; children: ReactN
 
   return (
     <CurrentPageContext.Provider value={current}>
-      <div className="flex h-dvh flex-col" style={{ '--page-hue': `var(--hue-${current})` } as CSSProperties}>
+      <div className="flex h-dvh flex-col">
         <TopBar onMenu={() => setMenuOpen(true)} onPalette={() => setPaletteOpen(true)} />
         <div className="flex min-h-0 flex-1">
           <Rail current={current} expanded={expanded} onToggle={toggle} />

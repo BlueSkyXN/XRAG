@@ -79,9 +79,8 @@ export function Palette({
       tag: '⌘B',
       run: onToggleSidebar
     }
+    // 外观条目放在最后：打开面板时默认高亮的仍是第一个动作。
     const list: Entry[] = [
-      sidebarEntry,
-      ...themeEntries,
       ...actions.map(a => ({
         key: `action:${a.action}`,
         group: groupNames[a.group] ?? a.group,
@@ -101,7 +100,9 @@ export function Palette({
         desc: k.name + (k.id === kb ? ' · 当前' : ''),
         tag: k.files !== undefined ? `${k.files} 文件` : undefined,
         run: () => setKb(k.id)
-      }))
+      })),
+      sidebarEntry,
+      ...themeEntries
     ]
     const needle = text.trim().toLowerCase()
     return needle ? list.filter(e => `${e.name} ${e.desc} ${e.tag ?? ''}`.toLowerCase().includes(needle)) : list

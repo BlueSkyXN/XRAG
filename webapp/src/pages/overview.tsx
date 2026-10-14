@@ -119,13 +119,9 @@ export default function OverviewPage() {
               key={card.label}
               type="button"
               onClick={() => navigate(card.to)}
-              className="rounded-[10px] border border-line bg-panel px-4 py-3 text-left transition-colors hover:border-line-strong"
+              className="overview-card rounded-[10px] border border-line bg-panel px-4 py-3 text-left transition-colors hover:border-line-strong"
+              style={{ '--card-hue': card.hue } as CSSProperties}
             >
-              <span
-                aria-hidden="true"
-                className="overview-card-hue -mx-4 mb-3"
-                style={{ '--card-hue': card.hue } as CSSProperties}
-              />
               <span className="block text-xs text-dim">{card.label}</span>
               <b className={`mt-1 block font-mono text-[22px] font-semibold tabular-nums ${card.label === '来源待处理' && Number(card.value) > 0 ? 'text-warn' : ''}`}>{card.value}</b>
             </button>

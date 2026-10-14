@@ -159,22 +159,6 @@
     color: var(--color-page-icon-light);
   }
 
-  .panel-title-dot {
-    display: none;
-    width: 8px;
-    height: 8px;
-    flex-shrink: 0;
-    border-radius: 3px;
-    background: var(--page-hue);
-  }
-
-  .overview-card-hue {
-    display: none;
-    height: 3px;
-    border-radius: 999px;
-    background: var(--card-hue);
-  }
-
   html[data-theme='light-color'] .nav-icon {
     background: var(--hue);
     color: var(--color-page-icon-light);
@@ -192,12 +176,9 @@
     display: flex;
   }
 
-  html[data-theme='light-color'] .panel-title-dot {
-    display: block;
-  }
-
-  html[data-theme='light-color'] .overview-card-hue {
-    display: block;
+  /* 页面色只出现在导航、页标题和概览统计卡；面板里会和路线色混淆，不使用。 */
+  html[data-theme='light-color'] .overview-card {
+    box-shadow: inset 0 3px 0 var(--card-hue);
   }
 
   input[type='checkbox'],

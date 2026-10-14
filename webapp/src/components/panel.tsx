@@ -15,7 +15,6 @@ type PanelHeaderProps = {
 export function PanelHeader({ title, meta, actions, className }: PanelHeaderProps) {
   return (
     <header className={cn('flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2', className)}>
-      <span aria-hidden="true" className="panel-title-dot" />
       <h2 className="text-[13px] font-semibold text-fg">{title}</h2>
       {meta && <div className="flex min-w-0 flex-wrap items-center gap-x-3 text-xs text-dim">{meta}</div>}
       {actions && <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>}
