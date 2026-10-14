@@ -1,5 +1,11 @@
 # 未发版（0.8.0-exp.1 之后）
 
+## 部署与镜像
+- 镜像通用化：不再内置 nginx，`xrag-server` 直接监听 `0.0.0.0:8765`（`XRAG_LISTEN` 可覆盖），上传上限与超时报错回归应用自身；通用入口见 `docker/entrypoint.sh`，数据目录 `XRAG_DATA_DIR`（默认 `/data/xrag`）。
+- 新增 `image` workflow：push `main`/tag 自动构建并推送 `ghcr.io/blueskyxn/xrag`（`sha-<短SHA>`、`main`、版本标签，无 `latest`），推送前跑两轮镜像冒烟（挂载+密码、不挂载+API Key）。`ci` workflow 只保留测试。
+- `/healthz` 增加 `commit` 字段（构建时注入的提交 SHA）；镜像带 `org.opencontainers.image.revision` label。
+- HF front matter 与部署说明移至 `deploy/hf/README.md`；主 README 改为项目说明与 Docker 运行指南。
+
 ## 工作台
 - 新工作台取代经典界面，挂在 `/`；页面路径（如 `/search`、`/settings/keys`）由 Server 回落到 `index.html`，缺失的静态文件仍返回 404，带哈希的资源长期缓存。
 - 覆盖经典界面的全部功能：检索、关系、调查、资料与来源、任务、知识与 Wiki、反馈、评测、概览、接入、设置。

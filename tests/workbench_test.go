@@ -108,6 +108,21 @@ func TestJobsFilterByKnowledgeBaseAndKind(t *testing.T) {
 	}
 }
 
+func TestHealthzReportsCommit(t *testing.T) {
+	h := productSetup(t)
+	c, b := h.request(t, "GET", "/healthz", nil, "")
+	if c != http.StatusOK {
+		t.Fatalf("healthz: %d", c)
+	}
+	v := object(t, b)
+	if v["commit"] != core.Commit {
+		t.Fatalf("healthz commit %v != core.Commit %v", v["commit"], core.Commit)
+	}
+	if v["version"] != core.Version {
+		t.Fatalf("healthz version %v != core.Version", v["version"])
+	}
+}
+
 func TestWorkbenchPagesFallBackToIndex(t *testing.T) {
 	h := productSetup(t)
 	c, home := h.request(t, "GET", "/", nil, "")

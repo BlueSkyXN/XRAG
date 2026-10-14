@@ -8,7 +8,7 @@
 
 在你自己的开发环境部署专用测试Qdrant及支持Query API v2的Neo4j，准备真实Embedding服务。不要直接拿重要现有库进行首次实验。
 
-`deploy/compose.backends.yaml` 只包含外部数据库，没有虚构一个已经发布的XRAG镜像。必须显式设置已选定镜像，不使用floating latest：
+`deploy/compose.backends.yaml` 只包含外部数据库；XRAG 镜像用 CI 发布到 GHCR（`ghcr.io/blueskyxn/xrag`），联调时按 digest 或版本标签固定，不使用 floating latest：
 
 ```bash
 # 由使用者填已选定、支持相应API的版本或digest
