@@ -1,0 +1,12 @@
+{
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {
+    "Labels": {
+      "org.opencontainers.image.title": "XRAG",
+      "org.opencontainers.image.revision": "a6e7576a24dc5f5fa1fb258e14e3b04ba32b8f17",
+      "org.opencontainers.image.licenses": "GPL-3.0-only"
+    }
+  },
+  "rootfs": { "type": "layers", "diff_ids": [] }
+}

@@ -1,5 +1,18 @@
 # 未发版（0.8.0-exp.1 之后）
 
+## 构建
+- 前端产物不再提交：`make web` 写入 `internal/server/web/dist/`（已忽略），Docker 镜像内加 Node 阶段构建。裸 `go build` 的二进制没有界面（`/` 返回 503 并提示 `make web`），API/CLI/MCP 不受影响；`go test` 用注入的假产物，不依赖 Node。
+
+## HF 部署
+- Space 改为运行 GHCR 镜像：`deploy/hf/`（README、Dockerfile、HF 入口、`render.sh` 渲染脚本）是 Space 文件的唯一来源；Space 的 `FROM` 默认跟随 `:main` 浮动标签，HF 页面 Rebuild 即拉最新镜像（`main` 标签仅在 CI 冒烟全部通过后推送）；`deploy-hf` workflow 手动触发，`image_digest` 留空部署 `:main` 当前指向（先解析钉死）、填 `sha256:...` 用于回退（输入经 env 传入并校验格式，先等 Space 提交变化再等待重建，线上地址取自 `hf spaces info` 的 `host`），以线上 `/healthz` 的 `commit` 与镜像一致作为成功标准；每次 `main` 推送镜像后 CI 用 `image-revision.sh` 读回 revision 并断言与提交一致。HF 入口检查 UID 与 `/data` 挂载、按 `PORT` 监听。
+- 新增 `XRAG_TRUST_FORWARDED_PROTO=1`：信任前置代理的 `X-Forwarded-Proto`，HF 边缘终止 TLS 时会话 cookie 正确带 `Secure`；默认关闭。
+
+## 部署与镜像
+- 镜像通用化：不再内置 nginx，`xrag-server` 直接监听 `0.0.0.0:8765`（`XRAG_LISTEN` 可覆盖），上传上限与超时报错回归应用自身；通用入口见 `docker/entrypoint.sh`，数据目录 `XRAG_DATA_DIR`（默认 `/data/xrag`）。
+- 新增 `image` workflow：push `main`/tag 自动构建并推送 `ghcr.io/blueskyxn/xrag`（`sha-<短SHA>`、`main`、版本标签，无 `latest`），推送前跑两轮镜像冒烟（挂载+密码、不挂载+API Key）。`ci` workflow 只保留测试。
+- `/healthz` 增加 `commit` 字段（构建时注入的提交 SHA）；镜像带 `org.opencontainers.image.revision` label。
+- HF front matter 与部署说明移至 `deploy/hf/README.md`；主 README 改为项目说明与 Docker 运行指南。
+
 ## 工作台
 - 新工作台取代经典界面，挂在 `/`；页面路径（如 `/search`、`/settings/keys`）由 Server 回落到 `index.html`，缺失的静态文件仍返回 404，带哈希的资源长期缓存。
 - 覆盖经典界面的全部功能：检索、关系、调查、资料与来源、任务、知识与 Wiki、反馈、评测、概览、接入、设置。

@@ -1,0 +1,23 @@
+{
+  "name": "ghcr.io/blueskyxn/xrag@sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "linux/amd64": {
+    "architecture": "amd64",
+    "os": "linux",
+    "config": {
+      "Labels": {
+        "org.opencontainers.image.revision": "ccb58c1fe88c0ad91b47a19b7bbba06a29e0a484"
+      }
+    },
+    "rootfs": { "type": "layers", "diff_ids": [] }
+  },
+  "linux/arm64": {
+    "architecture": "arm64",
+    "os": "linux",
+    "config": {
+      "Labels": {
+        "org.opencontainers.image.revision": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+      }
+    },
+    "rootfs": { "type": "layers", "diff_ids": [] }
+  }
+}

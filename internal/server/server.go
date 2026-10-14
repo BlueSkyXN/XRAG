@@ -28,8 +28,12 @@ import (
 	"github.com/BlueSkyXN/XRAG/protocols/mcp"
 )
 
-//go:embed web/*
+//go:embed web
 var static embed.FS
+
+// webFS returns the embedded frontend tree (web/dist when built, empty when
+// only the tracked README is present). Tests swap it via app.webAssets.
+func (a *App) webFS() fs.FS { return a.webAssets }
 
 type session struct {
 	Token   string
@@ -46,15 +50,36 @@ type App struct {
 	ConfigSource  string
 	EdgeUser      string
 	EdgePass      string
-	maintenanceMu sync.Mutex
-	mu            sync.Mutex
-	sessions      map[string]session
-	MCPAuth       *mcpauth.Verifier
-	MCPTransport  mcp.HTTPTransport
+	// TrustForwardedProto honors X-Forwarded-Proto: https when the process
+	// sits behind a TLS-terminating proxy (HF Spaces). Off by default.
+	TrustForwardedProto bool
+	maintenanceMu       sync.Mutex
+	mu                  sync.Mutex
+	sessions            map[string]session
+	MCPAuth             *mcpauth.Verifier
+	MCPTransport        mcp.HTTPTransport
+	// webAssets holds the built workbench (web/dist). Defaults to the embed
+	// tree; empty when the frontend was never built.
+	webAssets fs.FS
 }
 
+// WebAssetsForTest overrides the embedded frontend tree (e.g. fstest.MapFS).
+func (a *App) WebAssetsForTest(f fs.FS) { a.webAssets = f }
+
 func New(s *store.Store, b *build.Builder, logger *log.Logger) *App {
-	return &App{Store: s, Builder: b, Logger: logger, sessions: map[string]session{}}
+	// fs.Sub succeeds even when web/dist was never built; serveApp's
+	// index.html Stat then fails and the 503 branch answers.
+	assets, _ := fs.Sub(static, "web/dist")
+	return &App{Store: s, Builder: b, Logger: logger, sessions: map[string]session{}, webAssets: assets}
+}
+
+// secureCookie reports whether the session cookie should carry Secure. Direct
+// TLS or an explicitly trusted X-Forwarded-Proto both count as https.
+func (a *App) secureCookie(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return a.TrustForwardedProto && r.Header.Get("X-Forwarded-Proto") == "https"
 }
 func write(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -90,10 +115,11 @@ func decode(b []byte, out any) error {
 	}
 	return nil
 }
-// serveApp serves the bundled workbench. Page paths such as /search fall back to
-// index.html so the client router can reload them; missing files stay 404.
-func serveApp(w http.ResponseWriter, r *http.Request) {
-	assets, _ := fs.Sub(static, "web")
+// serveApp serves the bundled workbench. Page paths such as /search fall back
+// to index.html so the client router can reload them; missing files stay 404.
+// Without built assets (/ and page paths) it explains that `make web` is due.
+func (a *App) serveApp(w http.ResponseWriter, r *http.Request) {
+	assets := a.webFS()
 	name := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 	if name != "" && name != "." {
 		if st, err := fs.Stat(assets, name); err == nil && !st.IsDir() {
@@ -107,6 +133,12 @@ func serveApp(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
+	}
+	if _, err := fs.Stat(assets, "index.html"); err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = io.WriteString(w, "the web workbench is not built into this binary; run `make web` before building the server\n")
+		return
 	}
 	w.Header().Set("Cache-Control", "no-cache")
 	http.ServeFileFS(w, r, assets, "index.html")
@@ -242,7 +274,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/healthz" {
-		write(w, 200, map[string]any{"status": "ok", "version": core.Version})
+		write(w, 200, map[string]any{"status": "ok", "version": core.Version, "commit": core.Commit})
 		return
 	}
 	if r.URL.Path == "/v1/login" && r.Method == "GET" {
@@ -291,7 +323,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		a.sessions[sid] = session{Token: input.Key, Expires: time.Now().Add(8 * time.Hour), Edge: edge}
 		a.mu.Unlock()
-		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: sid, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: 28800})
+		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: sid, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: a.secureCookie(r), MaxAge: 28800})
 		write(w, 200, p)
 		return
 	}
@@ -301,7 +333,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			delete(a.sessions, c.Value)
 			a.mu.Unlock()
 		}
-		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil})
+		http.SetCookie(w, &http.Cookie{Name: "xrag_session", Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: a.secureCookie(r)})
 		write(w, 200, map[string]any{"logged_out": true})
 		return
 	}
@@ -310,7 +342,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		serveApp(w, r)
+		a.serveApp(w, r)
 		return
 	}
 	if r.URL.Path == "/mcp" {

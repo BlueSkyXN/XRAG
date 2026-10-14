@@ -12,4 +12,5 @@ checks
 **/*.py[cod]
 **/.DS_Store
 
-# Keep internal/server/web: the Go build embeds these bundled assets.
+# The image builds the frontend in a Node stage; never ship local dist output.
+internal/server/web/dist
