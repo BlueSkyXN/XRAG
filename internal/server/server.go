@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -87,6 +89,27 @@ func decode(b []byte, out any) error {
 		return core.Err("INVALID_ARGUMENT", "only one JSON value is allowed", 400)
 	}
 	return nil
+}
+// serveApp serves the bundled workbench. Page paths such as /search fall back to
+// index.html so the client router can reload them; missing files stay 404.
+func serveApp(w http.ResponseWriter, r *http.Request) {
+	assets, _ := fs.Sub(static, "web")
+	name := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+	if name != "" && name != "." {
+		if st, err := fs.Stat(assets, name); err == nil && !st.IsDir() {
+			if strings.HasPrefix(name, "assets/") {
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			}
+			http.FileServer(http.FS(assets)).ServeHTTP(w, r)
+			return
+		}
+		if strings.HasPrefix(name, "assets/") || strings.Contains(path.Base(name), ".") {
+			http.NotFound(w, r)
+			return
+		}
+	}
+	w.Header().Set("Cache-Control", "no-cache")
+	http.ServeFileFS(w, r, assets, "index.html")
 }
 func (a *App) passwordMatches(user, pass string) bool {
 	if a.EdgeUser == "" || a.EdgePass == "" || user == "" {
@@ -283,12 +306,11 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/v1/") && r.URL.Path != "/mcp" {
-		if r.Method != "GET" {
+		if r.Method != "GET" && r.Method != "HEAD" {
 			http.NotFound(w, r)
 			return
 		}
-		assets, _ := fs.Sub(static, "web")
-		http.FileServer(http.FS(assets)).ServeHTTP(w, r)
+		serveApp(w, r)
 		return
 	}
 	if r.URL.Path == "/mcp" {
@@ -458,7 +480,11 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		out := []store.Job{}
+		kbFilter, kindFilter := r.URL.Query().Get("kb"), r.URL.Query().Get("kind")
 		for _, j := range rs {
+			if (kbFilter != "" && j.KB != kbFilter) || (kindFilter != "" && !slices.Contains(strings.Split(kindFilter, ","), j.Kind)) {
+				continue
+			}
 			if j.Owner == p.ID || store.RoleAtLeast(p, "maintainer") {
 				out = append(out, a.jobVisible(j))
 			}

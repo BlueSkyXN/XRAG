@@ -105,45 +105,33 @@ def main(browser=False):
  (CHECKS/'smoke.json').write_text(json.dumps({'passed':len(rows),'checks':rows,'scope':'actual fresh XRAG processes/SQLite/CLI; local OAuth introspection fixture; explicit transient DB-write fault, not real provider or commercial client'},ensure_ascii=False,indent=2))
 
 def browser_checks(base,key,job,api,op):
+ """Workbench checks against the real server; see scripts/workbench_browser.py for the transport."""
+ import sys;sys.dont_write_bytecode=True;sys.path.insert(0,str(ROOT/'scripts'))
+ from workbench_browser import open_workbench,login_with_key,go,logout
  from playwright.sync_api import sync_playwright
- jar=http.cookiejar.CookieJar();opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar));errors=[]
- def bridge(path,options):
-  if not path.startswith('/')or path.startswith('//'):raise ValueError('only test server routes')
-  b=options.get('body');req=urllib.request.Request(base+path,data=None if b is None else b.encode(),method=options.get('method','GET'),headers={'Content-Type':'application/json',**options.get('headers',{})})
-  try:
-   with opener.open(req,timeout=30)as r:return{'status':r.status,'bytes':base64.b64encode(r.read()).decode(),'type':r.headers.get('Content-Type','application/json')}
-  except urllib.error.HTTPError as e:return{'status':e.code,'bytes':base64.b64encode(e.read()).decode(),'type':'application/json'}
  with sync_playwright()as pw:
-  browser=pw.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox']);p=browser.new_page(viewport={'width':1440,'height':1050});p.on('pageerror',lambda e:errors.append(str(e)));transport='direct URL'
-  try:p.goto(base,wait_until='domcontentloaded',timeout=12000)
-  except Exception as e:
-   if 'BLOCKED_BY_ADMINISTRATOR'not in str(e):raise
-   transport='DOM + actual HTTP bridge; terminal SSE body from real server';p.close();p=browser.new_page(viewport={'width':1440,'height':1050});p.on('pageerror',lambda e:errors.append(str(e)))
-   text=(ROOT/'internal/server/web/index.html').read_text().replace('<link rel="stylesheet" href="/style.css">','<style>'+(ROOT/'internal/server/web/style.css').read_text()+'</style>')
-   scripts=['app.js','extensions.js','product.js','lifecycle.js','completion.js','iteration6.js','iteration7.js','iteration8.js']
-   for f in scripts:text=text.replace(f'<script src="/{f}"></script>','')
-   p.expose_function('bridge9',bridge);p.set_content(text)
-   p.evaluate('''()=>{window.fetch=async(path,options={})=>{const r=await window.bridge9(String(path),options);return new Response(Uint8Array.from(atob(r.bytes),c=>c.charCodeAt(0)),{status:r.status,headers:{'Content-Type':r.type}})};
-   // Test-only transport adapter. The body is actual terminal SSE from XRAG;
-   // incremental network framing is tested separately in Go and CLI.
-   window.EventSource=class extends EventTarget{constructor(path){super();this.closed=false;setTimeout(async()=>{try{const r=await fetch(path,{headers:{Accept:'text/event-stream'}});const text=await r.text();if(!r.ok)throw Error('HTTP '+r.status);for(const block of text.split('\\n\\n')){if(this.closed)break;let type='message',data='';for(const line of block.split('\\n')){if(line.startsWith('event: '))type=line.slice(7);if(line.startsWith('data: '))data+=line.slice(6)}if(data)this.dispatchEvent(new MessageEvent(type,{data}))}}catch{if(!this.closed)this.dispatchEvent(new Event('error'))}},0)}close(){this.closed=true}}}''')
-   for f in scripts:p.add_script_tag(content=(ROOT/'internal/server/web'/f).read_text())
-  p.locator('#key-input').fill(key);p.locator('#login-form').evaluate('(f)=>f.requestSubmit()');p.locator('#app').wait_for(state='visible');p.locator('[data-page="research"]').click()
-  p.locator(f'[data-task-view="{job["id"]}"]').click();p.locator('#research-resume-selected').wait_for(state='visible')
-  ck('UI shows saved planned checkpoint of actual failed task','planned'in p.locator('#research-result').inner_text(),transport,'browser')
+  browser,p,origin,transport,errors=open_workbench(pw,base)
+  login_with_key(p,key);go(p,origin,'/research')
+  p.locator(f'[data-job-id="{job["id"]}"]').click()
+  detail=p.get_by_role('region',name='过程与依据')
+  detail.get_by_text('检查条件并继续原任务').wait_for(state='visible',timeout=15000)
+  ck('UI shows saved planned checkpoint of actual failed task','planned'in detail.inner_text(),transport,'browser')
   p.screenshot(path=str(CHECKS/'checkpoint.png'),full_page=True)
-  p.locator('#research-resume-selected').click();p.wait_for_function("document.querySelector('#research-result').innerText.includes('recipe_completed')",timeout=20000)
-  ck('UI resumes the actual saved job and displays completed evidence','类型化依据'in p.locator('#research-result').inner_text(),None,'browser')
+  detail.get_by_text('检查条件并继续原任务').click();detail.get_by_text('recipe_completed').first.wait_for(timeout=20000)
+  ck('UI resumes the actual saved job and displays completed evidence','类型化依据'in detail.inner_text(),None,'browser')
   ck('API confirms UI did not submit a replacement task',op('/v1/jobs/'+job['id'])['attempt']==2,None,'browser')
-  p.locator('#research-stream-start').click();p.wait_for_function("document.querySelector('#research-stream-status').innerText.includes('任务已结束')",timeout=10000)
-  ck('UI receives actual terminal SSE body through selected transport','任务已结束'in p.locator('#research-stream-status').inner_text(),transport,'browser')
+  detail.get_by_role('button',name='实时查看').click();detail.get_by_text('任务已结束').first.wait_for(timeout=10000)
+  ck('UI receives actual terminal SSE body through selected transport','任务已结束'in detail.inner_text(),transport,'browser')
   p.screenshot(path=str(CHECKS/'task-events.png'),full_page=True)
-  p.locator('#research-stream-stop').click();ck('stop viewing does not request task cancellation',not op('/v1/jobs/'+job['id'])['cancel_requested'],None,'browser')
-  p.locator('[data-page="settings"]').click();ck('MCP help matches new transport and external auth role','SSE'in p.locator('#settings-capabilities').inner_text()and'OAuth'in p.locator('#settings-capabilities').inner_text(),None,'browser')
+  ck('viewing the stream does not request task cancellation',not op('/v1/jobs/'+job['id'])['cancel_requested'],None,'browser')
+  go(p,origin,'/access');mcp=p.get_by_role('region',name='MCP');mcp.get_by_text('外部 OAuth').wait_for(timeout=10000)
+  ck('MCP help matches new transport and external auth role','SSE'in mcp.inner_text()and'OAuth'in mcp.inner_text(),None,'browser')
   p.screenshot(path=str(CHECKS/'mcp.png'),full_page=True)
-  p.set_viewport_size({'width':390,'height':844});p.wait_for_timeout(200);ck('current pages avoid full-page mobile overflow',p.evaluate('document.documentElement.scrollWidth<=innerWidth'),None,'browser')
+  p.set_viewport_size({'width':390,'height':844});go(p,origin,'/research');p.wait_for_timeout(400)
+  ck('current pages avoid full-page mobile overflow',p.evaluate('document.documentElement.scrollWidth<=innerWidth'),None,'browser')
   p.screenshot(path=str(CHECKS/'mobile.png'),full_page=True)
-  p.locator('#logout-btn').click();p.locator('#login').wait_for(state='visible');ck('logout clears saved investigation from DOM',p.locator('#research-result').inner_text()=='' and p.locator('#research-list').inner_text()=='',None,'browser')
+  p.set_viewport_size({'width':1440,'height':1050});logout(p)
+  ck('logout clears saved investigation from DOM',job['id']not in p.content(),None,'browser')
   ck('new UI has no JavaScript exceptions',not errors,errors,'browser');browser.close()
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--browser',action='store_true');main(p.parse_args().browser)

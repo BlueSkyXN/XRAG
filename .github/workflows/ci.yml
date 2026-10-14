@@ -32,9 +32,10 @@ jobs:
         working-directory: webapp
       - run: npm audit --omit=dev
         working-directory: webapp
-      - run: git diff --exit-code -- internal/server/web/next
+      - run: git diff --exit-code -- internal/server/web
       - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
       - run: CGO_ENABLED=1 go test ./...
+      - run: make build && python3 scripts/smoke_workbench.py
       - run: bash scripts/static-check.sh
 
   image:
@@ -76,8 +77,12 @@ jobs:
           done
           test "$ok" = 1
           test "$(curl --connect-timeout 1 --max-time 2 -s -o "$RUNNER_TEMP/home.html" -w '%{http_code}' http://127.0.0.1:7860/)" = 200
-          grep -q 'id="password-form"' "$RUNNER_TEMP/home.html"
-          grep -q '用户名' "$RUNNER_TEMP/home.html"
+          grep -q 'id="root"' "$RUNNER_TEMP/home.html"
+          asset="$(grep -o '/assets/index-[A-Za-z0-9_-]*\.js' "$RUNNER_TEMP/home.html" | head -1)"
+          test -n "$asset"
+          curl --connect-timeout 1 --max-time 5 -fsS "http://127.0.0.1:7860$asset" > "$RUNNER_TEMP/app.js"
+          grep -q 'password-form' "$RUNNER_TEMP/app.js"
+          grep -q '用户名' "$RUNNER_TEMP/app.js"
           test "$(curl --connect-timeout 1 --max-time 2 -s http://127.0.0.1:7860/v1/login)" = '{"mode":"password"}'
           test "$(curl --connect-timeout 1 --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/v1/system)" = 401
           docker rm -f xrag-ci >/dev/null

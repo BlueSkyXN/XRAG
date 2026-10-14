@@ -3,3 +3,13 @@
 local
 data
 bin
+.xrag
+.xrag-*
+webapp/node_modules
+checks
+.playwright-mcp
+**/__pycache__
+**/*.py[cod]
+**/.DS_Store
+
+# Keep internal/server/web: the Go build embeds these bundled assets.

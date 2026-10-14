@@ -82,6 +82,7 @@ type Request struct {
 	Ref             string   `json:"ref,omitempty"`
 	Offset          int      `json:"offset,omitempty"`
 	Length          int      `json:"length,omitempty"`
+	ContextLines    int      `json:"context_lines,omitempty"`
 	Pattern         string   `json:"pattern,omitempty"`
 	ResultID        string   `json:"result_id,omitempty"`
 	Cursor          string   `json:"cursor,omitempty"`
@@ -125,6 +126,7 @@ type Item struct {
 	Text          string             `json:"text,omitempty"`
 	Score         float64            `json:"score,omitempty"`
 	Ranking       string             `json:"ranking,omitempty"`
+	Routes        []string           `json:"routes,omitempty"`
 	LineStart     int                `json:"line_start,omitempty"`
 	LineEnd       int                `json:"line_end,omitempty"`
 	Fields        map[string]any     `json:"fields,omitempty"`
@@ -279,6 +281,20 @@ type ReadData struct {
 	Availability string `json:"availability"`
 	FileHash     string `json:"file_hash"`
 	Kind         string `json:"kind"`
+	// Window is set only when context_lines is requested for a chunk reference.
+	// It comes from the same pinned edition as the chunk, never from the current file.
+	Window *ReadWindow `json:"window,omitempty"`
+}
+
+// ReadWindow holds whole source lines around a cited chunk. Line numbers are 1-based
+// and refer to the edition's original file, including front matter.
+type ReadWindow struct {
+	LineStart  int    `json:"line_start"`
+	LineEnd    int    `json:"line_end"`
+	CiteStart  int    `json:"cite_start"`
+	CiteEnd    int    `json:"cite_end"`
+	TotalLines int    `json:"total_lines"`
+	Text       string `json:"text"`
 }
 type Cache struct {
 	Kind    string          `json:"kind"`
