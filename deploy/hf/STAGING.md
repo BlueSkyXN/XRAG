@@ -32,7 +32,7 @@ hf spaces variables set BlueSkyXN/XRAG-staging VARIABLE XRAG_DATA_DIR /tmp/xrag-
 
 注意：`XRAG_DATA_DIR=/tmp/xrag-staging` 与默认 `/data/xrag` 不同，唯一目的是配合只读挂载。生产部署**不带**这个变量。
 
-## 验证清单（deploy-hf 部署正式 Space 同一个 digest 后）
+## 验证清单（publish-space 部署正式 Space 同一个 digest 后）
 
 1. 登录页出现，用户名密码可登录。
 2. `/healthz` 的 `commit` 等于镜像的 revision。
@@ -52,7 +52,7 @@ hf spaces delete BlueSkyXN/XRAG-staging
 
 ## GHCR 镜像公开性（部署前置）
 
-临时与正式 Space 拉取 GHCR 镜像都不带凭据，镜像包必须为 public。在 L2 合入 `main`（首次推送自动发生）后、第一次运行 deploy-hf 前设置一次：
+临时与正式 Space 拉取 GHCR 镜像都不带凭据，镜像包必须为 public。在 L2 合入 `main`（首次推送自动发生）后、第一次运行 publish-space 前设置一次：
 
 GitHub → Package `blueskyxn/xrag` → Package settings → Change visibility → Public（会收到确认邮件，需点过生效）。
 
@@ -64,4 +64,4 @@ gh api /user/packages/container/xrag --jq .visibility   # 期望输出 public
 
 注意：**不要**用 ghcr.io 的匿名 token 端点当探测——实测它对公开包也返回 DENIED（匿名 token 不发给未认证客户端），403 无法区分"包不存在/私有/公开"。
 
-deploy-hf workflow 会在每次部署前自动检查包的 `visibility` 字段，非 `public` 即中止（见 `.github/workflows/deploy-hf.yml`）。
+publish-space workflow 会在每次发布前自动检查包的 `visibility` 字段，非 `public` 即中止（见 `.github/workflows/publish-space.yml`）。

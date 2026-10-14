@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Print the org.opencontainers.image.revision label of an image reference.
-# Used by deploy-hf.yml and by the image workflow right after pushing, so the
+# Used by publish-space.yml and by the image workflow right after pushing, so the
 # exact read path a deploy depends on is exercised on every main build.
 #
 # `buildx imagetools inspect --format '{{ json .Image }}'` yields either

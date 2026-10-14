@@ -1,4 +1,4 @@
-name: deploy-hf
+name: publish-space
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
         default: BlueSkyXN/XRAG
 
 concurrency:
-  group: xrag-deploy-hf-${{ inputs.space }}
+  group: xrag-publish-space-${{ inputs.space }}
   cancel-in-progress: false
 
 permissions:
@@ -20,7 +20,7 @@ permissions:
   packages: read
 
 jobs:
-  deploy:
+  publish:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
@@ -158,7 +158,7 @@ jobs:
           set -euo pipefail
           after="$(hf spaces info "$SPACE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")' || echo unknown)"
           {
-            echo "## HF deploy"
+            echo "## HF Space publish"
             echo "- Space: \`${SPACE}\`"
             echo "- Image digest: \`${DIGEST}\`"
             echo "- Commit: \`${REVISION}\`"

@@ -226,5 +226,5 @@ jobs:
             echo "- Image: \`${IMAGE_NAME}\`"
             echo "- Digest: \`${{ steps.push.outputs.digest }}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- Deploy with: run the \`deploy-hf\` workflow with \`image_digest=${{ steps.push.outputs.digest }}\`"
+            echo "- Pin/rollback: run the \`publish-space\` workflow with \`image_digest=${{ steps.push.outputs.digest }}\`; otherwise the Space follows :main"
           } >> "$GITHUB_STEP_SUMMARY"
