@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/BlueSkyXN/XRAG/core"
 )
@@ -108,8 +109,70 @@ func TestJobsFilterByKnowledgeBaseAndKind(t *testing.T) {
 	}
 }
 
+func TestHealthzReportsCommit(t *testing.T) {
+	h := productSetup(t)
+	c, b := h.request(t, "GET", "/healthz", nil, "")
+	if c != http.StatusOK {
+		t.Fatalf("healthz: %d", c)
+	}
+	v := object(t, b)
+	if v["commit"] != core.Commit {
+		t.Fatalf("healthz commit %v != core.Commit %v", v["commit"], core.Commit)
+	}
+	if v["version"] != core.Version {
+		t.Fatalf("healthz version %v != core.Version", v["version"])
+	}
+}
+
+func TestSessionCookieSecureBehindTrustedProxy(t *testing.T) {
+	h := productSetup(t)
+	h.app.EdgeUser = "xrag"
+	h.app.EdgePass = "correct-password"
+
+	login := func(forwarded string) []*http.Cookie {
+		req, e := http.NewRequest("POST", h.url+"/v1/session", strings.NewReader(`{"username":"xrag","password":"correct-password"}`))
+		must(t, e)
+		req.Header.Set("Content-Type", "application/json")
+		if forwarded != "" {
+			req.Header.Set("X-Forwarded-Proto", forwarded)
+		}
+		res, e := http.DefaultClient.Do(req)
+		must(t, e)
+		res.Body.Close()
+		if res.StatusCode != 200 || len(res.Cookies()) != 1 {
+			t.Fatalf("login: %d %d cookies", res.StatusCode, len(res.Cookies()))
+		}
+		return res.Cookies()
+	}
+
+	// Off by default: a forwarded header must not mark the cookie Secure.
+	h.app.TrustForwardedProto = false
+	if c := login("https")[0]; c.Secure {
+		t.Fatal("cookie must not be Secure when the proxy is not trusted")
+	}
+	h.app.TrustForwardedProto = true
+	if c := login("https")[0]; !c.Secure {
+		t.Fatal("cookie must be Secure when the trusted proxy says https")
+	}
+	if c := login("http")[0]; c.Secure {
+		t.Fatal("cookie must not be Secure when the trusted proxy says http")
+	}
+	if c := login("")[0]; c.Secure {
+		t.Fatal("cookie must not be Secure without a forwarded header")
+	}
+}
+
+func fakeWebAssets() fstest.MapFS {
+	return fstest.MapFS{
+		"index.html":        {Data: []byte(`<!doctype html><html><body><div id="root"></div></body></html>`)},
+		"assets/app.js":     {Data: []byte(`console.log("workbench")`)},
+		"eval-example.json": {Data: []byte(`{}`)},
+	}
+}
+
 func TestWorkbenchPagesFallBackToIndex(t *testing.T) {
 	h := productSetup(t)
+	h.app.WebAssetsForTest(fakeWebAssets())
 	c, home := h.request(t, "GET", "/", nil, "")
 	if c != http.StatusOK || !strings.Contains(string(home), `id="root"`) {
 		t.Fatalf("home: %d %.200s", c, home)
@@ -127,5 +190,23 @@ func TestWorkbenchPagesFallBackToIndex(t *testing.T) {
 	}
 	if c, _ := h.request(t, "POST", "/search", map[string]any{}, ""); c != http.StatusNotFound {
 		t.Fatalf("page paths accept only GET: %d", c)
+	}
+}
+
+func TestMissingWebDistServesGuidance(t *testing.T) {
+	h := productSetup(t)
+	h.app.WebAssetsForTest(fstest.MapFS{})
+	for _, page := range []string{"/", "/search"} {
+		c, b := h.request(t, "GET", page, nil, "")
+		if c != http.StatusServiceUnavailable || !strings.Contains(string(b), "make web") {
+			t.Fatalf("%s without built assets: %d %.200s", page, c, b)
+		}
+	}
+	// API and MCP keep working without the frontend.
+	if c, b := h.request(t, "GET", "/healthz", nil, ""); c != http.StatusOK {
+		t.Fatalf("healthz: %d %s", c, b)
+	}
+	if c, _ := h.request(t, "GET", "/v1/system", nil, ""); c != http.StatusUnauthorized {
+		t.Fatalf("v1 must not depend on the frontend: %d", c)
 	}
 }

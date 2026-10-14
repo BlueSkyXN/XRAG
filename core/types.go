@@ -15,6 +15,10 @@ import (
 
 const Version = "0.8.0-exp.1"
 
+// Commit is the source revision the binary was built from. It stays "dev"
+// unless the build injects it with -ldflags -X.
+var Commit = "dev"
+
 type Error struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
