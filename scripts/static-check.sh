@@ -57,11 +57,14 @@ if "COPY --chmod=0755 entrypoint.sh" not in hf_dockerfile:
 for script in ("deploy/hf/render.sh", "deploy/hf/image-revision.sh"):
     if not (root / script).stat().st_mode & 0o111:
         raise SystemExit(f"{script} must be executable")
-web = root / "internal/server/web"
-if 'id="root"' not in (web / "index.html").read_text(encoding="utf-8"):
-    raise SystemExit("internal/server/web must hold the built workbench; run make web")
+web = root / "internal/server/web" / "dist"
+index = web / "index.html"
+if not index.is_file():
+    raise SystemExit("internal/server/web/dist is missing; run make web")
+if 'id="root"' not in index.read_text(encoding="utf-8"):
+    raise SystemExit("dist/index.html must be the built workbench; run make web")
 if not any('password-form' in p.read_text(encoding="utf-8") for p in (web / "assets").glob("*.js")):
-    raise SystemExit("login page is missing the username and password form")
+    raise SystemExit("login page is missing the username and password form; run make web")
 print("static contract: PASS")
 PY
 if [[ -d .git ]]; then git diff --check; fi

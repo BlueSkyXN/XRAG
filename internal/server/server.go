@@ -17,6 +17,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"testing/fstest"
 	"time"
 	"github.com/BlueSkyXN/XRAG/adapters"
 	"github.com/BlueSkyXN/XRAG/contracts"
@@ -28,8 +29,12 @@ import (
 	"github.com/BlueSkyXN/XRAG/protocols/mcp"
 )
 
-//go:embed web/*
+//go:embed web
 var static embed.FS
+
+// webFS returns the embedded frontend tree (web/dist when built, empty when
+// only the tracked README is present). Tests swap it via app.webAssets.
+func (a *App) webFS() fs.FS { return a.webAssets }
 
 type session struct {
 	Token   string
@@ -54,10 +59,20 @@ type App struct {
 	sessions            map[string]session
 	MCPAuth             *mcpauth.Verifier
 	MCPTransport        mcp.HTTPTransport
+	// webAssets holds the built workbench (web/dist). Defaults to the embed
+	// tree; empty when the frontend was never built.
+	webAssets fs.FS
 }
 
+// WebAssetsForTest overrides the embedded frontend tree (e.g. fstest.MapFS).
+func (a *App) WebAssetsForTest(f fs.FS) { a.webAssets = f }
+
 func New(s *store.Store, b *build.Builder, logger *log.Logger) *App {
-	return &App{Store: s, Builder: b, Logger: logger, sessions: map[string]session{}}
+	assets, _ := fs.Sub(static, "web/dist")
+	if _, err := fs.Stat(assets, "."); err != nil {
+		assets = fstest.MapFS{}
+	}
+	return &App{Store: s, Builder: b, Logger: logger, sessions: map[string]session{}, webAssets: assets}
 }
 
 // secureCookie reports whether the session cookie should carry Secure. Direct
@@ -102,10 +117,11 @@ func decode(b []byte, out any) error {
 	}
 	return nil
 }
-// serveApp serves the bundled workbench. Page paths such as /search fall back to
-// index.html so the client router can reload them; missing files stay 404.
-func serveApp(w http.ResponseWriter, r *http.Request) {
-	assets, _ := fs.Sub(static, "web")
+// serveApp serves the bundled workbench. Page paths such as /search fall back
+// to index.html so the client router can reload them; missing files stay 404.
+// Without built assets (/ and page paths) it explains that `make web` is due.
+func (a *App) serveApp(w http.ResponseWriter, r *http.Request) {
+	assets := a.webFS()
 	name := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 	if name != "" && name != "." {
 		if st, err := fs.Stat(assets, name); err == nil && !st.IsDir() {
@@ -119,6 +135,12 @@ func serveApp(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
+	}
+	if _, err := fs.Stat(assets, "index.html"); err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = io.WriteString(w, "the web workbench is not built into this binary; run `make web` before building the server\n")
+		return
 	}
 	w.Header().Set("Cache-Control", "no-cache")
 	http.ServeFileFS(w, r, assets, "index.html")
@@ -322,7 +344,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		serveApp(w, r)
+		a.serveApp(w, r)
 		return
 	}
 	if r.URL.Path == "/mcp" {

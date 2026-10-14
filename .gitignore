@@ -13,4 +13,6 @@ __pycache__/
 *.py[cod]
 .DS_Store
 
-# internal/server/web/ is intentionally versioned for go:embed and Docker builds.
+
+# Frontend build output (make web); the tracked README keeps the embed dir non-empty
+internal/server/web/dist/

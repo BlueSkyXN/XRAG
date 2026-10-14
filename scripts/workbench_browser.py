@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 import mimetypes, os, urllib.error, urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / 'internal/server/web'
+WEB = ROOT / 'internal/server/web/dist'
 TEST_ORIGIN = 'http://xrag.test'
 
 

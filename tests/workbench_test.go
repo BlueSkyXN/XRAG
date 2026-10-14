@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/BlueSkyXN/XRAG/core"
 )
@@ -161,8 +162,17 @@ func TestSessionCookieSecureBehindTrustedProxy(t *testing.T) {
 	}
 }
 
+func fakeWebAssets() fstest.MapFS {
+	return fstest.MapFS{
+		"index.html":        {Data: []byte(`<!doctype html><html><body><div id="root"></div></body></html>`)},
+		"assets/app.js":     {Data: []byte(`console.log("workbench")`)},
+		"eval-example.json": {Data: []byte(`{}`)},
+	}
+}
+
 func TestWorkbenchPagesFallBackToIndex(t *testing.T) {
 	h := productSetup(t)
+	h.app.WebAssetsForTest(fakeWebAssets())
 	c, home := h.request(t, "GET", "/", nil, "")
 	if c != http.StatusOK || !strings.Contains(string(home), `id="root"`) {
 		t.Fatalf("home: %d %.200s", c, home)
@@ -180,5 +190,23 @@ func TestWorkbenchPagesFallBackToIndex(t *testing.T) {
 	}
 	if c, _ := h.request(t, "POST", "/search", map[string]any{}, ""); c != http.StatusNotFound {
 		t.Fatalf("page paths accept only GET: %d", c)
+	}
+}
+
+func TestMissingWebDistServesGuidance(t *testing.T) {
+	h := productSetup(t)
+	h.app.WebAssetsForTest(fstest.MapFS{})
+	for _, page := range []string{"/", "/search"} {
+		c, b := h.request(t, "GET", page, nil, "")
+		if c != http.StatusServiceUnavailable || !strings.Contains(string(b), "make web") {
+			t.Fatalf("%s without built assets: %d %.200s", page, c, b)
+		}
+	}
+	// API and MCP keep working without the frontend.
+	if c, b := h.request(t, "GET", "/healthz", nil, ""); c != http.StatusOK {
+		t.Fatalf("healthz: %d %s", c, b)
+	}
+	if c, _ := h.request(t, "GET", "/v1/system", nil, ""); c != http.StatusUnauthorized {
+		t.Fatalf("v1 must not depend on the frontend: %d", c)
 	}
 }

@@ -16,7 +16,7 @@ bash demo.sh
 
 工作台在 `/`，取代原来的经典界面，按“查找 / 建设 / 沉淀 / 评估 / 系统”组织全部页面，导航按 Reader/Contributor/Maintainer/Admin 角色显示。检索页把一次查询拆成执行过程、结果路线（关键词/语义/图）、四种完整性，并给出等价的 CLI、HTTP 与 MCP 调用；原文按引用固定的文件版本读取，标出引用行。`⌘K` 列出动作注册表里的全部动作。
 
-前端源码在 `webapp/`（React + Tailwind + Radix），`make web` 重建并写入 `internal/server/web/`；开发时 `make web-dev` 启动 Vite（端口 5173，`/v1` 代理到 8765）。发布包使用已提交的构建产物，不需要 Node。只用系统字体，不打包字体文件。
+前端源码在 `webapp/`（React + Tailwind + Radix），`make web` 构建到 `internal/server/web/dist/`（不进 Git）；开发时 `make web-dev` 启动 Vite（端口 5173，`/v1` 代理到 8765）。发布包和 Docker 镜像在构建时内嵌产物；裸 `go build` 得到的二进制没有界面（`/` 返回 503 提示，API 与 MCP 正常）。只用系统字体，不打包字体文件。
 
 Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
 
@@ -116,7 +116,7 @@ python3 scripts/package.py --out /tmp/xrag-release
 python3 scripts/package_clients.py --out /tmp/xrag-release
 ```
 
-`--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行。
+`--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行（先 `make web`）。`go test` 用注入的假前端产物，不依赖 Node。
 
 ## 10. 许可与数据
 
