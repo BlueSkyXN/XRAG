@@ -17,7 +17,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"testing/fstest"
 	"time"
 	"github.com/BlueSkyXN/XRAG/adapters"
 	"github.com/BlueSkyXN/XRAG/contracts"
@@ -68,10 +67,9 @@ type App struct {
 func (a *App) WebAssetsForTest(f fs.FS) { a.webAssets = f }
 
 func New(s *store.Store, b *build.Builder, logger *log.Logger) *App {
+	// fs.Sub succeeds even when web/dist was never built; serveApp's
+	// index.html Stat then fails and the 503 branch answers.
 	assets, _ := fs.Sub(static, "web/dist")
-	if _, err := fs.Stat(assets, "."); err != nil {
-		assets = fstest.MapFS{}
-	}
 	return &App{Store: s, Builder: b, Logger: logger, sessions: map[string]session{}, webAssets: assets}
 }
 
