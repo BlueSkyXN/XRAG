@@ -48,7 +48,7 @@ function FilePicker({ accept, file, onChange, label = '选择文件', className 
         <FileUp />
         {label}
       </Button>
-      <span className="min-w-0 flex-1 truncate text-xs text-dim" title={file?.name}>
+      <span className="min-w-0 truncate text-xs text-dim" title={file?.name}>
         {file?.name ?? '未选择文件'}
       </span>
     </div>

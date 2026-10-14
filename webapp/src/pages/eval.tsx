@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useMemo, useState } from 'react'
-import { Download, FlaskConical, Play, Upload } from 'lucide-react'
+import { Download, FlaskConical, Play, Plus, RefreshCw, Upload, X } from 'lucide-react'
 import { api, downloadJSON, EvalDraft, EvalReport, QueryRecord } from '../lib/api'
 import { useData, usePolling, useRun } from '../lib/feedback'
 import { useSession } from '../lib/session'
@@ -192,7 +192,7 @@ function Compare() {
               </Select>
             </Field>
             <div className="flex flex-wrap items-center gap-2">
-              <FilePicker accept=".json" file={file} onChange={setFile} className="min-w-56 flex-1" />
+              <FilePicker accept=".json" file={file} onChange={setFile} className="max-w-xs" />
               <Button size="sm" disabled={!file} onClick={() => void importFile()}>
                 <Upload />
                 导入
@@ -427,11 +427,12 @@ function Drafts() {
                       </Select>
                       <Input aria-label="原文锚点" placeholder="原文锚点（可空）" value={t.anchor} onChange={e => setTargets(ts => ts.map((x, j) => (j === i ? { ...x, anchor: e.target.value } : x)))} />
                       <Button variant="ghost" size="icon" aria-label="删除这一行" onClick={() => setTargets(ts => ts.filter((_, j) => j !== i))}>
-                        ×
+                        <X />
                       </Button>
                     </div>
                   ))}
                   <Button size="sm" onClick={() => setTargets(ts => [...ts, { path: '', anchor: '' }])}>
+                    <Plus />
                     添加一份期望资料
                   </Button>
                 </div>
@@ -475,7 +476,7 @@ function Queries() {
 
   return (
     <Panel>
-      <PanelHeader title="查询记录" meta={<span>查看保存的候选和阶段，不重新调用模型；普通查询最多保留 2,000 条摘要</span>} actions={<Button size="sm" onClick={() => void records.reload()}>刷新</Button>} />
+      <PanelHeader title="查询记录" meta={<span>查看保存的候选和阶段，不重新调用模型；普通查询最多保留 2,000 条摘要</span>} actions={<Button size="sm" variant="ghost" onClick={() => void records.reload()}><RefreshCw />刷新</Button>} />
       {records.data && items.length === 0 && <Empty title="还没有查询记录">先在“检索”页执行一次查询。</Empty>}
       {items.length > 0 && (
         <Table>

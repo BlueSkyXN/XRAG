@@ -1,11 +1,11 @@
 import { SyntheticEvent, useState } from 'react'
-import { KeyRound, MoreHorizontal } from 'lucide-react'
+import { EyeOff, KeyRound, MoreHorizontal } from 'lucide-react'
 import { api, ApiKey, Role } from '../lib/api'
 import { useData, useFeedback, useRun } from '../lib/feedback'
 import { roleLabels, useSession } from '../lib/session'
 import { commaList, when } from '../lib/utils'
 import { Badge } from '../components/badge'
-import { Button } from '../components/button'
+import { Button, buttonVariants } from '../components/button'
 import { CodeBlock, CopyButton } from '../components/code'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogTitle } from '../components/dialog'
 import { Field, Input, Select, Textarea } from '../components/input'
@@ -109,8 +109,9 @@ function Keys() {
               <>
                 <Textarea mono readOnly rows={3} value={fresh} onFocus={e => e.currentTarget.select()} />
                 <div className="flex gap-2">
-                  <CopyButton text={fresh} label="复制新 Key" className="h-8 px-3 text-[13px]" />
-                  <Button size="sm" variant="ghost" onClick={() => setFresh('')}>
+                  <CopyButton text={fresh} label="复制新 Key" className={buttonVariants()} />
+                  <Button variant="ghost" onClick={() => setFresh('')}>
+                    <EyeOff />
                     我已保存，隐藏
                   </Button>
                 </div>
@@ -222,20 +223,23 @@ export default function AccessPage() {
         <Panel>
           <PanelHeader title="Client 连接" />
           <PanelBody className="space-y-3">
-            <form
-              className="flex items-end gap-2"
-              onSubmit={e => {
-                e.preventDefault()
-                if (draft.trim()) setProfile(draft.trim())
-              }}
-            >
-              <Field label="CLI profile 名称" hint="只保存在这个浏览器里，用来生成页面上的 CLI 示例。" className="flex-1">
-                <Input mono value={draft} onChange={e => setDraft(e.target.value)} />
-              </Field>
-              <Button type="submit" disabled={!draft.trim() || draft.trim() === profile}>
-                保存
-              </Button>
-            </form>
+            <div className="space-y-1.5">
+              <form
+                className="flex items-end gap-2"
+                onSubmit={e => {
+                  e.preventDefault()
+                  if (draft.trim()) setProfile(draft.trim())
+                }}
+              >
+                <Field label="CLI profile 名称" className="flex-1">
+                  <Input mono value={draft} onChange={e => setDraft(e.target.value)} />
+                </Field>
+                <Button type="submit" disabled={!draft.trim() || draft.trim() === profile}>
+                  保存
+                </Button>
+              </form>
+              <p className="text-xs leading-relaxed text-faint">只保存在这个浏览器里，用来生成页面上的 CLI 示例。</p>
+            </div>
             <CodeBlock
               label="登记 profile"
               meta="Key 文件只放在本机"

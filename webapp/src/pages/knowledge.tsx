@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useState } from 'react'
-import { BookmarkPlus, MoreHorizontal, Plus, Sparkles, X } from 'lucide-react'
+import { BookmarkPlus, ListPlus, MoreHorizontal, Plus, Sparkles, X } from 'lucide-react'
 import { api, KnowledgeItem } from '../lib/api'
 import { useData, useFeedback, useRun } from '../lib/feedback'
 import { navigate } from '../lib/router'
@@ -122,9 +122,11 @@ function Editor({ draft, setDraft, onSaved }: { draft: Draft; setDraft: (d: Draf
                   setDraft({ ...draft, refs: [...existing, ...added].join('\n') })
                 }}
               >
+                <ListPlus />
                 全部填入
               </Button>
               <Button size="sm" variant="ghost" onClick={clearCites}>
+                <X />
                 清空
               </Button>
             </span>

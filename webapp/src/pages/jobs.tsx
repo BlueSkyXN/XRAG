@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { RotateCcw, Square } from 'lucide-react'
+import { RefreshCw, RotateCcw, Square } from 'lucide-react'
 import { api, Job } from '../lib/api'
 import { useData, useFeedback, usePolling, useRun } from '../lib/feedback'
 import { navigate, useLocation } from '../lib/router'
@@ -150,7 +150,8 @@ export default function JobsPage() {
         desc="构建、发布、Wiki、评测和调查都在后台执行。关闭页面不会取消任务。"
         cli={`xrag jobs watch JOB_ID --timeout 10m --profile ${profile}`}
         actions={
-          <Button onClick={() => void jobs.reload()} disabled={jobs.loading}>
+          <Button variant="ghost" onClick={() => void jobs.reload()} disabled={jobs.loading}>
+            <RefreshCw />
             刷新
           </Button>
         }

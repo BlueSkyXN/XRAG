@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useState, type CSSProperties } from 'react'
-import { ArrowRight, Plus } from 'lucide-react'
+import { ArrowRight, Plus, RefreshCw } from 'lucide-react'
 import { api } from '../lib/api'
 import { useData, useRun } from '../lib/feedback'
 import { navigate, useLocation } from '../lib/router'
@@ -94,7 +94,10 @@ export default function OverviewPage() {
         cli={`xrag overview --profile ${profile}`}
         actions={
           <>
-            <Button onClick={() => void overview.reload()}>刷新</Button>
+            <Button variant="ghost" onClick={() => void overview.reload()}>
+              <RefreshCw />
+              刷新
+            </Button>
             {may('admin') && (
               <Button variant="primary" onClick={() => setCreating(true)}>
                 <Plus />
