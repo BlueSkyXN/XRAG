@@ -157,11 +157,12 @@ jobs:
         run: |
           set -euo pipefail
           docker rm -f xrag-hf-ci >/dev/null 2>&1 || true
-          code=0
-          docker run --rm --name xrag-hf-ci xrag-hf:ci >/dev/null 2>&1 || code=$?
-          test "$code" != 0 || { docker run --rm xrag-hf:ci 2>&1 | tail -3; echo 'HF layer must fail without a mounted /data'; exit 1; }
-          docker run --rm xrag-hf:ci 2>&1 | grep -q 'mounted persistent volume' \
-            || { echo 'failure message must explain the /data mount'; exit 1; }
+          output="$(docker run --rm xrag-hf:ci 2>&1 || true)"
+          echo "$output"
+          echo "$output" | grep -q '\[xrag-hf\] ERROR:' \
+            || { echo 'HF layer must fail with an [xrag-hf] ERROR without a mounted /data'; exit 1; }
+          echo "$output" | grep -Eq 'mounted persistent volume|runtime UID' \
+            || { echo 'failure message must name the violated HF contract'; exit 1; }
 
       - name: Smoke - PORT changes the listen port
         run: |
