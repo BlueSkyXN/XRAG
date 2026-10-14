@@ -58,14 +58,13 @@ jobs:
           # Space build. The registry's anonymous token endpoint cannot be used
           # as a probe (it denies anonymous tokens even for public packages),
           # so ask the Packages API for the visibility field instead.
-          code="$(gh api -i /user/packages/container/xrag 2>/dev/null | head -1 | awk '{print $2}')"
-          if [ "$code" != 200 ]; then
-            echo "Cannot read package ghcr.io/blueskyxn/xrag (HTTP ${code})."
+          visibility="$(gh api /user/packages/container/xrag --jq .visibility 2>/dev/null || true)"
+          if [ -z "$visibility" ]; then
+            echo "Cannot read package ghcr.io/blueskyxn/xrag via the Packages API."
             echo "It must exist and be public before deploying: push happens on main, then"
             echo "Package settings -> Change visibility -> Public (confirm via the emailed link)."
             exit 1
           fi
-          visibility="$(gh api /user/packages/container/xrag --jq .visibility)"
           test "$visibility" = "public" || {
             echo "ghcr.io/blueskyxn/xrag is ${visibility}, not public; Spaces cannot pull it."
             exit 1
