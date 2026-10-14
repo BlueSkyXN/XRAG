@@ -14,6 +14,14 @@ fail() {
   exit 1
 }
 
+# Side-effect-free health probe: Docker runs this every 30s, so it must not
+# repeat validation, mkdir or the first-boot init.
+if [[ "${1:-}" = "healthcheck" ]]; then
+  port="${listen##*:}"
+  host="${listen%%:*}"
+  exec curl -fsS "http://${host}:${port}/healthz"
+fi
+
 test -x "${server_bin}" || fail "xrag-server not found at ${server_bin}"
 
 admin_user="${ADMIN_USERNAME:-}"
@@ -33,12 +41,6 @@ test -w "${data_dir}" || fail "XRAG data directory ${data_dir} is not writable"
 if [[ ! -f "${data_dir}/xrag.sqlite" ]]; then
   # init writes admin.key and prints its path; the key value stays out of logs.
   "${server_bin}" init --data "${data_dir}" --examples "${examples_dir}" >/dev/null
-fi
-
-if [[ "${1:-}" = "healthcheck" ]]; then
-  port="${listen##*:}"
-  host="${listen%%:*}"
-  exec curl -fsS "http://${host}:${port}/healthz"
 fi
 
 exec "${server_bin}" serve --data "${data_dir}" --listen "${listen}" --workers embedded
