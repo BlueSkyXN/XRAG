@@ -319,7 +319,7 @@ export default function ResearchPage() {
         </div>
         <Panel aria-label="过程与依据">
           <PanelHeader title="过程与依据" />
-          <PanelBody>{selected ? <TaskDetail id={selected} onChanged={() => void tasks.reload()} /> : <Empty title="选择一个任务查看过程与依据" className="px-0" />}</PanelBody>
+          <PanelBody>{selected ? <TaskDetail id={selected} onChanged={() => void tasks.reload()} /> : <Empty mark={false} title="选择一个任务查看过程与依据" className="px-0" />}</PanelBody>
         </Panel>
       </div>
     </Page>

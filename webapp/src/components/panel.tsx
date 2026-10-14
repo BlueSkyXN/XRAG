@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { cn } from '../lib/utils'
+import { PageMark } from './page'
 
 export function Panel({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   return <section className={cn('flex min-w-0 flex-col rounded-[10px] border border-line bg-panel', className)} {...props} />
@@ -26,10 +27,23 @@ export function PanelBody({ className, ...props }: React.HTMLAttributes<HTMLDivE
   return <div className={cn('p-4', className)} {...props} />
 }
 
-/** 空状态：说明现在是什么情况、下一步可以做什么。 */
-export function Empty({ title, children, action, className }: { title: React.ReactNode; children?: React.ReactNode; action?: React.ReactNode; className?: string }) {
+/** 空状态：说明现在是什么情况、下一步可以做什么。详情区里的占位提示传 mark={false}，不重复显示页面色块。 */
+export function Empty({
+  title,
+  children,
+  action,
+  mark = true,
+  className
+}: {
+  title: React.ReactNode
+  children?: React.ReactNode
+  action?: React.ReactNode
+  mark?: boolean
+  className?: string
+}) {
   return (
     <div className={cn('flex flex-col items-start gap-2 px-4 py-8 text-[13px]', className)}>
+      {mark && <PageMark className="mb-1" />}
       <p className="font-medium text-fg">{title}</p>
       {children && <div className="max-w-xl leading-relaxed text-dim">{children}</div>}
       {action && <div className="mt-1 flex flex-wrap gap-2">{action}</div>}

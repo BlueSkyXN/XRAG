@@ -11,20 +11,27 @@ type PageHeaderProps = {
   actions?: React.ReactNode
 }
 
-export function PageHeader({ title, desc, cli, actions }: PageHeaderProps) {
+/** 当前页面的色块图标，只在浅色多彩主题下显示。 */
+export function PageMark({ className }: { className?: string }) {
   const current = React.useContext(CurrentPageContext)
   const Icon = pageById[current].icon
   return (
+    <span
+      aria-hidden="true"
+      className={cn('page-mark shrink-0', className)}
+      data-icon-tone={current === 'sources' ? 'dark' : 'light'}
+      style={{ '--hue': `var(--hue-${current})` } as React.CSSProperties}
+    >
+      <Icon className="h-4 w-4" strokeWidth={1.7} />
+    </span>
+  )
+}
+
+export function PageHeader({ title, desc, cli, actions }: PageHeaderProps) {
+  return (
     <header className="flex flex-wrap items-start gap-x-6 gap-y-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <span
-          aria-hidden="true"
-          className="page-title-icon mt-0.5 shrink-0"
-          data-icon-tone={current === 'sources' ? 'dark' : 'light'}
-          style={{ '--hue': `var(--hue-${current})` } as React.CSSProperties}
-        >
-          <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
-        </span>
+        <PageMark />
         <div className="min-w-0 flex-1">
           <h1 className="text-[17px] font-semibold tracking-tight">{title}</h1>
           {desc && <p className="mt-0.5 max-w-3xl text-[13px] leading-relaxed text-dim">{desc}</p>}
