@@ -31,10 +31,10 @@ export function PageHeader({ title, desc, cli, actions }: PageHeaderProps) {
   return (
     <header className="flex flex-wrap items-start gap-x-6 gap-y-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <PageMark />
+        <PageMark className="mt-px" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-[17px] font-semibold tracking-tight">{title}</h1>
-          {desc && <p className="mt-0.5 max-w-3xl text-[13px] leading-relaxed text-dim">{desc}</p>}
+          <h1 className="text-[20px] leading-7 font-semibold tracking-tight">{title}</h1>
+          {desc && <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-dim">{desc}</p>}
           {cli && (
             <div className="mt-2 flex max-w-full items-center gap-2 font-mono text-[12px] text-faint">
               <span aria-hidden="true">❯</span>

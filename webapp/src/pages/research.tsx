@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useRef, useState } from 'react'
-import { Radio, RotateCcw, Square } from 'lucide-react'
+import { EyeOff, Radio, RotateCcw, Square } from 'lucide-react'
 import { api, Job } from '../lib/api'
 import { useData, useFeedback, usePolling, useRun } from '../lib/feedback'
 import { useSession } from '../lib/session'
@@ -100,11 +100,12 @@ function TaskDetail({ id, onChanged }: { id: string; onChanged: () => void }) {
         {r.stop_reason && <Badge>停止原因 {r.stop_reason}</Badge>}
         <span className="ml-auto flex flex-wrap gap-1.5">
           {streamRef.current ? (
-            <Button size="sm" onClick={() => stop()}>
+            <Button size="sm" variant="ghost" onClick={() => stop()}>
+              <EyeOff />
               停止查看
             </Button>
           ) : (
-            <Button size="sm" onClick={watch}>
+            <Button size="sm" variant="ghost" onClick={watch}>
               <Radio />
               实时查看
             </Button>

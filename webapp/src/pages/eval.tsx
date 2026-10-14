@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useMemo, useState } from 'react'
-import { Download, Play, Upload } from 'lucide-react'
+import { Download, FlaskConical, Play, Upload } from 'lucide-react'
 import { api, downloadJSON, EvalDraft, EvalReport, QueryRecord } from '../lib/api'
 import { useData, usePolling, useRun } from '../lib/feedback'
 import { useSession } from '../lib/session'
@@ -9,7 +9,7 @@ import { Button } from '../components/button'
 import { Chip } from '../components/chip'
 import { JsonBlock } from '../components/code'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogTitle } from '../components/dialog'
-import { Check, Field, Input, Select, Textarea } from '../components/input'
+import { Check, Field, FilePicker, Input, Select, Textarea } from '../components/input'
 import { Page, PageHeader } from '../components/page'
 import { Empty, ErrorLine, Loading, Note, Panel, PanelBody, PanelHeader } from '../components/panel'
 import { Table, Td, Th } from '../components/table'
@@ -192,23 +192,21 @@ function Compare() {
               </Select>
             </Field>
             <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="file"
-                accept=".json"
-                onChange={e => setFile(e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 text-xs text-dim file:mr-2 file:rounded-md file:border file:border-line-strong file:bg-raised file:px-2.5 file:py-1 file:text-fg"
-              />
+              <FilePicker accept=".json" file={file} onChange={setFile} className="min-w-56 flex-1" />
               <Button size="sm" disabled={!file} onClick={() => void importFile()}>
                 <Upload />
                 导入
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => void loadExample()}>
-                载入合成样例
-              </Button>
-              <Button size="sm" variant="ghost" disabled={!selectedSet} onClick={async () => selectedSet && downloadJSON(await api.evalSet(selectedSet.id), `xrag-eval-set-${selectedSet.id}.json`)}>
-                <Download />
-                导出
-              </Button>
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={() => void loadExample()}>
+                  <FlaskConical />
+                  载入合成样例
+                </Button>
+                <Button size="sm" variant="ghost" disabled={!selectedSet} onClick={async () => selectedSet && downloadJSON(await api.evalSet(selectedSet.id), `xrag-eval-set-${selectedSet.id}.json`)}>
+                  <Download />
+                  导出
+                </Button>
+              </div>
             </div>
             <Note>JSON 每题指定期望文件和可选原文锚点。没有期望不能冒充“应当无结果”。</Note>
           </PanelBody>

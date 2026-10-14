@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useState } from 'react'
-import { Download, Save } from 'lucide-react'
+import { Download, RotateCcw, Save } from 'lucide-react'
 import { api, download, downloadJSON, KbSettings, MaintenancePolicy, ProviderConfig, ProviderState } from '../lib/api'
 import { useData, useFeedback, useRun } from '../lib/feedback'
 import { navigate, useLocation } from '../lib/router'
@@ -173,8 +173,11 @@ function Providers() {
           <Save />
           保存配置
         </Button>
-        <Button onClick={() => void state.reload()}>重新载入</Button>
-        <Button onClick={() => downloadJSON(clean(), 'providers.references.json')}>
+        <Button variant="ghost" onClick={() => void state.reload()}>
+          <RotateCcw />
+          重新载入
+        </Button>
+        <Button variant="ghost" onClick={() => downloadJSON(clean(), 'providers.references.json')}>
           <Download />
           导出引用配置
         </Button>
