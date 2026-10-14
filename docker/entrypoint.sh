@@ -35,4 +35,10 @@ if [[ ! -f "${data_dir}/xrag.sqlite" ]]; then
   "${server_bin}" init --data "${data_dir}" --examples "${examples_dir}" >/dev/null
 fi
 
+if [[ "${1:-}" = "healthcheck" ]]; then
+  port="${listen##*:}"
+  host="${listen%%:*}"
+  exec curl -fsS "http://${host}:${port}/healthz"
+fi
+
 exec "${server_bin}" serve --data "${data_dir}" --listen "${listen}" --workers embedded

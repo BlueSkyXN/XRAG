@@ -29,6 +29,7 @@ COPY docker/entrypoint.sh /usr/local/bin/xrag-entrypoint
 RUN chmod 0755 /usr/local/bin/xrag-server /usr/local/bin/xrag /usr/local/bin/xrag-entrypoint
 USER xrag
 EXPOSE 8765
+# The entrypoint serves the same curl against the actual XRAG_LISTEN port.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=5 \
-    CMD ["curl", "-fsS", "http://127.0.0.1:8765/healthz"]
+    CMD ["/usr/local/bin/xrag-entrypoint", "healthcheck"]
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/xrag-entrypoint"]

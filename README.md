@@ -1,24 +1,3 @@
----
-title: XRAG
-emoji: 🔎
-colorFrom: green
-colorTo: gray
-sdk: docker
-app_port: 7860
-suggested_hardware: cpu-basic
-pinned: false
-license: gpl-3.0
----
-
-# 部署
-
-Protected Space：<https://huggingface.co/spaces/BlueSkyXN/XRAG>
-应用：<https://blueskyxn-xrag.hf.space>
-
-打开应用先看到登录页。用户名 `xrag`，密码在本机 `local/hfs-targets/production.env`。`/healthz` 是公开存活检查。私有 Bucket `BlueSkyXN/xrag-data` 挂在 `/data`，服务数据在 `/data/xrag`。
-
-登录页只有这一套用户名和密码。API Key 仍只留给本机 CLI 和 MCP。
-
 # XRAG 0.8.0-exp.1
 
 这是第一个正式实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
@@ -47,7 +26,9 @@ Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server�
 docker run -d --name xrag -p 8765:8765 -v xrag-data:/data ghcr.io/blueskyxn/xrag:<tag>
 ```
 
-镜像按提交打标签（`sha-<短SHA>`）、`main` 跟随主干、版本 tag 跟随发布；不提供 `latest`。数据落在卷的 `/data/xrag`，端口默认 `8765`，可用 `XRAG_LISTEN` 覆盖。
+镜像按提交打标签（`sha-<短SHA>`）、`main` 跟随主干、版本 tag 跟随发布；任何情况下都不打 `latest`。数据落在卷的 `/data/xrag`，端口默认 `8765`，可用 `XRAG_LISTEN` 覆盖。
+
+bind mount 宿主目录时（`-v /host/path:/data`），该目录需要对容器内用户（UID 1000）可写。
 
 两种登录方式，由环境变量决定：
 
