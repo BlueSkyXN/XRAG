@@ -7,6 +7,17 @@ bash -n deploy/hf/entrypoint.sh
 bash -n deploy/hf/render.sh
 bash -n deploy/hf/image-revision.sh
 bash -n scripts/prepare-bucket-prefix.sh
+
+# Offline tests for scripts whose real inputs only exist in CI:
+# buildx's --format JSON shapes per buildx source (see testdata comments).
+rev="deploy/hf/image-revision.sh"
+got="$(bash "$rev" --parse < deploy/hf/testdata/single-image.json)" || { echo "single-image fixture: parse failed"; exit 1; }
+[[ "$got" =~ ^[0-9a-f]{40}$ ]] || { echo "single-image fixture: bad revision $got"; exit 1; }
+got="$(bash "$rev" --parse < deploy/hf/testdata/platform-map.json)" || { echo "platform-map fixture: parse failed"; exit 1; }
+[[ "$got" =~ ^[0-9a-f]{40}$ ]] || { echo "platform-map fixture: bad revision $got"; exit 1; }
+if bash "$rev" --parse < deploy/hf/testdata/no-revision.json >/dev/null 2>&1; then
+  echo "no-revision fixture: must exit non-zero"; exit 1
+fi
 ROOT="${root}" python3 - <<'PY'
 import os, pathlib, tomllib
 root = pathlib.Path(os.environ["ROOT"])

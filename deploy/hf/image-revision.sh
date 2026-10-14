@@ -5,63 +5,59 @@ set -euo pipefail
 # Used by deploy-hf.yml and by the image workflow right after pushing, so the
 # exact read path a deploy depends on is exercised on every main build.
 #
-# Pushes made by build-push-action v6 are attested indexes; inspecting
-# .Image.Config.Labels only works on a plain image, so fall back to walking
-# the index manifests.
+# `buildx imagetools inspect --format '{{ json .Image }}'` yields either
+#   - the image object itself (architecture/os/config...; single-platform
+#     result, buildx source util/imagetools/printers.go ImagePrinter), or
+#   - a platform -> image mapping (the documented --format shape), where we
+#     take linux/amd64.
+# Key casing follows buildx source (lowercase name/manifest/image keys) and
+# the OCI image spec (lowercase config, capital Labels). Parsing is testable
+# offline via --parse (fixtures in deploy/hf/testdata/ mirror both shapes).
 
-ref="${1:?usage: image-revision.sh <image[@digest|:tag]>}"
-tool='docker'
-
-if ! command -v docker >/dev/null 2>&1; then
-  echo "image-revision.sh: docker (buildx) is required" >&2
-  exit 1
-fi
-
-label_of() {
-  # $1: json blob selected by the given --format
-  printf '%s' "$1" | python3 -c '
+parse_stdin() {
+  python3 -c '
 import json, sys
+
+def revision_of(image):
+    labels = ((image.get("config") or {}).get("Labels")) or {}
+    return labels.get("org.opencontainers.image.revision", "")
+
 try:
     v = json.load(sys.stdin)
 except Exception:
+    sys.exit(3)
+if not isinstance(v, dict):
+    sys.exit(3)
+if "config" in v:
+    rev = revision_of(v)
+else:
+    # platform -> image mapping: prefer linux/amd64, else any single entry
+    candidate = None
+    for platform, image in v.items():
+        if not isinstance(image, dict):
+            continue
+        if platform == "linux/amd64":
+            candidate = image
+            break
+        if candidate is None:
+            candidate = image
+    rev = revision_of(candidate) if candidate is not None else ""
+if not rev:
     sys.exit(1)
-labels = v.get("Image", {}).get("Config", {}).get("Labels") or v.get("Config", {}).get("Labels") or {}
-rev = labels.get("org.opencontainers.image.revision", "")
 print(rev)
 '
 }
 
-image_json="$($tool buildx imagetools inspect "$ref" --format '{{ json . }}')"
-revision="$(label_of "$image_json")"
-if [[ -n "$revision" ]]; then
-  echo "$revision"
-  exit 0
+if [[ "${1:-}" = "--parse" ]]; then
+  parse_stdin
+  exit $?
 fi
 
-# Index without a direct label: inspect every manifest it lists.
-mapfile -t children < <(printf '%s' "$image_json" | python3 -c '
-import json, sys
-v = json.load(sys.stdin)
-out = []
-for m in v.get("Manifest", {}).get("Manifests", []) or []:
-    digest = m.get("Digest", "")
-    if digest:
-        out.append(digest)
-    p = m.get("Platform") or {}
-    if p.get("os") == "unknown" or "attestation" in (m.get("Annotations") or {}):
-        continue
-for digest in out:
-    print(digest)
-')
-for digest in "${children[@]}"; do
-  child_json="$($tool buildx imagetools inspect "${ref%%@*}@${digest}" --format '{{ json . }}' 2>/dev/null || true)"
-  [[ -z "$child_json" ]] && continue
-  revision="$(label_of "$child_json")"
-  if [[ -n "$revision" ]]; then
-    echo "$revision"
-    exit 0
-  fi
-done
+ref="${1:?usage: image-revision.sh <image[@digest|:tag]> | --parse < json}"
 
-echo "image-revision.sh: no org.opencontainers.image.revision label on $ref" >&2
-exit 1
+if ! command -v docker >/dev/null 2>&1; then
+  echo "image-revision.sh: docker (buildx) is required" >&2
+  exit 2
+fi
+
+docker buildx imagetools inspect "$ref" --format '{{ json .Image }}' | parse_stdin

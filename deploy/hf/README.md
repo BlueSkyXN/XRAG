@@ -22,7 +22,7 @@ license: gpl-3.0
 部署和回退都通过 GitHub Actions 的 `deploy-hf` workflow 手动触发：
 
 - **更新**：在 [Actions 页面](https://github.com/BlueSkyXN/XRAG/actions/workflows/deploy-hf.yml) 对 `main` 运行 workflow，输入要部署的镜像 digest（`sha256:...`，来自 image workflow 的 job summary）。
-- **回退**：用上一个 digest 再运行一次。
+- **回退**：用上一个 digest 再运行一次。同一个 digest 重复部署不会改变 Space 内容（workflow 会以“Space commit did not change”失败）；只想重启 Space 时请在 HF 页面操作，不要重跑部署。
 
 workflow 会校验 digest 存在、渲染部署文件、上传到本 Space、等待重启，并以线上 `/healthz` 的 `commit` 与镜像的提交一致作为成功标准。
 

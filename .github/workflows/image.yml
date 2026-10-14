@@ -109,67 +109,13 @@ jobs:
           docker rm -f xrag-ci >/dev/null
           trap - EXIT
 
-      - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push the image (reuses the build cache; same binaries)
-        id: push
-        if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Verify the pushed digest reports this commit
-        if: github.event_name != 'pull_request'
-        run: |
-          set -euo pipefail
-          revision="$(bash deploy/hf/image-revision.sh "${IMAGE_NAME}@${{ steps.push.outputs.digest }}")"
-          echo "revision label: $revision"
-          test "$revision" = "$GITHUB_SHA"
-
-      - name: Write the digest to the job summary
-        if: github.event_name != 'pull_request'
-        run: |
-          {
-            echo "## Pushed image"
-            echo "- Image: \`${IMAGE_NAME}\`"
-            echo "- Digest: \`${{ steps.push.outputs.digest }}\`"
-            echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- Deploy with: run the \`deploy-hf\` workflow with \`image_digest=${{ steps.push.outputs.digest }}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  hf-layer:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build the image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          load: true
-          tags: xrag:ci
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Build the HF layer from the rendered Space files
         run: |
           set -euo pipefail
           bash deploy/hf/render.sh xrag:ci "$RUNNER_TEMP/hf" >/dev/null
-          docker build -t xrag-hf:ci "$RUNNER_TEMP/hf"
+          # The default (docker driver) builder sees the xrag:ci image loaded
+          # above; the docker-container builder from setup-buildx does not.
+          docker buildx build --builder default --load -t xrag-hf:ci "$RUNNER_TEMP/hf"
 
       - name: Smoke - mounted data, password login, Secure cookie behind the proxy
         run: |
@@ -241,3 +187,43 @@ jobs:
           test "$ok" = 1
           docker rm -f xrag-hf-ci >/dev/null
           trap - EXIT
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push the image (reuses the build cache; same binaries)
+        id: push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify the pushed digest reports this commit
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          revision="$(bash deploy/hf/image-revision.sh "${IMAGE_NAME}@${{ steps.push.outputs.digest }}")"
+          echo "revision label: $revision"
+          test "$revision" = "$GITHUB_SHA"
+
+      - name: Write the digest to the job summary
+        if: github.event_name != 'pull_request'
+        run: |
+          {
+            echo "## Pushed image"
+            echo "- Image: \`${IMAGE_NAME}\`"
+            echo "- Digest: \`${{ steps.push.outputs.digest }}\`"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Deploy with: run the \`deploy-hf\` workflow with \`image_digest=${{ steps.push.outputs.digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,10 @@
+{
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {
+    "Labels": {
+      "org.opencontainers.image.title": "XRAG"
+    }
+  },
+  "rootfs": { "type": "layers", "diff_ids": [] }
+}
