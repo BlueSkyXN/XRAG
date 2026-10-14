@@ -242,7 +242,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/healthz" {
-		write(w, 200, map[string]any{"status": "ok", "version": core.Version})
+		write(w, 200, map[string]any{"status": "ok", "version": core.Version, "commit": core.Commit})
 		return
 	}
 	if r.URL.Path == "/v1/login" && r.Method == "GET" {

@@ -1,29 +1,10 @@
----
-title: XRAG
-emoji: 🔎
-colorFrom: green
-colorTo: gray
-sdk: docker
-app_port: 7860
-suggested_hardware: cpu-basic
-pinned: false
-license: gpl-3.0
----
-
-# 部署
-
-Protected Space：<https://huggingface.co/spaces/BlueSkyXN/XRAG>
-应用：<https://blueskyxn-xrag.hf.space>
-
-打开应用先看到登录页。用户名 `xrag`，密码在本机 `local/hfs-targets/production.env`。`/healthz` 是公开存活检查。私有 Bucket `BlueSkyXN/xrag-data` 挂在 `/data`，服务数据在 `/data/xrag`。
-
-登录页只有这一套用户名和密码。API Key 仍只留给本机 CLI 和 MCP。
-
 # XRAG 0.8.0-exp.1
 
 这是第一个正式实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
 
 它不是生产发行。磁盘格式仍使用 Demo.9 的 `store_schema=demo9`，响应里的 `schema_version` 仍是 `0.7-demo`。不迁移更早的数据目录。真实 Qdrant、Neo4j、商业模型和 S3/WeKnora 现场联调仍未完成。
+
+线上实例：<https://blueskyxn-xrag.hf.space>（HF Space 部署方式见 [deploy/hf/](deploy/hf/README.md)）。
 
 ## 1. 从无模型版本开始
 
@@ -39,7 +20,24 @@ bash demo.sh
 
 Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
 
-## 2. 已有功能
+## 2. 用 Docker 运行
+
+```bash
+docker run -d --name xrag -p 8765:8765 -v xrag-data:/data ghcr.io/blueskyxn/xrag:<tag>
+```
+
+镜像按提交打标签（`sha-<短SHA>`）、`main` 跟随主干、版本 tag 跟随发布；任何情况下都不打 `latest`。数据落在卷的 `/data/xrag`，端口默认 `8765`，可用 `XRAG_LISTEN` 覆盖。
+
+bind mount 宿主目录时（`-v /host/path:/data`），该目录需要对容器内用户（UID 1000）可写。
+
+两种登录方式，由环境变量决定：
+
+- **API Key 模式**（默认，不设变量）：首次启动生成管理员 Key，浏览器打开 `http://127.0.0.1:8765` 后执行 `docker exec xrag cat /data/xrag/admin.key` 取出并输入。
+- **用户名密码模式**：设置 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`（两者必须同时设置，密码至少 16 位），浏览器直接用账号登录。
+
+`/healthz` 返回版本与所构建的提交 SHA。HF Space 上的部署见 [deploy/hf/](deploy/hf/README.md)。
+
+## 3. 已有功能
 
 | 领域 | 主要能力 |
 |---|---|
@@ -52,7 +50,7 @@ Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server�
 
 S3/WeKnora/Qdrant/Neo4j/模型的适配代码和受控测试不等于真实部署已通过。当前文本在SQLite/Qdrant，Neo4j存关系和块标识，不另存原文。
 
-## 3. Client
+## 4. Client
 
 ```bash
 ./bin/xrag profile add team --server http://127.0.0.1:8765 \
@@ -69,7 +67,7 @@ S3/WeKnora/Qdrant/Neo4j/模型的适配代码和受控测试不等于真实部�
 
 `+ask` 仍为固定检索组合；Research 根据结果选择下一步；Recipe执行明确的只读步骤。它们不自动发布知识或执行业务动作。续跑不会增加旧任务时间/预算，也不会自动重放未知收费调用。
 
-## 4. 模块分别运行
+## 5. 模块分别运行
 
 ```bash
 ./bin/xrag-server serve --data .xrag --workers off --web=false --mcp=false
@@ -78,7 +76,7 @@ S3/WeKnora/Qdrant/Neo4j/模型的适配代码和受控测试不等于真实部�
 
 没有Worker时任务排队，直接查询已有资料仍可用。Web/MCP/Worker开关独立。无需全部组件一起启动。
 
-## 5. MCP 接入
+## 6. MCP 接入
 
 ```bash
 ./bin/xrag mcp --profile team --toolsets core,graph,files,utility,research
@@ -93,7 +91,7 @@ python3 scripts/mcp_probe.py --url http://127.0.0.1:8765/mcp \
   --key-file .xrag/admin.key --report /tmp/mcp-probe.json
 ```
 
-## 6. 本轮文档
+## 7. 本轮文档
 
 - [Demo.9 操作说明](docs/DEMO9_OPERATIONS.md)：协议、OAuth角色、任务状态和续跑规则。
 - [66项功能表](docs/FEATURE_MATRIX.md)、[当前范围](docs/STATUS.md)、[阶段完成情况](docs/COMPLETION.md)。
@@ -101,11 +99,11 @@ python3 scripts/mcp_probe.py --url http://127.0.0.1:8765/mcp \
 - [数据恢复](docs/DATA_RECOVERY.md)、[历史整理](docs/HISTORY_MAINTENANCE.md)、[Demo.8投影恢复](docs/DEMO8_OPERATIONS.md)。
 - [实际测试报告](checks/REPORT.md)。历史批次文档仅说明当时增量，以当前STATUS和新操作说明为准。
 
-## 7. 还没有完成的内容
+## 8. 还没有完成的内容
 
 真实 Qdrant+Neo4j+模型+direct 联合运行、真实 S3/WeKnora/商业 IdP/第三方 Agent、真实业务效果；复杂大库下推/实际容量、孤儿产物发现、供应商级联合快照；全平台 Server/Docker/真实代理与浏览器部署。不能用几百项本机/受控测试替代这些工作。
 
-## 8. 开发检查
+## 9. 开发检查
 
 ```bash
 make build && make test && make race && make vet
@@ -120,6 +118,6 @@ python3 scripts/package_clients.py --out /tmp/xrag-release
 
 `--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行。
 
-## 9. 许可与数据
+## 10. 许可与数据
 
 见 [LICENSE_NOTICE.md](LICENSE_NOTICE.md)。本次不替用户决定许可证，不修改本机仓库。包里没有模型权重、字体、运行数据或真实凭据。
