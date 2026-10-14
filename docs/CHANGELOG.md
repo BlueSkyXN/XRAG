@@ -9,6 +9,9 @@
 - `+ask` 的结果项新增 `routes`，列出找到该结果的检索路线（`keyword`、`semantic`、`graph`、`external`）；RRF 融合时取并集，翻页读取保存结果时保留。单一路线动作不加这个字段。
 - `GET /v1/jobs` 支持 `kb` 与 `kind`（逗号分隔）筛选。
 
+## 部署
+- 合入 `main` 不再自动更新 HF Space。需要部署时，在 GitHub Actions 里对 `main` 手动运行 `ci` workflow；测试和镜像检查通过后才会上传。
+
 ## 检查
 - 新增 `scripts/smoke_workbench.py`（HTTP 契约；`--browser` 驱动工作台页面）与共用的 `scripts/workbench_browser.py`；`smoke_demo9.py --browser` 改为检查新工作台。demo.8 及更早批次脚本的 `--browser` 针对已移除的经典界面，不再维护。
 
