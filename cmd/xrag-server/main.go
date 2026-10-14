@@ -294,6 +294,9 @@ func run() error {
 			return fmt.Errorf("XRAG_EDGE_LOGIN requires ADMIN_USERNAME and ADMIN_PASSWORD")
 		}
 	}
+	if os.Getenv("XRAG_TRUST_FORWARDED_PROTO") == "1" {
+		app.TrustForwardedProto = true
+	}
 	srv := &http.Server{Addr: *listen, Handler: app, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 120 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	errc := make(chan error, 1)
 	go func() {

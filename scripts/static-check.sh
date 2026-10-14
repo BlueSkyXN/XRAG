@@ -3,6 +3,7 @@ set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${root}"
 bash -n docker/entrypoint.sh
+bash -n deploy/hf/entrypoint.sh
 bash -n scripts/prepare-bucket-prefix.sh
 ROOT="${root}" python3 - <<'PY'
 import os, pathlib, tomllib
@@ -27,6 +28,15 @@ for snippet in ("ADMIN_PASSWORD", "XRAG_EDGE_LOGIN"):
         raise SystemExit(f"docker/entrypoint.sh is missing: {snippet}")
 if "nginx" in dockerfile or "htpasswd" in entrypoint:
     raise SystemExit("the image must not ship nginx; browser login lives in the app")
+hf_entrypoint = (root / "deploy/hf/entrypoint.sh").read_text(encoding="utf-8")
+for snippet in ("mountpoint -q /data", "XRAG_TRUST_FORWARDED_PROTO", "exec /usr/local/bin/xrag-entrypoint"):
+    if snippet not in hf_entrypoint:
+        raise SystemExit(f"deploy/hf/entrypoint.sh is missing: {snippet}")
+if "must be 1000" not in hf_entrypoint:
+    raise SystemExit("HF entrypoint must check the runtime UID")
+hf_dockerfile = (root / "deploy/hf/Dockerfile").read_text(encoding="utf-8")
+if "ARG XRAG_IMAGE=" not in hf_dockerfile or "${XRAG_IMAGE}" not in hf_dockerfile:
+    raise SystemExit("deploy/hf/Dockerfile must build FROM the XRAG image via ARG")
 web = root / "internal/server/web"
 if 'id="root"' not in (web / "index.html").read_text(encoding="utf-8"):
     raise SystemExit("internal/server/web must hold the built workbench; run make web")
@@ -35,5 +45,5 @@ if not any('password-form' in p.read_text(encoding="utf-8") for p in (web / "ass
 print("static contract: PASS")
 PY
 if [[ -d .git ]]; then git diff --check; fi
-if command -v shellcheck >/dev/null 2>&1; then shellcheck docker/entrypoint.sh scripts/static-check.sh scripts/prepare-bucket-prefix.sh; fi
+if command -v shellcheck >/dev/null 2>&1; then shellcheck docker/entrypoint.sh deploy/hf/entrypoint.sh scripts/static-check.sh scripts/prepare-bucket-prefix.sh; fi
 printf 'static checks: PASS\n'

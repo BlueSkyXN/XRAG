@@ -1,0 +1,112 @@
+name: deploy-hf
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "GHCR image digest to deploy (sha256:...)"
+        required: true
+      space:
+        description: "Target HF Space (owner/name)"
+        required: true
+        default: BlueSkyXN/XRAG
+
+concurrency:
+  group: xrag-deploy-hf-${{ inputs.space }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/blueskyxn/xrag
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Validate the digest input
+        run: |
+          set -euo pipefail
+          test -n "$HF_TOKEN"
+          digest="${{ inputs.image_digest }}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "image_digest must match sha256:<64 hex chars>"; exit 1; }
+          echo "DIGEST=$digest" >> "$GITHUB_ENV"
+
+      - name: Read the commit from the image
+        run: |
+          set -euo pipefail
+          revision="$(docker buildx imagetools inspect "${IMAGE}@${DIGEST}" --format '{{ json .Image.Config.Labels }}' \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("org.opencontainers.image.revision", ""))')"
+          test -n "$revision" || { echo "image has no org.opencontainers.image.revision label"; exit 1; }
+          echo "REVISION=$revision" >> "$GITHUB_ENV"
+
+      - name: Render deploy/hf with the pinned digest
+        run: |
+          set -euo pipefail
+          render="$(mktemp -d)"
+          cp deploy/hf/README.md deploy/hf/Dockerfile deploy/hf/entrypoint.sh "$render/"
+          sed -i "s|^ARG XRAG_IMAGE=.*|ARG XRAG_IMAGE=${IMAGE}@${DIGEST}|" "$render/Dockerfile"
+          grep -q "@${DIGEST}" "$render/Dockerfile" || { echo "failed to pin the digest"; exit 1; }
+          echo "RENDER_DIR=$render" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --disable-pip-version-check "huggingface_hub[cli]"
+
+      - name: Record the Space commit before the upload
+        run: |
+          set -euo pipefail
+          before="$(hf spaces info "${{ inputs.space }}" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")')"
+          echo "SPACE_BEFORE=$before" >> "$GITHUB_ENV"
+
+      - name: Upload the rendered files to the Space
+        run: |
+          set -euo pipefail
+          hf upload "${{ inputs.space }}" "$RENDER_DIR" \
+            --repo-type space \
+            --commit-message "Deploy ${IMAGE}@${DIGEST} (${REVISION})" \
+            --delete "*"
+
+      - name: Wait for the Space to rebuild
+        run: hf spaces wait "${{ inputs.space }}" --timeout 15m
+
+      - name: Verify the live commit matches the image
+        run: |
+          set -euo pipefail
+          host="${{ inputs.space }}"
+          owner="${host%%/*}"
+          name="${host##*/}"
+          url="https://${owner,,}-${name,,}.hf.space/healthz"
+          ok=0
+          for _ in $(seq 1 30); do
+            if curl -fsS --max-time 5 "$url" | grep -q "\"commit\":\"${REVISION}\""; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          if [ "$ok" != 1 ]; then
+            curl -fsS --max-time 5 "$url" || true
+            echo "live /healthz does not report ${REVISION}"
+            exit 1
+          fi
+
+      - name: Write the deploy summary
+        if: always()
+        run: |
+          set -euo pipefail
+          after="$(hf spaces info "${{ inputs.space }}" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha") or "")' || echo unknown)"
+          {
+            echo "## HF deploy"
+            echo "- Space: \`${{ inputs.space }}\`"
+            echo "- Image digest: \`${DIGEST}\`"
+            echo "- Commit: \`${REVISION}\`"
+            echo "- Space commit before: \`${SPACE_BEFORE:-unknown}\`"
+            echo "- Space commit after: \`${after}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

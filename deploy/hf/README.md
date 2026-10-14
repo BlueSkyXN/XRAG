@@ -33,3 +33,12 @@ workflow 会校验 digest 存在、渲染 `deploy/hf/`、上传到本 Space、�
 - 登录密码由 Space secret 提供（`ADMIN_USERNAME`、`ADMIN_PASSWORD`），不写入仓库。
 - 数据卷挂在 `/data`，服务数据在 `/data/xrag`，与镜像的默认路径一致。
 - `/healthz` 是公开存活检查，返回版本和提交 SHA。
+- Space 层入口（`entrypoint.sh`）检查 UID 1000 和 `/data` 挂载，按 HF 的 `PORT` 环境变量设置监听地址，并开启 `XRAG_TRUST_FORWARDED_PROTO`（HF 边缘终止 TLS，会话 cookie 由此带 `Secure`）。
+
+## 仓库文件与 Space 的对应
+
+| 仓库文件 | Space 里的角色 |
+| --- | --- |
+| `deploy/hf/README.md` | Space README（front matter 决定 `app_port: 8765` 等） |
+| `deploy/hf/Dockerfile` | Space 构建文件（`FROM` GHCR 镜像，按 digest 固定） |
+| `deploy/hf/entrypoint.sh` | HF 平台检查 + 转发到镜像内通用入口 |

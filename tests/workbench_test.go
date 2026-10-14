@@ -123,6 +123,44 @@ func TestHealthzReportsCommit(t *testing.T) {
 	}
 }
 
+func TestSessionCookieSecureBehindTrustedProxy(t *testing.T) {
+	h := productSetup(t)
+	h.app.EdgeUser = "xrag"
+	h.app.EdgePass = "correct-password"
+
+	login := func(forwarded string) []*http.Cookie {
+		req, e := http.NewRequest("POST", h.url+"/v1/session", strings.NewReader(`{"username":"xrag","password":"correct-password"}`))
+		must(t, e)
+		req.Header.Set("Content-Type", "application/json")
+		if forwarded != "" {
+			req.Header.Set("X-Forwarded-Proto", forwarded)
+		}
+		res, e := http.DefaultClient.Do(req)
+		must(t, e)
+		res.Body.Close()
+		if res.StatusCode != 200 || len(res.Cookies()) != 1 {
+			t.Fatalf("login: %d %d cookies", res.StatusCode, len(res.Cookies()))
+		}
+		return res.Cookies()
+	}
+
+	// Off by default: a forwarded header must not mark the cookie Secure.
+	h.app.TrustForwardedProto = false
+	if c := login("https")[0]; c.Secure {
+		t.Fatal("cookie must not be Secure when the proxy is not trusted")
+	}
+	h.app.TrustForwardedProto = true
+	if c := login("https")[0]; !c.Secure {
+		t.Fatal("cookie must be Secure when the trusted proxy says https")
+	}
+	if c := login("http")[0]; c.Secure {
+		t.Fatal("cookie must not be Secure when the trusted proxy says http")
+	}
+	if c := login("")[0]; c.Secure {
+		t.Fatal("cookie must not be Secure without a forwarded header")
+	}
+}
+
 func TestWorkbenchPagesFallBackToIndex(t *testing.T) {
 	h := productSetup(t)
 	c, home := h.request(t, "GET", "/", nil, "")
