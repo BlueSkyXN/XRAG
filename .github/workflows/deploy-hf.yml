@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       image_digest:
-        description: "GHCR image digest to deploy (sha256:...)"
-        required: true
+        description: "GHCR image digest (sha256:...). Empty = deploy whatever :main currently points at."
+        required: false
       space:
         description: "Target HF Space (owner/name)"
         required: true
@@ -31,11 +31,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Validate the inputs
+      - name: Validate the inputs and resolve the image reference
         run: |
           set -euo pipefail
-          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "image_digest must match sha256:<64 hex chars>"; exit 1; }
+          if [[ -n "$DIGEST" ]]; then
+            [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "image_digest must match sha256:<64 hex chars>"; exit 1; }
+          fi
           [[ "$SPACE" =~ ^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$ ]] || { echo "space must be owner/name"; exit 1; }
+          # Empty digest = follow :main: pin the digest it resolves to right
+          # now, so the revision check below still verifies a known image.
+          if [[ -z "$DIGEST" ]]; then
+            # .Manifest.Digest is the digest the tag resolves to (works for
+            # manifest lists too) - docker docs, buildx imagetools inspect.
+            DIGEST="$(docker buildx imagetools inspect "${IMAGE}:main" --format '{{ .Manifest.Digest }}')"
+            test -n "$DIGEST" || { echo "cannot resolve ${IMAGE}:main to a digest; has main been pushed?"; exit 1; }
+            echo "resolved ${IMAGE}:main -> ${DIGEST}"
+          fi
+          echo "DIGEST=$DIGEST" >> "$GITHUB_ENV"
 
       - name: Check the image package is public
         env:

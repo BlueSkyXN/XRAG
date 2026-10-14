@@ -1,0 +1,52 @@
+{
+  "kb": "demo",
+  "name": "Demo 合成资料回归",
+  "cases": [
+    {
+      "id": "code-exact",
+      "question": "E203",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "E203 表示"
+        }
+      ]
+    },
+    {
+      "id": "log-loss",
+      "question": "日志丢失",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "日志丢失可能"
+        }
+      ]
+    },
+    {
+      "id": "component",
+      "question": "组件B",
+      "expected": [
+        {
+          "path": "manual/04-F2.md",
+          "anchor": "使用"
+        }
+      ]
+    },
+    {
+      "id": "procedure",
+      "question": "沉淀",
+      "expected": [
+        {
+          "path": "manual/05-procedure.md",
+          "anchor": "知识草稿"
+        }
+      ]
+    },
+    {
+      "id": "negative",
+      "question": "ZXQ999999NONEXIST",
+      "expected_empty": true,
+      "expected": []
+    }
+  ]
+}
