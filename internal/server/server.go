@@ -415,11 +415,11 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				plugins[id] = map[string]any{"kind": spec.Kind, "version": spec.Version, "protocol": spec.Protocol}
 			}
 		}
-		write(w, 200, map[string]any{"plugins": plugins, "version": core.Version, "origin_id": a.Store.Origin, "identity": p, "edge_login": a.EdgeUser != "", "workers": a.Workers, "storage": "SQLite / same-machine Demo", "keyword": "FTS5 BM25 + character/bigram fallback", "graph_backend": func() string {
+		write(w, 200, map[string]any{"plugins": plugins, "version": core.Version, "origin_id": a.Store.Origin, "identity": p, "edge_login": a.EdgeUser != "", "workers": a.Workers, "storage": "SQLite (single machine)", "keyword": "FTS5 BM25 + character/bigram fallback", "graph_backend": func() string {
 			if a.Builder.Config.Neo4j != nil {
 				return "neo4j-query-api"
 			}
-			return "SQLite explicit relation Demo"
+			return "SQLite explicit relations"
 		}(), "embedding": a.Builder.Config.Embedding != nil, "qdrant": a.Builder.Config.Qdrant != nil, "wiki": a.Builder.Config.Chat != nil, "rerank": a.Builder.Config.Rerank != nil, "agent": true, "investigation": map[string]any{"runtime": true, "planner_requires_chat": true, "recipe": true, "resume": "explicit_checkpoint", "events": "current_snapshot_sse"}, "mcp": map[string]any{"enabled": !a.DisableMCP, "versions": mcp.Versions, "http_post": []string{"json", "sse"}, "resources": true, "prompts": true, "oauth_resource_server": a.MCPAuth != nil, "server_initiated_stream": false}, "git_source": true, "source_polling": true, "signed_hook": "xrag-hmac-v1", "evaluation": true, "model_policy": "No mock model is enabled in the application.", "by_kb": byKB})
 		return
 	}
@@ -849,7 +849,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.fail(w, core.Err("NOT_FOUND", "route not implemented in Demo", 404))
+	a.fail(w, core.Err("NOT_FOUND", "route not found", 404))
 }
 func (a *App) upload(ctx context.Context, kb, p, text string) error {
 	if _, e := core.CleanPath(p); e != nil {

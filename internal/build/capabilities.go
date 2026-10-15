@@ -32,7 +32,7 @@ func (b *Builder) Capabilities(ctx context.Context, kb string) (map[string]any, 
 		return nil, e
 	}
 	c := bb.Config
-	graph := "SQLite explicit/support graph"
+	graph := "SQLite explicit relations"
 	if c.Neo4j != nil {
 		graph = "neo4j-query-api"
 	}

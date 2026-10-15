@@ -17,8 +17,8 @@ secrets = ["ADMIN_PASSWORD"]
 variables = ["ADMIN_USERNAME"]
 
 deviations = [
-  "product = This Space runs the XRAG server itself. It is not a wrapper around an upstream image.",
-  "persistence = SQLite, content cache, and uploaded Markdown live under /data/xrag on a private bucket. Container-local Nginx state stays in /tmp.",
+  "product = This Space runs XRAG's own published image (ghcr.io/blueskyxn/xrag) through a thin wrapper rendered from deploy/hf/; it is not a wrapper around a third-party upstream image.",
+  "persistence = SQLite, content cache, and uploaded Markdown live under /data/xrag on a private bucket.",
   "edge-auth = The browser login is the application page, with one username and password. /healthz is public liveness and does not read the database.",
-  "scope = 0.8.0-exp.1 uses the Demo.9 implementation as its baseline. Real Qdrant, Neo4j, commercial models, and live S3/WeKnora are not bundled.",
+  "scope = Uses the Demo.9 implementation as its baseline. Real Qdrant, Neo4j, commercial models, and live S3/WeKnora are not bundled.",
 ]
