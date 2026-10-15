@@ -113,7 +113,7 @@ export default function GraphPage() {
     <Page>
       <PageHeader
         title="关系"
-        desc="沿关系查看上下文。每条边都带出处；选定范围同样约束关系的支撑块。图里有路径，不等于证明了因果。"
+        desc="沿关系查看上下文。每条边都带出处；选定范围同样约束关系的支撑块。"
         cli={spec ? invocation(spec, action === 'graph.path' ? { kbs: [kb], from_id: name || '起点', to_id: to || '终点', direction, max_hops: hops } : { kbs: [kb], name: name || '实体', ...(action === 'graph.neighbors' ? { direction, hops } : {}) }, profile).cli : undefined}
       />
 
@@ -181,7 +181,7 @@ export default function GraphPage() {
             )}
             <Panel>
               <PanelHeader title={`${response.returned} 项`} meta={<span>{actionInfo[action]}</span>} />
-              {items.length === 0 && <Empty title="当前范围内没有找到">范围、方向和展开深度都会影响结果。没有找到不表示全图或现实中一定不存在。</Empty>}
+              {items.length === 0 && <Empty title="当前范围内没有找到">调整方向或展开深度，或清除范围后再查。</Empty>}
               <ul>
                 {items.map((item, i) => (
                   <li key={item.ref ?? i} className="border-b px-4 py-3">

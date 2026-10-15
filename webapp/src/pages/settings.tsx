@@ -154,7 +154,7 @@ function Providers() {
   return (
     <form onSubmit={save} className="space-y-3">
       <p className={`rounded-md border px-3 py-2 text-[13px] ${s.restart_required ? 'border-warn/30 bg-warn/[0.06] text-warn' : 'border-line text-fg-soft'}`}>{banner}</p>
-      <Note>只保存 env:/file: 引用，不在这里填真实密钥；引用在 Server 或 Worker 所在机器上解析。保存成功不代表外部服务已经测试通过。</Note>
+      <Note>只保存 env:/file: 引用，不在这里填真实密钥；引用在 Server 或 Worker 所在机器上解析。</Note>
       <div className="grid gap-3 xl:grid-cols-2">
         {providerSpecs.map(p => {
           const on = Boolean(cfg[p.id])
@@ -424,7 +424,7 @@ function KbConfig() {
                     <Input type="number" min={0} value={f.day_tokens} onChange={set('day_tokens')} />
                   </Field>
                 </div>
-                <Note>发送前按请求字节和输出上限保守预留，收到 usage 后结算；响应未知时保留预留额。预留不是精确分词，也不是供应商账单。</Note>
+                <Note>发送前按请求字节和输出上限保守预留，收到 usage 后结算；响应未知时保留预留额。</Note>
                 <Button type="submit">
                   <Save />
                   保存预算
@@ -741,7 +741,7 @@ function Maintenance() {
       </div>
       <Panel>
         <PanelHeader title="最近维护任务" actions={<Button size="sm" variant="ghost" onClick={() => void runs.reload()}><RefreshCw />刷新</Button>} />
-        {runs.data && runs.data.items.length === 0 && <Empty title="还没有维护任务">默认不会自动删除或备份。</Empty>}
+        {runs.data && runs.data.items.length === 0 && <Empty title="还没有维护任务" />}
         {runs.data && runs.data.items.length > 0 && (
           <Table>
             <thead>

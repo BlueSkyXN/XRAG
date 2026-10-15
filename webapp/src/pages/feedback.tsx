@@ -171,7 +171,7 @@ export default function FeedbackPage() {
               <Field label="原始用户问题">
                 <Textarea required maxLength={2000} rows={3} value={question} onChange={e => setQuestion(e.target.value)} />
               </Field>
-              <Note>一条反馈只评价一个结果，不代表整个问题的标准答案。问题保存为待确认，期望资料要在“评测”页确认后才能进入题集。</Note>
+              <Note>期望资料要在“评测”页确认后才能进入题集。</Note>
             </DialogBody>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setCaseFor(null)}>

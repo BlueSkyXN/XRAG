@@ -352,7 +352,7 @@ function Drafts() {
       <Panel>
         <PanelHeader title="从反馈整理的测试问题" meta={<span>先确认期望资料，再发布为独立题集</span>} />
         {drafts.loading && !drafts.data && <Loading />}
-        {drafts.data && items.length === 0 && <Empty title="还没有待确认的问题">在“反馈”页对一条反馈点“整理成测试问题”。系统不会自动生成标准答案。</Empty>}
+        {drafts.data && items.length === 0 && <Empty title="还没有待确认的问题">在“反馈”页对一条反馈点“整理成测试问题”。</Empty>}
         <ul>
           {items.map(d => (
             <li key={d.id} className="flex items-start gap-3 border-b px-4 py-3">

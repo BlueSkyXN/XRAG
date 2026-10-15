@@ -191,7 +191,7 @@ function SyncTargets() {
           </Button>
         }
       />
-      {targets.data && targets.data.items.length === 0 && <Empty title="还没有写回目标">登记服务器目录、本机 Git 专用分支或 S3 后，才能把已发布条目写回。系统不会自动写回原来源。</Empty>}
+      {targets.data && targets.data.items.length === 0 && <Empty title="还没有写回目标">登记服务器目录、本机 Git 专用分支或 S3 后，才能把已发布条目写回。</Empty>}
       {targets.data && targets.data.items.length > 0 && (
         <Table>
           <thead>
@@ -491,7 +491,7 @@ export default function KnowledgePage() {
               <Field label="主题">
                 <Input required value={topic} onChange={e => setTopic(e.target.value)} placeholder="例如：日志" />
               </Field>
-              <Note>以非 Wiki 的原始资料为依据，调用已配置的 Chat 模型生成草稿，费用计入本库预算。不会自动发布。</Note>
+              <Note>以非 Wiki 的原始资料为依据，调用已配置的 Chat 模型生成草稿，费用计入本库预算；发布需要你在草稿页确认。</Note>
             </DialogBody>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setWikiOpen(false)}>

@@ -505,10 +505,10 @@ export default function SearchPage() {
                   : undefined
               }
             >
-              结果保留文件路径、行号和版本，可以直接对照原文核查。按 <Kbd>/</Kbd> 回到检索框，<Kbd>⌘K</Kbd> 查看全部动作。
+              每条结果带文件路径、行号和版本。按 <Kbd>/</Kbd> 回到检索框，<Kbd>⌘K</Kbd> 查看全部动作。
             </Empty>
           )}
-          {response && items.length === 0 && (emptyKb ? <EmptyKb kb={kb} /> : <Empty title="当前范围内没有命中">没有命中不代表现实中不存在。可以换用文件中的完整编号、放宽字段筛选，或清除范围后再查。</Empty>)}
+          {response && items.length === 0 && (emptyKb ? <EmptyKb kb={kb} /> : <Empty mark title="当前范围内没有命中">换用文件中的完整编号，或清除范围后再查。</Empty>)}
           {items.length > 0 && (
             <ol ref={listRef} onKeyDown={onListKey} aria-label="结果列表">
               {items.map((item, index) => (
@@ -538,7 +538,7 @@ export default function SearchPage() {
                 下一页
                 <ChevronRight />
               </Button>
-              <span>翻页读取已保存的结果，不重新检索。</span>
+              <span>读取已保存的结果。</span>
             </div>
           )}
           {response && <Completeness response={response} className="px-3.5 py-2.5" />}
@@ -562,7 +562,7 @@ export default function SearchPage() {
             <TabsContent value="call" className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3">
               {calls ? (
                 <>
-                  <p className="text-xs leading-relaxed text-dim">这次检索的等价调用。网页、CLI、HTTP 和 MCP 走同一组接口，结果一致。</p>
+                  <p className="text-xs leading-relaxed text-dim">这次检索的等价调用，网页、CLI、HTTP 和 MCP 走同一组接口。</p>
                   <CodeBlock label="CLI" meta={`xrag Client · profile ${profile}`} code={calls.cli} />
                   <CodeBlock label="HTTP" meta={submittedSpec?.path} code={calls.http} />
                   <CodeBlock label="MCP" meta={`tools/call · ${submittedSpec?.tool} · ${submittedSpec?.group} 工具组`} code={calls.mcp} />
