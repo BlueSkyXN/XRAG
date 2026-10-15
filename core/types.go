@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const Version = "0.8.0-exp.1"
+const Version = "0.9.0"
 
 // Commit is the source revision the binary was built from. It stays "dev"
 // unless the build injects it with -ldflags -X.

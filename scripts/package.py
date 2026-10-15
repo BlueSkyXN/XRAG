@@ -4,7 +4,7 @@ Usage: python3 scripts/package.py --out /tmp/releases
 """
 from pathlib import Path
 import argparse, tarfile, zipfile
-ROOT=Path(__file__).resolve().parents[1];NAME='xrag-demo-0.8.0-exp.1'
+ROOT=Path(__file__).resolve().parents[1];NAME='xrag-demo-0.9.0'
 def eligible(p):
  rel=p.relative_to(ROOT)
  return p.is_file() and not p.is_symlink() and not any(x in {'.git','.xrag-demo','__pycache__'} for x in rel.parts) and p.suffix not in {'.pyc','.key','.sqlite'} and not p.name.endswith(('.sqlite-wal','.sqlite-shm')) and rel.as_posix() not in {'providers.json','client.direct.json'}

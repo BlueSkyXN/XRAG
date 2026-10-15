@@ -1,4 +1,4 @@
-# 未发版（0.8.0-exp.1 之后）
+# 0.9.0（2026-10-15）
 
 ## 构建
 - 前端产物不再提交：`make web` 写入 `internal/server/web/dist/`（已忽略），Docker 镜像内加 Node 阶段构建。裸 `go build` 的二进制没有界面（`/` 返回 503 并提示 `make web`），API/CLI/MCP 不受影响；`go test` 用注入的假产物，不依赖 Node。

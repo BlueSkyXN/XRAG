@@ -53,7 +53,7 @@ def main(browser=False):
      if api('/healthz')[0]==200:break
     except Exception:pass
     time.sleep(.1)
-   ck('fresh server has current version',api('/healthz')[1]['version']=='0.8.0-exp.1')
+   ck('fresh server has current version',api('/healthz')[1]['version']=='0.9.0')
    ck('fresh demo corpus builds without models',wait(post('/v1/kbs/demo/builds',{}))['state']=='succeeded')
    old=post('/v1/search/keyword',{'kbs':['demo'],'q':'分页样本记录','limit':10});ck('exact total still separated from page',old['total']['value']==37 and len(old['items'])==10)
    ck('aggregate reference now returned',bool(old.get('summary_ref')))
