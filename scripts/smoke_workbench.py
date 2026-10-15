@@ -107,6 +107,20 @@ def browser_checks(base, key, op):
         login_with_key(p, key)
         ck('key login opens the workbench', '/search' in p.url, transport, 'browser')
 
+        # 唯一的永久管理员 Key 停用失败时，toast 同时给出中文说明和错误码。
+        keys = op('/v1/keys')['items']
+        admins = [k for k in keys if k['role'] == 'admin' and not k['disabled'] and k['expires_at'] == 0]
+        assert len(admins) == 1
+        go(p, origin, '/access')
+        p.get_by_role('button', name=admins[0]['name'] + ' 的操作', exact=True).click()
+        p.get_by_role('menuitem', name='停用', exact=True).click()
+        with p.expect_response(lambda r: '/v1/keys/' in r.url and r.request.method == 'DELETE') as disabled:
+            p.get_by_role('dialog').get_by_role('button', name='停用', exact=True).click()
+        toast = p.get_by_role('status').filter(has_text='LAST_ADMIN')
+        toast.wait_for(timeout=10000)
+        ck('last permanent admin stays active with a Chinese error toast', disabled.value.status == 409 and any('\u4e00' <= c <= '\u9fff' for c in toast.inner_text()) and not op('/v1/keys')['items'][0]['disabled'], None, 'browser')
+        p.screenshot(path=str(CHECKS / 'last-admin.png'))
+
         # 检索：结果、路线、执行过程、原文行窗口、等价调用
         go(p, origin, '/search')
         p.get_by_label('查询', exact=True).fill('E203')
