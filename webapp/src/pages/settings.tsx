@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useState } from 'react'
-import { Download, Save } from 'lucide-react'
+import { Download, RefreshCw, Save } from 'lucide-react'
 import { api, download, downloadJSON, KbSettings, MaintenancePolicy, ProviderConfig, ProviderState } from '../lib/api'
 import { useData, useFeedback, useRun } from '../lib/feedback'
 import { navigate, useLocation } from '../lib/router'
@@ -173,8 +173,11 @@ function Providers() {
           <Save />
           保存配置
         </Button>
-        <Button onClick={() => void state.reload()}>重新载入</Button>
-        <Button onClick={() => downloadJSON(clean(), 'providers.references.json')}>
+        <Button variant="ghost" onClick={() => void state.reload()}>
+          <RefreshCw />
+          重新载入
+        </Button>
+        <Button variant="ghost" onClick={() => downloadJSON(clean(), 'providers.references.json')}>
           <Download />
           导出引用配置
         </Button>
@@ -445,7 +448,7 @@ function KbConfig() {
             </PanelBody>
           </Panel>
           <Panel>
-            <PanelHeader title="模型调用与用量" actions={<Button size="sm" variant="ghost" onClick={() => void usage.reload()}>刷新</Button>} />
+            <PanelHeader title="模型调用与用量" actions={<Button size="sm" variant="ghost" onClick={() => void usage.reload()}><RefreshCw />刷新</Button>} />
             {usage.data && usage.data.totals.length === 0 && <Empty title="还没有模型调用记录" />}
             {usage.data && usage.data.totals.length > 0 && (
               <Table>
@@ -687,7 +690,7 @@ function Maintenance() {
         </Panel>
       </div>
       <Panel>
-        <PanelHeader title="最近维护任务" actions={<Button size="sm" variant="ghost" onClick={() => void runs.reload()}>刷新</Button>} />
+        <PanelHeader title="最近维护任务" actions={<Button size="sm" variant="ghost" onClick={() => void runs.reload()}><RefreshCw />刷新</Button>} />
         {runs.data && runs.data.items.length === 0 && <Empty title="还没有维护任务">默认不会自动删除或备份。</Empty>}
         {runs.data && runs.data.items.length > 0 && (
           <Table>

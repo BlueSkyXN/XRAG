@@ -22,7 +22,7 @@ def main(src,lin):
   ck('unpacked source passes the current top-level tests',len(passed)==json.loads((ROOT/'checks/demo9/test-summary.json').read_text())['passed'])
   b=t/'linux';b.mkdir()
   with tarfile.open(lin) as f:f.extractall(b,filter='data')
-  root=next(p for p in b.iterdir() if p.is_dir());ck('packaged binary reports demo.9',run([str(root/'bin/xrag-server'),'version']).strip()=='0.8.0-exp.1')
+  root=next(p for p in b.iterdir() if p.is_dir());ck('packaged binary reports demo.9',run([str(root/'bin/xrag-server'),'version']).strip()=='0.9.0')
   with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
   data=t/'data';base=f'http://127.0.0.1:{port}';env=dict(os.environ,XRAG_DEMO_DATA=str(data),XRAG_DEMO_LISTEN=f'127.0.0.1:{port}');env.pop('XRAG_DEMO_CONFIG',None)
   proc=subprocess.Popen(['bash','run-linux.sh'],cwd=root,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)

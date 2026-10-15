@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { CurrentPageContext, pageById } from '../shell/nav'
 import { cn } from '../lib/utils'
 import { CopyButton } from './code'
 
@@ -10,21 +11,40 @@ type PageHeaderProps = {
   actions?: React.ReactNode
 }
 
+/** 当前页面的色块图标，只在浅色多彩主题下显示。 */
+export function PageMark({ className }: { className?: string }) {
+  const current = React.useContext(CurrentPageContext)
+  const Icon = pageById[current].icon
+  return (
+    <span
+      aria-hidden="true"
+      className={cn('page-mark shrink-0', className)}
+      data-icon-tone={current === 'sources' ? 'dark' : 'light'}
+      style={{ '--hue': `var(--hue-${current})` } as React.CSSProperties}
+    >
+      <Icon className="h-4 w-4" strokeWidth={1.7} />
+    </span>
+  )
+}
+
 export function PageHeader({ title, desc, cli, actions }: PageHeaderProps) {
   return (
     <header className="flex flex-wrap items-start gap-x-6 gap-y-3">
-      <div className="min-w-0 flex-1">
-        <h1 className="text-[17px] font-semibold tracking-tight">{title}</h1>
-        {desc && <p className="mt-0.5 max-w-3xl text-[13px] leading-relaxed text-dim">{desc}</p>}
-        {cli && (
-          <div className="mt-2 flex max-w-full items-center gap-2 font-mono text-[12px] text-faint">
-            <span aria-hidden="true">❯</span>
-            <code className="min-w-0 truncate text-dim" title={cli}>
-              {cli}
-            </code>
-            <CopyButton text={cli} className="h-5 px-1.5" />
-          </div>
-        )}
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <PageMark className="mt-px" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[20px] leading-7 font-semibold tracking-tight">{title}</h1>
+          {desc && <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-dim">{desc}</p>}
+          {cli && (
+            <div className="mt-2 flex max-w-full items-center gap-2 font-mono text-[12px] text-faint">
+              <span aria-hidden="true">❯</span>
+              <code className="min-w-0 truncate text-dim" title={cli}>
+                {cli}
+              </code>
+              <CopyButton text={cli} className="h-5 px-1.5" />
+            </div>
+          )}
+        </div>
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>

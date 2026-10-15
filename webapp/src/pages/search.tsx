@@ -557,7 +557,7 @@ export default function SearchPage() {
               {readTarget ? (
                 <Reader target={readTarget} terms={terms} className="min-h-[360px] flex-1" />
               ) : (
-                <Empty title="选中一条结果，在这里对照原文">原文来自结果引用固定的文件版本，引用行会被标出。</Empty>
+                <Empty mark={false} title="选中一条结果，在这里对照原文">原文来自结果引用固定的文件版本，引用行会被标出。</Empty>
               )}
             </TabsContent>
             <TabsContent value="call" className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3">
@@ -576,11 +576,11 @@ export default function SearchPage() {
                   </p>
                 </>
               ) : (
-                <Empty title="检索之后显示等价调用" />
+                <Empty mark={false} title="检索之后显示等价调用" />
               )}
             </TabsContent>
             <TabsContent value="json" className="min-h-0 flex-1 overflow-y-auto p-3">
-              {response ? <JsonBlock value={response} open summary="完整响应" /> : <Empty title="检索之后显示完整响应" />}
+              {response ? <JsonBlock value={response} open summary="完整响应" /> : <Empty mark={false} title="检索之后显示完整响应" />}
             </TabsContent>
           </Tabs>
         </Panel>

@@ -1,5 +1,5 @@
-import { SyntheticEvent, useEffect, useState } from 'react'
-import { ArrowRight, Plus } from 'lucide-react'
+import { SyntheticEvent, useEffect, useState, type CSSProperties } from 'react'
+import { ArrowRight, Plus, RefreshCw } from 'lucide-react'
 import { api } from '../lib/api'
 import { useData, useRun } from '../lib/feedback'
 import { navigate, useLocation } from '../lib/router'
@@ -94,7 +94,10 @@ export default function OverviewPage() {
         cli={`xrag overview --profile ${profile}`}
         actions={
           <>
-            <Button onClick={() => void overview.reload()}>刷新</Button>
+            <Button variant="ghost" onClick={() => void overview.reload()}>
+              <RefreshCw />
+              刷新
+            </Button>
             {may('admin') && (
               <Button variant="primary" onClick={() => setCreating(true)}>
                 <Plus />
@@ -110,19 +113,20 @@ export default function OverviewPage() {
       {c && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            ['已发布文件', c.files, '/sources'],
-            ['资料来源', c.sources, '/sources'],
-            ['知识条目', c.knowledge, '/knowledge'],
-            ['来源待处理', c.source_errors, '/sources']
-          ].map(([label, value, to]) => (
+            { label: '已发布文件', value: c.files, to: '/sources', hue: 'var(--hue-sources)' },
+            { label: '资料来源', value: c.sources, to: '/sources', hue: 'var(--hue-sources)' },
+            { label: '知识条目', value: c.knowledge, to: '/knowledge', hue: 'var(--hue-knowledge)' },
+            { label: '来源待处理', value: c.source_errors, to: '/sources', hue: 'var(--hue-sources)' }
+          ].map(card => (
             <button
-              key={label as string}
+              key={card.label}
               type="button"
-              onClick={() => navigate(to as string)}
-              className="rounded-[10px] border border-line bg-panel px-4 py-3 text-left transition-colors hover:border-line-strong"
+              onClick={() => navigate(card.to)}
+              className="overview-card rounded-[10px] border border-line bg-panel px-4 py-3 text-left transition-colors hover:border-line-strong"
+              style={{ '--card-hue': card.hue } as CSSProperties}
             >
-              <span className="block text-xs text-dim">{label}</span>
-              <b className={`mt-1 block font-mono text-[22px] font-semibold tabular-nums ${label === '来源待处理' && Number(value) > 0 ? 'text-warn' : ''}`}>{value}</b>
+              <span className="block text-xs text-dim">{card.label}</span>
+              <b className={`mt-1 block font-mono text-[22px] font-semibold tabular-nums ${card.label === '来源待处理' && Number(card.value) > 0 ? 'text-warn' : ''}`}>{card.value}</b>
             </button>
           ))}
         </div>

@@ -1,8 +1,10 @@
 import * as React from 'react'
+import { FileUp } from 'lucide-react'
+import { Button } from './button'
 import { cn } from '../lib/utils'
 
 const control =
-  'w-full rounded-md border border-line-strong bg-bg text-[13px] text-fg outline-none transition-colors placeholder:text-faint focus:border-dim disabled:cursor-not-allowed disabled:opacity-50'
+  'w-full rounded-md border border-line-strong bg-field text-[13px] text-fg outline-none transition-colors placeholder:text-faint focus:border-dim disabled:cursor-not-allowed disabled:opacity-50'
 
 const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { mono?: boolean }>(
   ({ className, mono, ...props }, ref) => <input ref={ref} className={cn(control, 'h-8 px-2.5', mono && 'font-mono', className)} {...props} />
@@ -17,9 +19,41 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttribu
 Textarea.displayName = 'Textarea'
 
 const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(({ className, ...props }, ref) => (
-  <select ref={ref} className={cn(control, 'h-8 px-2', className)} {...props} />
+  <select
+    ref={ref}
+    className={cn(
+      control,
+      'h-8 appearance-none bg-no-repeat pl-2.5 pr-8 [background-image:var(--select-chevron)] [background-position:right_10px_center] [background-size:14px_14px]',
+      className
+    )}
+    {...props}
+  />
 ))
 Select.displayName = 'Select'
+
+type FilePickerProps = {
+  accept?: string
+  file: File | null
+  onChange: (file: File | null) => void
+  label?: string
+  className?: string
+}
+
+function FilePicker({ accept, file, onChange, label = '选择文件', className }: FilePickerProps) {
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  return (
+    <div className={cn('flex min-w-0 items-center gap-2', className)}>
+      <input ref={inputRef} type="file" accept={accept} tabIndex={-1} className="hidden" onChange={e => onChange(e.target.files?.[0] ?? null)} />
+      <Button size="sm" onClick={() => inputRef.current?.click()}>
+        <FileUp />
+        {label}
+      </Button>
+      <span className="min-w-0 truncate text-xs text-dim" title={file?.name}>
+        {file?.name ?? '未选择文件'}
+      </span>
+    </div>
+  )
+}
 
 type FieldProps = {
   label: React.ReactNode
@@ -48,4 +82,4 @@ function Check({ label, className, ...props }: React.InputHTMLAttributes<HTMLInp
   )
 }
 
-export { Input, Textarea, Select, Field, Check }
+export { Input, Textarea, Select, FilePicker, Field, Check }

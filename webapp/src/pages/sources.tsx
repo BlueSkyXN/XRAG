@@ -1,5 +1,5 @@
 import { SyntheticEvent, useEffect, useState } from 'react'
-import { ChevronDown, FileUp, MoreHorizontal, Play, Plus, Search as SearchIcon } from 'lucide-react'
+import { BookOpenText, Calculator, ChevronDown, FileUp, MoreHorizontal, Play, Plus, Search as SearchIcon } from 'lucide-react'
 import { api, Item, SourceDetail } from '../lib/api'
 import { useData, useFeedback, useRun } from '../lib/feedback'
 import { navigate } from '../lib/router'
@@ -9,7 +9,7 @@ import { Badge, Dot, StateBadge } from '../components/badge'
 import { Button } from '../components/button'
 import { JsonBlock } from '../components/code'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogTitle } from '../components/dialog'
-import { Check, Field, Input, Select, Textarea } from '../components/input'
+import { Check, Field, FilePicker, Input, Select, Textarea } from '../components/input'
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '../components/menu'
 import { Page, PageHeader } from '../components/page'
 import { Empty, ErrorLine, Loading, Note, Panel, PanelHeader } from '../components/panel'
@@ -302,12 +302,7 @@ function UploadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
         <DialogTitle>上传 Markdown / TXT</DialogTitle>
         <form onSubmit={submit} className="contents">
           <DialogBody className="space-y-3">
-            <input
-              type="file"
-              accept=".md,.markdown,.txt"
-              onChange={e => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-[13px] text-dim file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-raised file:px-3 file:py-1.5 file:text-fg"
-            />
+            <FilePicker accept=".md,.markdown,.txt" file={file} onChange={setFile} label="选择文件" />
             <Note>文件进入“上传”来源，并自动提交一次构建。单个文件不超过 5 MiB。</Note>
           </DialogBody>
           <DialogFooter>
@@ -401,8 +396,11 @@ export default function SourcesPage() {
         actions={
           maintainer && (
             <>
-              <Button onClick={async () => setEstimate((await run(() => api.estimate(kb))) ?? null)}>估算</Button>
-              <Button onClick={() => setUploadOpen(true)}>
+              <Button variant="ghost" onClick={async () => setEstimate((await run(() => api.estimate(kb))) ?? null)}>
+                <Calculator />
+                估算
+              </Button>
+              <Button variant="ghost" onClick={() => setUploadOpen(true)}>
                 <FileUp />
                 上传文件
               </Button>
@@ -600,13 +598,16 @@ export default function SourcesPage() {
                     {tail(item.edition_id)}
                   </Td>
                   <Td className="whitespace-nowrap text-right">
-                    <Button size="sm" variant="ghost" onClick={() => item.ref && setReading({ ref: item.ref, kb, path: item.path, title: item.title })}>
-                      阅读
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => void onlyThisFile(item)}>
-                      <SearchIcon />
-                      只查此文件
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => item.ref && setReading({ ref: item.ref, kb, path: item.path, title: item.title })}>
+                        <BookOpenText />
+                        阅读
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => void onlyThisFile(item)}>
+                        <SearchIcon />
+                        只查此文件
+                      </Button>
+                    </div>
                   </Td>
                 </tr>
               ))}

@@ -153,6 +153,16 @@ def browser_checks(base, key, op):
         palette = p.get_by_role('dialog')
         palette.get_by_text('search keyword').first.wait_for(timeout=5000)
         ck('command palette lists registry actions', palette.get_by_text('files grep').count() >= 1, None, 'browser')
+        first_entry = palette.locator('[data-index="0"]').inner_text()
+        ck('command palette highlights an action first, not appearance', '侧栏' not in first_entry and '主题' not in first_entry, first_entry, 'browser')
+        p.get_by_label('搜索命令').fill('主题：浅色多彩')
+        palette.get_by_text('主题：浅色多彩').first.click()
+        ck('command palette switches themes', p.evaluate("document.documentElement.dataset.theme") == 'light-color', None, 'browser')
+        p.keyboard.press('Control+k')
+        palette.get_by_label('搜索命令').fill('收起侧栏')
+        palette.get_by_text('收起侧栏').first.click()
+        p.wait_for_timeout(250)
+        ck('command palette collapses the sidebar', p.get_by_role('navigation', name='工作台').first.evaluate('el => el.getBoundingClientRect().width') <= 64, None, 'browser')
         p.keyboard.press('Escape')
 
         # 设置：管理员看到全部标签
@@ -160,6 +170,89 @@ def browser_checks(base, key, op):
         tabs = p.get_by_role('tab')
         tabs.first.wait_for(timeout=10000)
         ck('admin sees every settings tab', tabs.count() == 5, tabs.all_inner_texts(), 'browser')
+
+        # 主题与侧栏：这里的 localStorage 变化最后会清掉，不影响后续 Reader 检查。
+        def select_theme(name):
+            p.get_by_role('button', name='主题').click()
+            p.get_by_role('menuitem', name=name, exact=True).click()
+            p.wait_for_timeout(100)
+
+        def clear_appearance_storage():
+            p.evaluate("localStorage.removeItem('xrag.theme'); localStorage.removeItem('xrag.sidebar')")
+
+        def sidebar_width():
+            return p.get_by_role('navigation', name='工作台').first.evaluate('el => el.getBoundingClientRect().width')
+
+        clear_appearance_storage()
+        p.emulate_media(color_scheme='light')
+        go(p, origin, '/search')
+        ck('system light resolves to the light theme', p.evaluate("document.documentElement.dataset.theme") == 'light', None, 'browser')
+        p.emulate_media(color_scheme='dark')
+        go(p, origin, '/search')
+        ck('system dark resolves to the dark theme', p.evaluate("document.documentElement.dataset.theme") == 'dark', None, 'browser')
+
+        select_theme('浅色')
+        ck('manual light theme applies immediately', p.evaluate("document.documentElement.dataset.theme") == 'light', None, 'browser')
+        go(p, origin, '/search')
+        ck(
+            'manual light theme survives a reload',
+            p.evaluate("document.documentElement.dataset.theme") == 'light' and p.evaluate('getComputedStyle(document.body).backgroundColor') == 'rgb(245, 245, 247)',
+            p.evaluate('getComputedStyle(document.body).backgroundColor'),
+            'browser',
+        )
+
+        select_theme('浅色多彩')
+        search_icon_hue = p.get_by_role('navigation', name='工作台').first.locator('a[href="/search"] .nav-icon')
+        ck('light-color renders the search page hue', search_icon_hue.evaluate('el => getComputedStyle(el).backgroundColor') == 'rgb(10, 124, 240)', None, 'browser')
+        select_theme('深色')
+        ck('dark keeps navigation icons transparent', search_icon_hue.evaluate('el => getComputedStyle(el).backgroundColor') in ('transparent', 'rgba(0, 0, 0, 0)'), None, 'browser')
+
+        p.set_viewport_size({'width': 1440, 'height': 1050})
+        clear_appearance_storage()
+        go(p, origin, '/search')
+        ck('wide viewports expand the sidebar by default', sidebar_width() >= 200, sidebar_width(), 'browser')
+        ck('expanded sidebar shows page labels', p.get_by_role('link', name='资料与来源').first.is_visible(), None, 'browser')
+        p.get_by_role('button', name='收起侧栏').click()
+        p.wait_for_timeout(250)
+        ck('the sidebar toggle collapses the rail', sidebar_width() <= 64, sidebar_width(), 'browser')
+        go(p, origin, '/search')
+        ck('a manually collapsed sidebar survives a reload', sidebar_width() <= 64, sidebar_width(), 'browser')
+        p.keyboard.press('ControlOrMeta+b')
+        p.wait_for_timeout(250)
+        ck('command+b expands the sidebar again', sidebar_width() >= 200, sidebar_width(), 'browser')
+
+        p.set_viewport_size({'width': 1024, 'height': 768})
+        clear_appearance_storage()
+        go(p, origin, '/search')
+        ck('medium viewports collapse the sidebar by default', sidebar_width() <= 64, sidebar_width(), 'browser')
+
+        # 三套主题都用同一检索结果截图，便于对照路线色和状态色。
+        p.set_viewport_size({'width': 1440, 'height': 1050})
+        go(p, origin, '/search')
+        p.get_by_label('查询', exact=True).fill('E203')
+        p.get_by_label('查询', exact=True).press('Enter')
+        p.get_by_role('region', name='结果').get_by_role('heading', name='条结果').wait_for(timeout=15000)
+        select_theme('深色')
+        p.screenshot(path=str(CHECKS / 'theme-dark.png'))
+        select_theme('浅色')
+        p.screenshot(path=str(CHECKS / 'theme-light.png'))
+        select_theme('浅色多彩')
+        p.screenshot(path=str(CHECKS / 'theme-light-color.png'))
+        go(p, origin, '/overview')
+        p.get_by_role('heading', name='概览').wait_for(timeout=10000)
+        p.screenshot(path=str(CHECKS / 'overview-light-color.png'))
+        p.get_by_role('button', name='收起侧栏').click()
+        p.wait_for_timeout(250)
+        go(p, origin, '/search')
+        p.screenshot(path=str(CHECKS / 'sidebar-collapsed.png'))
+
+        p.set_viewport_size({'width': 390, 'height': 844})
+        go(p, origin, '/search')
+        p.wait_for_timeout(600)
+        ck('the desktop sidebar is hidden on phones', p.get_by_role('navigation', name='工作台').first.is_hidden(), None, 'browser')
+        ck('/search still fits a 390px viewport with themes', p.evaluate('document.documentElement.scrollWidth <= innerWidth'), None, 'browser')
+        clear_appearance_storage()
+        p.set_viewport_size({'width': 1440, 'height': 1050})
 
         # 移动端不出现整页横向滚动
         p.set_viewport_size({'width': 390, 'height': 844})
