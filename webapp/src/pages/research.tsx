@@ -249,7 +249,7 @@ export default function ResearchPage() {
     <Page>
       <PageHeader
         title="调查"
-        desc="委托调查由专用 Agent 按返回结果决定下一步；固定配方按明确步骤运行。两者都只读取选定知识，不自动发布，也不执行业务操作。"
+        desc="委托调查由专用 Agent 按返回结果决定下一步，固定配方按明确步骤运行；两者都只读取选定知识。"
         cli={mode === 'recipe' ? `xrag recipe run --data @recipe-run.json --wait --profile ${profile}` : `xrag research run --data @research-task.json --wait --profile ${profile}`}
       />
       <div className="grid gap-3 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
@@ -282,7 +282,7 @@ export default function ResearchPage() {
                   </Field>
                 </div>
                 {mode === 'recipe' && (
-                  <Field label="配方 JSON" hint="有限的顺序步骤，不是任意流程画布。">
+                  <Field label="配方 JSON" hint="有限的顺序步骤。">
                     <Textarea mono rows={10} value={recipe} onChange={e => setRecipe(e.target.value)} spellCheck={false} />
                   </Field>
                 )}

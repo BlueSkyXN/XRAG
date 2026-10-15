@@ -326,7 +326,7 @@ export default function KnowledgePage() {
   }
 
   async function archive(item: KnowledgeItem) {
-    const ok = await confirm({ title: `归档“${item.title}”？`, body: '条目会移出当前检索视图，历史引用仍然保留。这不是强制撤回。', confirm: '归档', danger: true })
+    const ok = await confirm({ title: `归档“${item.title}”？`, body: '条目会移出当前检索视图，历史引用仍然保留。', confirm: '归档', danger: true })
     if (!ok || !item.published_revision) return
     await run(() => api.archiveKnowledge(item.id, item.published_revision!), '条目已归档')
     void list.reload()
@@ -516,7 +516,7 @@ export default function KnowledgePage() {
               <Field label="限定来源目录（可空）">
                 <Input mono value={regenForm.path} onChange={e => setRegenForm({ ...regenForm, path: e.target.value })} placeholder="manual/" />
               </Field>
-              <Note>只选原始资料，排除全部知识条目和 Wiki，避免引用自己的总结。当前已发布正文不变。</Note>
+              <Note>只选原始资料，排除全部知识条目和 Wiki，避免引用自己的总结。</Note>
             </DialogBody>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setRegen(null)}>

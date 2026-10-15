@@ -260,7 +260,7 @@ export default function GraphPage() {
       {!response && !error && (
         <Panel>
           <Empty mark title="输入一个实体名开始">
-            默认关系来自原文里 <code>[[A]] --关系--&gt; [[B]]</code> 这样的显式标注，不是自动发现的事实。可以在“设置”里改用模型或插件抽取。
+            默认关系来自原文里 <code>[[A]] --关系--&gt; [[B]]</code> 这样的显式标注；可以在“设置”里改用模型或插件抽取。
           </Empty>
         </Panel>
       )}

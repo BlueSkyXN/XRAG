@@ -262,7 +262,7 @@ export default function AccessPage() {
               ]}
             />
             <CodeBlock label="stdio" code={`xrag mcp --profile ${profile} --toolsets core,graph,files,utility,research`} />
-            <Note>只承诺上面列出的协议修订，不宣称支持 2026 新协议的全部行为；没有自建授权登录服务。使用指南随源码提供：skills/xrag-retrieval/SKILL.md。</Note>
+            <Note>只承诺上面列出的协议修订，没有自建授权登录服务。使用指南随源码提供：skills/xrag-retrieval/SKILL.md。</Note>
           </PanelBody>
         </Panel>
       </div>

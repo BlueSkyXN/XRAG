@@ -66,7 +66,7 @@ function Report({ report }: { report: EvalReport }) {
           ))}
         </tbody>
       </Table>
-      <Note>小题集上的实际查询结果，错误计入分母。没有配置真实模型时，“组合”可能只执行词法，不能把相同流程当成算法优劣的证据。</Note>
+      <Note>实际查询结果，错误计入分母；未配置模型时“组合”只执行词法。</Note>
       {report.pairs.length > 0 && (
         <div className="space-y-1.5">
           <h3 className="text-[13px] font-semibold">命中差异</h3>
@@ -142,7 +142,7 @@ function Compare() {
       const r = await fetch('/eval-example.json')
       if (!r.ok) throw new Error('无法读取示例题集')
       return api.importEvalSet({ ...(await r.json()), kb })
-    }, '已载入合成样例。它只适用于 demo.sh 导入的 manual/ 文档，不能证明实际业务效果。')
+    }, '已载入合成样例（对应 demo.sh 导入的 manual/ 文档）')
     if (s) {
       await sets.reload()
       setSetId(s.id)

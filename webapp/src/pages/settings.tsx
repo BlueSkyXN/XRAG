@@ -58,7 +58,7 @@ function Capabilities() {
         ))}
       </div>
       <Panel>
-        <PanelHeader title={`知识库 ${kb}`} meta={<span>kb discover · 只读取已登记元数据，不调用模型</span>} />
+        <PanelHeader title={`知识库 ${kb}`} meta={<span>kb discover · 只读元数据</span>} />
         <PanelBody>
           {d ? (
             <KeyValues
@@ -478,7 +478,7 @@ function KbConfig() {
                 <Download />
                 下载已发布资料 ZIP
               </Button>
-              <Note>上限 10,000 份文件、正文 64 MiB。这是内容导出，不是完整系统备份。</Note>
+              <Note>上限 10,000 份文件、正文 64 MiB，不含草稿与向量。</Note>
             </PanelBody>
           </Panel>
           <Panel>
@@ -797,7 +797,7 @@ export default function SettingsPage() {
   }
   return (
     <Page>
-      <PageHeader title="设置" desc="服务能力、模型连接、数据与维护；知识库页签只影响当前知识库。打开设置不会探测网络或调用模型。" cli={cli[current]} />
+      <PageHeader title="设置" desc="服务能力、模型连接、数据与维护；知识库页签只影响当前知识库。" cli={cli[current]} />
       <Tabs value={current} onValueChange={v => navigate(`/settings/${v}`, true)}>
         <TabsList className="-mx-1 px-1">
           {visible.map((t, i) => (

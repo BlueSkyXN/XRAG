@@ -16,7 +16,7 @@ import { Table, Td, Th } from '../components/table'
 const faq: [string, string][] = [
   ['配置保存后，为什么能力没变？', '当前进程继续使用启动时的配置。重启 Server 和所有 Worker 后再看“设置 · 能力”；带 --config 启动时优先使用外部文件。改变向量模型后还需要显式重建向量。'],
   ['任务一直排队怎么办？', '检查内置执行器是否关闭；需要时单独运行 xrag-server worker --data 你的数据目录。关闭浏览器不会停止后台任务。'],
-  ['图里的路径说明了什么？', '边来自原文的明确标注或已配置的抽取器，只说明关联及其出处，不能代替因果分析。'],
+  ['图里的路径说明了什么？', '边来自原文的明确标注或已配置的抽取器，只说明关联及其出处。'],
   ['备份为什么不包含来源目录？', '数据库快照保留入库正文与历史。Git 工作区、未导入的文件、Key 文件、环境变量和外部数据库由各自的存储管理，需要单独备份。恢复后先确认来源，再重新构建。'],
   ['统计有 37 条，却只展示 10 条？', '总数是在完整条件范围上计算的，10 条是当前页。翻页读取已保存的结果，不重新检索。']
 ]
@@ -81,7 +81,7 @@ export default function OverviewPage() {
         { title: '准备资料', done: c.sources > 0, desc: c.sources > 0 ? `已登记 ${c.sources} 个来源` : '登记服务器目录、Git 仓库，或直接上传 MD/TXT', to: '/sources', label: '资料与来源' },
         { title: '完成构建', done: c.files > 0, desc: c.files > 0 ? `已有 ${c.files} 个可查询文件` : '构建成功后文件才进入检索', to: '/sources', label: '资料与来源' },
         { title: '运行一次明确的查询', done: false, desc: '用资料里的错误编号或术语，再打开原文核对行号和版本', to: '/search', label: '检索' },
-        { title: '按需增加能力', done: system.embedding, desc: system.embedding ? '语义模型已配置' : '模型不是首次使用的前提；需要语义检索时再配置', to: '/settings/providers', label: '设置' },
+        { title: '按需增加能力', done: system.embedding, desc: system.embedding ? '语义模型已配置' : '需要语义检索时再配置', to: '/settings/providers', label: '设置' },
         { title: '收集反馈、持续改进', done: false, desc: '处理结果反馈，再用同一组问题比较策略', to: '/feedback', label: '反馈' }
       ]
     : []

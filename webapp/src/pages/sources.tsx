@@ -206,7 +206,7 @@ function PolicyDialog({ detail, onClose, onDone }: { detail: SourceDetail | null
                   </>
                 )}
               </div>
-              <Note>通知只安排重新扫描已登记的来源，不读取请求里的仓库地址，也不执行提交中的命令。</Note>
+              <Note>webhook 只触发已登记来源的重新扫描；请求里的仓库地址和提交命令都不会执行。</Note>
             </div>
           </DialogBody>
           <DialogFooter>
@@ -628,7 +628,7 @@ export default function SourcesPage() {
             <p className="text-[13px] text-fg-soft">
               {String(estimate?.files ?? '—')} 个文件 · {String(estimate?.characters ?? '—')} 字符 · 预计 {String(estimate?.estimated_chunks ?? '—')} 块 · 模型调用 {String(estimate?.models_called ?? 0)} 次
             </p>
-            <Note>估算只读取来源，不写入任何索引。Git 来源可能会更新本机仓库缓存。</Note>
+            <Note>估算不写入索引；Git 来源可能更新本机仓库缓存。</Note>
             <JsonBlock value={estimate} />
           </DialogBody>
         </DialogContent>
