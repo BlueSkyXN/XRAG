@@ -185,7 +185,7 @@ export default function JobsPage() {
         />
         {jobs.loading && !jobs.data && <Loading />}
         <ErrorLine className="m-4">{jobs.error}</ErrorLine>
-        {jobs.data && shown.length === 0 && <Empty title="当前没有任务">构建、Wiki 生成、评测和调查提交后会出现在这里。</Empty>}
+        {jobs.data && shown.length === 0 && <Empty mark title="当前没有任务">构建、Wiki 生成、评测和调查提交后会出现在这里。</Empty>}
         {shown.length > 0 && (
           <Table>
             <thead>

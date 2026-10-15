@@ -246,7 +246,7 @@ function Compare() {
 
       <Panel>
         <PanelHeader title="对比任务" meta={<span>{runs.data?.items.length ?? 0} 个</span>} />
-        {runs.data && runs.data.items.length === 0 && <Empty title="还没有对比任务">先导入题集，再选择策略运行。</Empty>}
+        {runs.data && runs.data.items.length === 0 && <Empty mark title="还没有对比任务">先导入题集，再选择策略运行。</Empty>}
         {runs.data && runs.data.items.length > 0 && (
           <Table>
             <thead>

@@ -390,7 +390,7 @@ export default function KnowledgePage() {
           <PanelHeader title="条目" meta={<span>{items.length} 条</span>} />
           {list.loading && !list.data && <Loading />}
           <ErrorLine className="m-4">{list.error}</ErrorLine>
-          {list.data && items.length === 0 && <Empty title="还没有知识条目">在检索结果上点“用作草稿依据”，再回到这里写草稿。</Empty>}
+          {list.data && items.length === 0 && <Empty mark title="还没有知识条目">在检索结果上点“用作草稿依据”，再回到这里写草稿。</Empty>}
           <ul>
             {items.map(item => {
               const st = stateInfo[item.state] ?? { label: item.state, tone: 'neutral' as Tone }

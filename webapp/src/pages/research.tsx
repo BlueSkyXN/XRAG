@@ -295,7 +295,7 @@ export default function ResearchPage() {
           </Panel>
           <Panel>
             <PanelHeader title="本知识库的调查与配方" meta={<span>{items.length} 个</span>} />
-            {tasks.data && items.length === 0 && <Empty title="还没有提交过调查">可以先用固定配方，在现有资料上试一次。</Empty>}
+            {tasks.data && items.length === 0 && <Empty mark title="还没有提交过调查">可以先用固定配方，在现有资料上试一次。</Empty>}
             <ul>
               {items.map(t => (
                 <li key={t.id}>

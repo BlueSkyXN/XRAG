@@ -106,7 +106,7 @@ export default function FeedbackPage() {
         />
         {page.loading && !page.data && <Loading />}
         <ErrorLine className="m-4">{page.error}</ErrorLine>
-        {page.data && items.length === 0 && <Empty title="当前条件下没有反馈">在检索结果上按 F 或点“反馈这条结果”提交。</Empty>}
+        {page.data && items.length === 0 && <Empty mark title="当前条件下没有反馈">在检索结果上按 F 或点“反馈这条结果”提交。</Empty>}
         <ul>
           {items.map(f => {
             const st = statusInfo[f.status] ?? { label: f.status, tone: 'neutral' as Tone }

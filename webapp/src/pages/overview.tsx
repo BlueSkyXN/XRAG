@@ -181,7 +181,7 @@ export default function OverviewPage() {
       <Panel>
         <PanelHeader title="知识库" meta={<span>{kbs.length} 个</span>} />
         {kbs.length === 0 ? (
-          <Empty title="还没有知识库" action={may('admin') && <Button variant="primary" onClick={() => setCreating(true)}>新建知识库</Button>}>
+          <Empty mark title="还没有知识库" action={may('admin') && <Button variant="primary" onClick={() => setCreating(true)}>新建知识库</Button>}>
             {may('admin') ? '新建一个知识库，然后登记来源或上传资料。' : '当前身份没有任何知识库的访问权限。'}
           </Empty>
         ) : (

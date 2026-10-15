@@ -246,7 +246,7 @@ function TopBar({ onMenu, onPalette }: { onMenu: () => void; onPalette: () => vo
         </Button>
         <span className="hidden items-center gap-1.5 lg:flex" title={system.workers ? '本进程内置执行器在处理任务' : '任务会排队，需要单独运行 xrag-server worker'}>
           <Dot tone={system.workers ? 'ok' : 'off'} />
-          {system.workers ? '后台任务运行中' : '后台任务未启用'}
+          {system.workers ? '执行器在线' : '执行器未启用'}
         </span>
         <span className="hidden font-mono lg:inline">{system.version}</span>
         <ThemeSwitcher />

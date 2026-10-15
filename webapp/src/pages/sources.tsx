@@ -451,7 +451,7 @@ export default function SourcesPage() {
             {sources.loading && !sources.data && <Loading />}
             <ErrorLine className="m-4">{sources.error}</ErrorLine>
             {sources.data && details.length === 0 && (
-              <Empty title="还没有来源">上传文件会自动建立“上传”来源；也可以登记服务器目录、Git 仓库、S3 或 WeKnora。</Empty>
+              <Empty mark title="还没有来源">上传文件会自动建立“上传”来源；也可以登记服务器目录、Git 仓库、S3 或 WeKnora。</Empty>
             )}
             {details.length > 0 && (
               <Table>
@@ -572,7 +572,7 @@ export default function SourcesPage() {
         />
         {files.loading && !files.data && <Loading />}
         <ErrorLine className="m-4">{files.error}</ErrorLine>
-        {files.data && files.data.items.length === 0 && <Empty title="还没有已发布文件">登记来源或上传文件后，构建成功的文件会出现在这里。</Empty>}
+        {files.data && files.data.items.length === 0 && <Empty mark title="还没有已发布文件">登记来源或上传文件后，构建成功的文件会出现在这里。</Empty>}
         {files.data && files.data.items.length > 0 && (
           <Table>
             <thead>
