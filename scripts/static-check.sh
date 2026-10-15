@@ -19,7 +19,7 @@ if bash "$rev" --parse < deploy/hf/testdata/no-revision.json >/dev/null 2>&1; th
   echo "no-revision fixture: must exit non-zero"; exit 1
 fi
 ROOT="${root}" python3 - <<'PY'
-import os, pathlib, tomllib
+import os, pathlib, re, tomllib
 root = pathlib.Path(os.environ["ROOT"])
 with (root / "hfs-dev.toml").open("rb") as handle:
     cfg = tomllib.load(handle)
@@ -65,6 +65,24 @@ if 'id="root"' not in index.read_text(encoding="utf-8"):
     raise SystemExit("dist/index.html must be the built workbench; run make web")
 if not any('password-form' in p.read_text(encoding="utf-8") for p in (web / "assets").glob("*.js")):
     raise SystemExit("login page is missing the username and password form; run make web")
+
+# 界面禁用句式；保留项在同一行或上一行注明 text-ok: 理由。
+forbidden = re.compile(r"不代表|不等于|不承诺|不宣称|冒充|悄悄|不会被说成|尚未在真实|真实联调")
+violations = []
+for source in sorted((root / "webapp/src").rglob("*")):
+    if source.suffix not in (".ts", ".tsx") or not source.is_file():
+        continue
+    lines = source.read_text(encoding="utf-8").splitlines()
+    for index, line in enumerate(lines):
+        if line.lstrip().startswith(("//", "*", "/*", "{/*")):
+            continue
+        if "text-ok" in line or (index > 0 and "text-ok" in lines[index - 1]):
+            continue
+        if forbidden.search(line):
+            violations.append(f"{source.relative_to(root)}:{index + 1}: {line.strip()}")
+if violations:
+    print("\n".join(violations))
+    raise SystemExit("界面文案包含禁用句式，请改写或用 text-ok 注明保留理由")
 print("static contract: PASS")
 PY
 if [[ -d .git ]]; then git diff --check; fi
