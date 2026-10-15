@@ -333,7 +333,7 @@ var questionWords = strings.NewReplacer(
 	"怎么样", " ", "为什么", " ", "有没有", " ", "是不是", " ",
 	"怎么", " ", "怎样", " ", "如何", " ", "什么", " ", "哪些", " ",
 	"哪个", " ", "哪里", " ", "为何", " ", "是否", " ", "能否", " ",
-	"可以", " ", "请问", " ", "的", " ", "了", " ", "吗", " ", "呢", " ", "吧", " ",
+	"可以", " ", "请问", " ", "的", " ", "了", " ", "吗", " ", "呢", " ", "吧", " ", "是", " ",
 )
 var queryWords = regexp.MustCompile(`[\pL\pN_]+`)
 var englishQuestionWords = regexp.MustCompile(`(?i)^(what|how|why|which|where|who|is|are|does|do|the|a|an|of|to|in|for)$`)
@@ -352,6 +352,25 @@ func RelaxedDictionaryQuery(q string, words []string) (string, error) {
 	}
 	if len(terms) == 0 {
 		return "", Err("INVALID_ARGUMENT", "query needs 1..48 terms", 400)
+	}
+	hasMultiRune := false
+	for _, term := range terms {
+		if utf8.RuneCountInString(term) > 1 {
+			hasMultiRune = true
+			break
+		}
+	}
+	if hasMultiRune {
+		// 多字词元已能限定内容时，移除容易扩大 OR 召回的单个汉字。
+		filtered := terms[:0]
+		for _, term := range terms {
+			r, size := utf8.DecodeRuneInString(term)
+			if size == len(term) && unicode.Is(unicode.Han, r) {
+				continue
+			}
+			filtered = append(filtered, term)
+		}
+		terms = filtered
 	}
 	if len(terms) > 48 {
 		terms = terms[:48]

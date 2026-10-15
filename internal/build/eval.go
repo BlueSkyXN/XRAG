@@ -21,6 +21,14 @@ type frozenRepo struct {
 func (r frozenRepo) Snapshot(ctx context.Context, kbs []string) (core.View, error) {
 	return r.View, nil
 }
+
+func (r frozenRepo) RelaxedLexical(ctx context.Context, view core.View, q string) ([]core.Ranked, error) {
+	if relaxed, ok := r.Repository.(core.RelaxedLexical); ok {
+		return relaxed.RelaxedLexical(ctx, view, q)
+	}
+	return r.Repository.Lexical(ctx, view, q)
+}
+
 func (b *Builder) RunEval(ctx context.Context, j store.Job) (any, error) {
 	scoped, scopeErr := b.ForKB(ctx, j.KB)
 	if scopeErr != nil {
