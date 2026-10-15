@@ -1,0 +1,198 @@
+{
+  "kb": "demo",
+  "name": "Demo 问句与短词召回回归",
+  "cases": [
+    {
+      "id": "q01",
+      "question": "日志丢失怎么排查",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "日志丢失可能"
+        }
+      ]
+    },
+    {
+      "id": "q02",
+      "question": "如何排查日志丢失",
+      "expected": [
+        {
+          "path": "manual/05-procedure.md",
+          "anchor": "检查同一时间是否存在队列满的记录"
+        }
+      ]
+    },
+    {
+      "id": "q03",
+      "question": "E203 是什么错误",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "E203 表示"
+        }
+      ]
+    },
+    {
+      "id": "q04",
+      "question": "错误码 E203 的含义",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "E203 表示"
+        }
+      ]
+    },
+    {
+      "id": "q05",
+      "question": "设备A 使用了哪些组件",
+      "expected": [
+        {
+          "path": "manual/04-F2.md",
+          "anchor": "[[设备A]] --使用--> [[组件B]]"
+        }
+      ]
+    },
+    {
+      "id": "q06",
+      "question": "E2030 是什么错误",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "E2030 表示远程采集服务握手失败"
+        }
+      ]
+    },
+    {
+      "id": "q07",
+      "question": "日志写入队列满了该检查什么",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "请先检查日志目录剩余空间及写入频率"
+        }
+      ]
+    },
+    {
+      "id": "q08",
+      "question": "调查日志丢失需要收集哪些信息",
+      "expected": [
+        {
+          "path": "manual/05-procedure.md",
+          "anchor": "记录具体版本、发生时间、错误编号和部署位置"
+        }
+      ]
+    },
+    {
+      "id": "q09",
+      "question": "组件B 记录了什么",
+      "expected": [
+        {
+          "path": "manual/04-F2.md",
+          "anchor": "[[组件B]] --记录--> [[日志事件]]"
+        }
+      ]
+    },
+    {
+      "id": "q10",
+      "question": "部署甲运行了哪个版本",
+      "expected": [
+        {
+          "path": "manual/04-F2.md",
+          "anchor": "[[部署甲]] --运行--> [[版本1.2]]"
+        }
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "版本1.2 包含哪些修复",
+      "expected": [
+        {
+          "path": "manual/04-F2.md",
+          "anchor": "[[版本1.2]] --包含修复--> [[修复F7]]"
+        }
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "知识草稿什么时候进入检索",
+      "expected": [
+        {
+          "path": "manual/05-procedure.md",
+          "anchor": "草稿发布成功后才会进入检索"
+        }
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "如何保存资料范围句柄",
+      "expected": [
+        {
+          "path": "manual/01-overview.md",
+          "anchor": "再保存范围句柄"
+        }
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "分页样本记录用于验证什么",
+      "expected": [
+        {
+          "path": "manual/07-pagination.md",
+          "anchor": "用于验证完整总数与页面条数分离"
+        }
+      ]
+    },
+    {
+      "id": "short01",
+      "question": "E203",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "E203 表示"
+        }
+      ]
+    },
+    {
+      "id": "short02",
+      "question": "日志丢失",
+      "expected": [
+        {
+          "path": "manual/02-errors.md",
+          "anchor": "日志丢失可能"
+        }
+      ]
+    },
+    {
+      "id": "short03",
+      "question": "组件B",
+      "expected": [
+        {
+          "path": "manual/04-F2.md",
+          "anchor": "[[设备A]] --使用--> [[组件B]]"
+        }
+      ]
+    },
+    {
+      "id": "short04",
+      "question": "分页样本记录",
+      "expected": [
+        {
+          "path": "manual/07-pagination.md",
+          "anchor": "分页样本记录 01"
+        }
+      ]
+    },
+    {
+      "id": "empty01",
+      "question": "ZXQ999999NONEXIST",
+      "expected_empty": true,
+      "expected": []
+    },
+    {
+      "id": "empty02",
+      "question": "ZXQ884422VOID 是什么",
+      "expected_empty": true,
+      "expected": []
+    }
+  ]
+}
