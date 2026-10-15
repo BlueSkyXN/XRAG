@@ -413,7 +413,7 @@ func Main(args []string, out, errout io.Writer) error {
 			}
 		}
 		if p.Type == "direct" && (action == "files.tree" || action == "files.grep") {
-			return nil, core.Err("MODE_UNSUPPORTED", "direct Demo has chunks only; this operation needs the Server", 422)
+			return nil, core.Err("MODE_UNSUPPORTED", "direct mode has chunks only; this operation needs the Server", 422)
 		}
 		return engine.Run(ctx, action, req, p.ID)
 	}

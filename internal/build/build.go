@@ -107,7 +107,7 @@ func Inventory(root string) ([]ScanEntry, error) {
 		}
 		entries = append(entries, ScanEntry{rel, p, info.Size(), info.ModTime()})
 		if len(entries) > 5000 {
-			return core.Err("SOURCE_LIMIT", "Demo source limit: 5000 files", 422)
+			return core.Err("SOURCE_LIMIT", "source limit: 5000 files per directory source", 422)
 		}
 		return nil
 	})

@@ -252,7 +252,7 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 		}
 	}
 	if !view.Compact && len(chunks) > e.capacity() {
-		return resp, Err("VIEW_TOO_LARGE", "Demo view exceeds configured item limit; narrow the knowledge bases", 422)
+		return resp, Err("VIEW_TOO_LARGE", "view exceeds configured item limit; narrow the knowledge bases", 422)
 	}
 	resp.Coverage.ScopeBasis = basis
 	selected := []string{}
@@ -620,7 +620,7 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 		items = kept
 	}
 	if len(items) > e.capacity() {
-		return resp, Err("RESULT_TOO_LARGE", "Demo result cache capacity exceeded; narrow the scope", 422)
+		return resp, Err("RESULT_TOO_LARGE", "result cache capacity exceeded; narrow the scope", 422)
 	}
 	for _, it := range items {
 		if it.ChunkID != "" {
