@@ -72,11 +72,14 @@ function JobDetail({ id, onClose, onChanged }: { id: string; onClose: () => void
                   {j.state === 'failed' && !j.cancel_requested && ['research', 'recipe'].includes(j.kind) && (
                     <Button size="sm" variant="primary" onClick={() => void resume()}>
                       <RotateCcw />
-                      检查条件并继续
+                      继续任务
                     </Button>
                   )}
                 </span>
               </div>
+              {j.state === 'failed' && !j.cancel_requested && ['research', 'recipe'].includes(j.kind) && (
+                <Note>继续任务会沿用原范围、截止时间和剩余预算；结果未知的付费调用不会重试。</Note>
+              )}
               <KeyValues
                 rows={[
                   ['任务', <code key="id">{j.id}</code>],
@@ -120,7 +123,6 @@ function JobDetail({ id, onClose, onChanged }: { id: string; onClose: () => void
               <JsonBlock value={j.result ?? null} summary="任务结果" />
               <JsonBlock value={j.payload ?? null} summary="提交参数" />
               {restOfDetails && Object.keys(restOfDetails).length > 0 && <JsonBlock value={restOfDetails} summary="模型调用与其他明细" />}
-              <Note>关闭这个面板不会取消任务。没有执行器时任务会一直排队，不会被说成已完成。</Note>
             </>
           )}
         </DialogBody>

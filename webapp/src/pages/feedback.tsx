@@ -82,7 +82,7 @@ export default function FeedbackPage() {
     <Page>
       <PageHeader
         title="反馈"
-        desc="查看对检索结果的真实反馈，定位资料并记录处理结果。Contributor 只看到自己的反馈，维护者按知识库查看。"
+        desc="查看检索反馈并记录处理结果。Contributor 查看自己提交的反馈，维护者查看本库反馈。"
         cli={`xrag feedback list --profile ${profile}`}
         actions={
           <Button disabled={!page.data} onClick={() => page.data && downloadJSON({ ...page.data, kb, offset, export_scope: 'current displayed page' }, 'feedback-page.json')}>
@@ -106,7 +106,15 @@ export default function FeedbackPage() {
         />
         {page.loading && !page.data && <Loading />}
         <ErrorLine className="m-4">{page.error}</ErrorLine>
-        {page.data && items.length === 0 && <Empty mark title="当前条件下没有反馈">在检索结果上按 F 或点“反馈这条结果”提交。</Empty>}
+        {page.data && items.length === 0 && (
+          <Empty
+            mark
+            title={status ? `没有${statusInfo[status]?.label ?? ''}的反馈` : '还没有反馈'}
+            action={status ? <Button size="sm" onClick={() => setStatus('')}>查看全部反馈</Button> : undefined}
+          >
+            {!status && '在检索结果上按 F 或点“反馈这条结果”提交。'}
+          </Empty>
+        )}
         <ul>
           {items.map(f => {
             const st = statusInfo[f.status] ?? { label: f.status, tone: 'neutral' as Tone }

@@ -137,11 +137,14 @@ function TaskDetail({ id, onChanged }: { id: string; onChanged: () => void }) {
               }}
             >
               <RotateCcw />
-              检查条件并继续原任务
+              继续任务
             </Button>
           )}
         </span>
       </div>
+      {j.state === 'failed' && !j.cancel_requested && (
+        <Note>继续任务会沿用原范围、截止时间和剩余预算；结果未知的付费调用不会重试。</Note>
+      )}
       {live && <p role="status" aria-live="polite" className="text-xs text-dim">{live.status}</p>}
       {j.error && <ErrorLine>{j.error}</ErrorLine>}
       <KeyValues
@@ -215,7 +218,7 @@ function TaskDetail({ id, onChanged }: { id: string; onChanged: () => void }) {
 }
 
 export default function ResearchPage() {
-  const { kb, caps, profile } = useSession()
+  const { kb, caps, profile, system } = useSession()
   const run = useRun()
   const [mode, setMode] = useState<'research' | 'recipe'>(caps.wiki ? 'research' : 'recipe')
   const [goal, setGoal] = useState(kb === 'demo' ? 'E203' : '')
@@ -238,7 +241,7 @@ export default function ResearchPage() {
       const payload: Record<string, unknown> = { kb, goal, path, max_steps: steps, max_seconds: seconds }
       if (mode === 'recipe') payload.recipe = JSON.parse(recipe)
       return mode === 'recipe' ? api.recipe(payload) : api.research(payload)
-    }, '任务已入队；关闭页面不会取消')
+    }, '任务已入队，可稍后查看结果')
     if (job) {
       setSelected(job.id)
       void tasks.reload()
@@ -249,7 +252,7 @@ export default function ResearchPage() {
     <Page>
       <PageHeader
         title="调查"
-        desc="委托调查由专用 Agent 按返回结果决定下一步，固定配方按明确步骤运行；两者都只读取选定知识。"
+        desc="委托 Agent 调查，或按固定配方检索选定资料。"
         cli={mode === 'recipe' ? `xrag recipe run --data @recipe-run.json --wait --profile ${profile}` : `xrag research run --data @research-task.json --wait --profile ${profile}`}
       />
       <div className="grid gap-3 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
@@ -264,7 +267,7 @@ export default function ResearchPage() {
                   onChange={setMode}
                   options={[
                     { value: 'research', label: '委托调查 · 使用 Chat', disabled: !caps.wiki, title: caps.wiki ? undefined : '本库未配置 Chat 模型' },
-                    { value: 'recipe', label: '固定配方 · 不用规划模型' }
+                    { value: 'recipe', label: '固定配方' }
                   ]}
                 />
                 <Field label={mode === 'recipe' ? '配方输入（替换 $input）' : '调查任务'}>
@@ -282,14 +285,15 @@ export default function ResearchPage() {
                   </Field>
                 </div>
                 {mode === 'recipe' && (
-                  <Field label="配方 JSON" hint="有限的顺序步骤。">
+                  <Field label="配方 JSON">
                     <Textarea mono rows={10} value={recipe} onChange={e => setRecipe(e.target.value)} spellCheck={false} />
                   </Field>
                 )}
                 <Button type="submit" variant="primary">
                   提交任务
                 </Button>
-                <Note>没有执行器时任务排队。Chat 调用计入知识库预算；默认 8 步、120 秒，不承诺一次查清。失败后可以明确请求继续，原范围、截止时间和已用预算保持不变，结果未知的付费调用不会重放。</Note>
+                <Note>模型调用计入本库预算。</Note>
+                {!system.workers && <Note>本进程未启用执行器，任务需由独立 Worker 执行。</Note>}
               </form>
             </PanelBody>
           </Panel>

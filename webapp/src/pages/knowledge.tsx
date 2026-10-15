@@ -50,7 +50,7 @@ function Editor({ draft, setDraft, onSaved }: { draft: Draft; setDraft: (d: Draf
     const saved = await run(async () => {
       if (!refList.length) throw new Error('至少需要一条依据引用')
       return api.saveKnowledge(kb, body)
-    }, '草稿已保存；已发布版本不受影响')
+    }, '草稿已保存')
     if (saved) onSaved(saved)
   }
 
@@ -70,7 +70,7 @@ function Editor({ draft, setDraft, onSaved }: { draft: Draft; setDraft: (d: Draf
           </Select>
         </Field>
       </div>
-      <Field label="正文（Markdown）" hint="说明情境、步骤、结果；不确定的内容写明不确定。">
+      <Field label="正文（Markdown）">
         <Textarea required rows={9} value={draft.body_md} onChange={set('body_md')} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -84,7 +84,7 @@ function Editor({ draft, setDraft, onSaved }: { draft: Draft; setDraft: (d: Draf
       <div className="space-y-1.5">
         <span className="block text-xs text-dim">依据引用</span>
         {refList.length === 0 ? (
-          <p className="rounded-md border border-dashed border-line-strong px-3 py-2.5 text-xs text-faint">还没有依据。在检索结果上点“用作草稿依据”，再回来填入。没有依据的条目不能保存。</p>
+          <p className="rounded-md border border-dashed border-line-strong px-3 py-2.5 text-xs text-faint">至少添加一条依据。可从检索结果收集，或在下方手动填入引用。</p>
         ) : (
           <ul className="divide-y divide-line rounded-md border border-line-strong">
             {refList.map(ref => {
@@ -183,7 +183,7 @@ function SyncTargets() {
     <Panel>
       <PanelHeader
         title="写回目标"
-        meta={<span>默认只手动写回；auto_sync 目标在之后发布成功时排队</span>}
+        meta={<span>手动写回；启用 auto_sync 后随发布自动同步</span>}
         actions={
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus />
@@ -228,7 +228,7 @@ function SyncTargets() {
             <DialogBody className="space-y-4">
               <Check label="高级 JSON（S3、自动同步、推送）" checked={advanced} onChange={e => setAdvanced(e.target.checked)} />
               {advanced ? (
-                <Field label="目标 JSON" hint="auto_sync 是显式订阅；push=true 只推指定的 xrag/* 分支。凭据只填 env:/file: 引用。">
+                <Field label="目标 JSON" hint="auto_sync 开启发布后自动同步；push=true 推送指定的 xrag/* 分支。凭据使用 env:/file: 引用。">
                   <Textarea mono rows={14} value={json} onChange={e => setJson(e.target.value)} spellCheck={false} />
                 </Field>
               ) : (
@@ -364,7 +364,7 @@ export default function KnowledgePage() {
     <Page>
       <PageHeader
         title="知识与 Wiki"
-        desc="经验先写成草稿，明确发布后才参与检索。草稿和已发布版本分开保存，引用不会因为编辑而改变。"
+        desc="编写知识草稿，发布后用于检索。"
         cli={`xrag knowledge revisions ITEM_ID --profile ${profile}`}
         actions={
           <>
@@ -516,7 +516,7 @@ export default function KnowledgePage() {
               <Field label="限定来源目录（可空）">
                 <Input mono value={regenForm.path} onChange={e => setRegenForm({ ...regenForm, path: e.target.value })} placeholder="manual/" />
               </Field>
-              <Note>只选原始资料，排除全部知识条目和 Wiki，避免引用自己的总结。</Note>
+              <Note>生成依据为原始资料，排除知识条目和 Wiki。</Note>
             </DialogBody>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setRegen(null)}>

@@ -122,6 +122,28 @@ def browser_checks(base, key, op):
         ck('call tab shows the equivalent CLI', 'xrag +ask E203 --kb demo' in inspector.inner_text(), None, 'browser')
         p.screenshot(path=str(CHECKS / 'search.png'))
 
+        # 空结果建议与当前范围一致；候选集合使用中文标签，诊断保留在完整响应中。
+        p.get_by_label('查询', exact=True).fill('COPY_REVIEW_NO_MATCH')
+        p.get_by_label('查询', exact=True).press('Enter')
+        results.get_by_text('未找到匹配结果', exact=True).wait_for(timeout=10000)
+        ck('unscoped empty search offers usable guidance', '清除范围' not in results.inner_text() and inspector.get_by_text('没有可显示的原文', exact=True).is_visible(), None, 'browser')
+        p.get_by_label('查询', exact=True).fill('E203')
+        p.get_by_label('查询', exact=True).press('Enter')
+        results.get_by_role('button', name='在此范围内继续查', exact=True).wait_for(timeout=10000)
+        results.get_by_role('button', name='在此范围内继续查', exact=True).click()
+        p.get_by_label('查询', exact=True).press('Enter')
+        results.get_by_text('候选集合', exact=True).wait_for(timeout=10000)
+        ck('saved candidate scopes have a Chinese label', True, None, 'browser')
+        pipeline = p.get_by_role('region', name='执行过程')
+        ck('pipeline keeps a duration label and omits internal projection prose', pipeline.get_by_text('总耗时', exact=True).is_visible() and pipeline.locator('[title*="corpus text"]').count() == 0, None, 'browser')
+        inspector.get_by_role('tab', name='响应 JSON').click()
+        ck('full response retains original trace diagnostics', 'corpus text and vectors are not in the View' in inspector.inner_text(), None, 'browser')
+        p.get_by_label('查询', exact=True).fill('COPY_REVIEW_NO_MATCH')
+        p.get_by_label('查询', exact=True).press('Enter')
+        results.get_by_text('未找到匹配结果', exact=True).wait_for(timeout=10000)
+        ck('scoped empty search explains the available scope reset', '清除范围' in results.inner_text() and p.get_by_role('button', name='清除范围', exact=True).is_visible(), None, 'browser')
+        p.get_by_role('button', name='清除范围', exact=True).click()
+
         # 只查此文件 → 带范围回到检索
         go(p, origin, '/sources')
         p.locator('tr', has_text='manual/02-errors.md').get_by_role('button', name='只查此文件').click()
@@ -133,6 +155,18 @@ def browser_checks(base, key, op):
         p.get_by_role('button', name='查询', exact=True).click()
         p.get_by_role('img', name='关系图', exact=False).wait_for(timeout=10000)
         ck('graph page draws returned relations', '组件B' in (p.get_by_role('img', name='关系图', exact=False).get_attribute('aria-label') or ''), None, 'browser')
+
+        p.get_by_role('button', name='实体', exact=True).click()
+        p.get_by_label('实体名', exact=True).fill('COPY_REVIEW_NO_ENTITY')
+        p.get_by_role('button', name='查询', exact=True).click()
+        p.get_by_text('未找到匹配结果', exact=True).wait_for(timeout=10000)
+        ck('entity empty state does not suggest unavailable graph controls', p.get_by_label('方向', exact=True).count() == 0 and '调整方向' not in p.inner_text('main') and '展开层数后再查' not in p.inner_text('main'), None, 'browser')
+
+        go(p, origin, '/feedback')
+        p.get_by_role('button', name='已处理', exact=True).click()
+        p.get_by_role('button', name='查看全部反馈', exact=True).wait_for(timeout=10000)
+        p.get_by_role('button', name='查看全部反馈', exact=True).click()
+        ck('filtered feedback offers a working reset', p.get_by_role('button', name='全部', exact=True).get_attribute('aria-pressed') == 'true', None, 'browser')
 
         # 评测：载入样例并运行一次关键词对比
         go(p, origin, '/eval')
@@ -153,6 +187,7 @@ def browser_checks(base, key, op):
         palette = p.get_by_role('dialog')
         palette.get_by_text('search keyword').first.wait_for(timeout=5000)
         ck('command palette lists registry actions', palette.get_by_text('files grep').count() >= 1, None, 'browser')
+        ck('command palette uses short UI descriptions', '连通不是因果' not in palette.inner_text() and '按名称查找实体' in palette.inner_text(), None, 'browser')
         first_entry = palette.locator('[data-index="0"]').inner_text()
         ck('command palette highlights an action first, not appearance', '侧栏' not in first_entry and '主题' not in first_entry, first_entry, 'browser')
         p.get_by_label('搜索命令').fill('主题：浅色多彩')
@@ -267,7 +302,8 @@ def browser_checks(base, key, op):
         ck('logout returns to the login form', p.locator('#key-form').is_visible(), None, 'browser')
 
         # Reader：导航只显示查找与系统页面；直接访问维护页面得到角色说明
-        reader = op('/v1/keys', {'name': 'smoke reader', 'role': 'reader', 'kbs': ['demo'], 'expires_at': 0})['key']
+        op('/v1/kbs', {'id': 'copy-empty', 'name': '文案回归空库'})
+        reader = op('/v1/keys', {'name': 'smoke reader', 'role': 'reader', 'kbs': ['demo', 'copy-empty'], 'expires_at': 0})['key']
         login_with_key(p, reader)
         nav = p.get_by_role('navigation', name='工作台').first
         ck('reader navigation hides maintainer pages', nav.get_by_role('link', name='评测').count() == 0 and nav.get_by_role('link', name='知识与 Wiki').count() == 0 and nav.get_by_role('link', name='检索').count() == 1, None, 'browser')
@@ -280,6 +316,14 @@ def browser_checks(base, key, op):
         go(p, origin, '/settings')
         p.get_by_role('tab').first.wait_for(timeout=10000)
         ck('reader sees only the capability settings tab', p.get_by_role('tab').count() == 1, p.get_by_role('tab').all_inner_texts(), 'browser')
+        p.get_by_role('button', name='切换知识库', exact=True).click()
+        p.get_by_role('menuitem', name='copy-empty', exact=False).click()
+        go(p, origin, '/search')
+        p.get_by_text('请联系知识库维护者添加资料。', exact=True).wait_for(timeout=10000)
+        ck('read-only empty libraries avoid management actions', p.get_by_role('button', name='去资料与来源', exact=True).count() == 0, None, 'browser')
+        go(p, origin, '/overview')
+        p.get_by_role('heading', name='常用操作', exact=True).wait_for(timeout=10000)
+        ck('overview shortcuts follow the reader role', p.get_by_text('构建资料', exact=True).count() == 0 and p.get_by_text('处理反馈', exact=True).count() == 0 and p.get_by_text('查看检索能力', exact=True).is_visible(), None, 'browser')
         logout(p)
         ck('no JavaScript exceptions', not errors, errors, 'browser')
         browser.close()

@@ -66,7 +66,7 @@ function Report({ report }: { report: EvalReport }) {
           ))}
         </tbody>
       </Table>
-      <Note>实际查询结果，错误计入分母；未配置模型时“组合”只执行词法。</Note>
+      <Note>错误计入分母；未配置向量模型时，组合检索使用关键词。</Note>
       {report.pairs.length > 0 && (
         <div className="space-y-1.5">
           <h3 className="text-[13px] font-semibold">命中差异</h3>
@@ -208,11 +208,11 @@ function Compare() {
                 </Button>
               </div>
             </div>
-            <Note>JSON 每题指定期望文件和可选原文锚点。没有期望不能冒充“应当无结果”。</Note>
+            <Note>每题填写期望文件；预期无结果的题设置 <code>expected_empty: true</code>。</Note>
           </PanelBody>
         </Panel>
         <Panel>
-          <PanelHeader title="明确策略，提交比较" />
+          <PanelHeader title="检索策略" />
           <PanelBody>
             <form onSubmit={submit} className="space-y-3">
               <div className="flex flex-wrap gap-1.5">
@@ -238,7 +238,7 @@ function Compare() {
                 <Play />
                 运行对比
               </Button>
-              <Note>对比任务和构建共用本库的互斥队列。模型策略会真实调用已配置的服务。</Note>
+              <Note>对比与构建依次执行；模型调用计入本库预算。</Note>
             </form>
           </PanelBody>
         </Panel>
@@ -400,7 +400,7 @@ function Drafts() {
               发布题集
             </Button>
           </form>
-          <Note className="mt-3">同一系列里，规范化后相同的问题不能同时进入调试集和留出集。这里不识别语义相近的问题，也不强制隐藏留出题答案。</Note>
+          <Note className="mt-3">同一系列中，调试集与留出集不能包含规范化后相同的问题。语义相近问题需人工核对；留出题答案可见。</Note>
         </PanelBody>
       </Panel>
       <Dialog open={Boolean(approving)} onOpenChange={o => !o && setApproving(null)}>
@@ -476,7 +476,7 @@ function Queries() {
 
   return (
     <Panel>
-      <PanelHeader title="查询记录" meta={<span>查看保存的候选和阶段，不重新调用模型；普通查询最多保留 2,000 条摘要</span>} actions={<Button size="sm" variant="ghost" onClick={() => void records.reload()}><RefreshCw />刷新</Button>} />
+      <PanelHeader title="查询记录" meta={<span>保存的候选与执行阶段 · 最多保留 2,000 条普通查询摘要</span>} actions={<Button size="sm" variant="ghost" onClick={() => void records.reload()}><RefreshCw />刷新</Button>} />
       {records.data && items.length === 0 && <Empty title="还没有查询记录">先在“检索”页执行一次查询。</Empty>}
       {items.length > 0 && (
         <Table>
@@ -540,7 +540,7 @@ function Queries() {
                 查看诊断
               </Button>
             </form>
-            <Note>不会重跑查询或调用模型。历史过程与当前资料状态分别展示；缺失的历史候选显示为 unknown。</Note>
+            <Note>对照历史查询与当前资料状态；缺失的历史候选显示为 unknown。</Note>
             {result != null && <JsonBlock value={result} open summary="诊断结果" />}
           </DialogBody>
         </DialogContent>
@@ -555,7 +555,7 @@ export default function EvalPage() {
     <Page>
       <PageHeader
         title="评测"
-        desc="固定已发布文件版本、明确策略开关，用同一组问题比较实际结果。看漏了哪份资料，而不只看一个分数。"
+        desc="用同一组问题比较检索策略，查看命中结果和遗漏资料。"
         cli={`xrag eval run SET_ID --wait --profile ${profile}`}
       />
       <Tabs defaultValue="compare">

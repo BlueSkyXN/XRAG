@@ -27,9 +27,9 @@ import { Completeness, itemRoutes, itemView, pipelineStages, rankingLabels, tota
 type SearchAction = '+ask' | 'search.keyword' | 'search.semantic' | 'files.grep' | 'search.external'
 
 const actionLabels: Record<SearchAction, { label: string; hint: string }> = {
-  '+ask': { label: '组合检索', hint: '词法、语义、图按需组合，不生成答案' },
+  '+ask': { label: '组合检索', hint: '组合关键词、语义与关系结果' },
   'search.keyword': { label: '关键词', hint: '编号与关键词，完成时给出精确块数' },
-  'search.semantic': { label: '语义', hint: '向量近邻，结果是候选而非全集' },
+  'search.semantic': { label: '语义', hint: '按语义相似度返回候选结果' },
   'files.grep': { label: '原文正则', hint: '在已发布原文里逐行匹配正则' },
   'search.external': { label: '外部服务', hint: '调用已登记的外部 XRAG 检索' }
 }
@@ -49,7 +49,7 @@ function FilterDialog({ open, onOpenChange, fields, value, onApply }: { open: bo
       <DialogContent className="max-w-md">
         <DialogTitle>按字段筛选</DialogTitle>
         <DialogBody className="space-y-3">
-          <p className="text-xs leading-relaxed text-dim">字段来自资料的 front matter。同一字段只填一个值；多个字段之间同时满足。留空表示不筛选。</p>
+          <p className="text-xs leading-relaxed text-dim">填写要匹配的字段值，多个条件同时生效。</p>
           {fields.length === 0 && <p className="text-[13px] text-dim">这个知识库没有登记字段。</p>}
           {fields.map(field => (
             <Field key={field} label={<code>{field}</code>}>
@@ -310,6 +310,14 @@ export default function SearchPage() {
     : null
   const disc = discover.data?.data
   const emptyKb = disc !== undefined && disc.documents === 0
+  const noResultsHint = action === 'files.grep'
+    ? '调整正则表达式后重试。'
+    : scope
+      ? '更换查询词，或清除范围后再查。'
+      : Object.keys(filters).length > 0
+        ? '更换查询词，或放宽字段筛选。'
+        : '更换查询词后重试。'
+  const notes = response?.notes.map(translateNote).filter((note): note is string => note !== null) ?? []
 
   return (
     <Page>
@@ -436,7 +444,7 @@ export default function SearchPage() {
         <Pipeline
           label="执行过程"
           stages={pipelineStages(response, Boolean(caps.embedding))}
-          total={{ label: response.notes.length ? translateNote(response.notes[0]) : '总耗时', value: totalDuration(response) }}
+          total={{ label: '总耗时', value: totalDuration(response) }}
         />
       )}
 
@@ -451,8 +459,8 @@ export default function SearchPage() {
                 <>
                   <span>{submitted ? actionLabels[submitted.action].label : ''}</span>
                   {pages.length > 1 && <span>第 {pages.length} 页</span>}
-                  {response.notes.slice(response.trace?.length ? 1 : 0).map(note => (
-                    <span key={note}>{translateNote(note)}</span>
+                  {notes.map(note => (
+                    <span key={note}>{note}</span>
                   ))}
                 </>
               )
@@ -467,7 +475,7 @@ export default function SearchPage() {
                     </Button>
                   )}
                   {response.handle && (
-                    <span className="inline-flex h-7 items-center gap-2 rounded-md border border-line-strong pl-2.5 pr-1 text-xs" title="保存的是这次结果的集合；组合与语义检索是候选集合，不是知识库全集。24 小时内有效。">
+                    <span className="inline-flex h-7 items-center gap-2 rounded-md border border-line-strong pl-2.5 pr-1 text-xs" title="保存本次检索结果，有效期 24 小时。组合与语义检索保存候选集合。">
                       范围 <code className="text-fg">{tail(response.handle, 10)}</code>
                       <Button
                         size="sm"
@@ -508,7 +516,7 @@ export default function SearchPage() {
               每条结果带文件路径、行号和版本。按 <Kbd>/</Kbd> 回到检索框，<Kbd>⌘K</Kbd> 查看全部动作。
             </Empty>
           )}
-          {response && items.length === 0 && (emptyKb ? <EmptyKb kb={kb} /> : <Empty mark title="当前范围内没有命中">换用文件中的完整编号，或清除范围后再查。</Empty>)}
+          {response && items.length === 0 && (emptyKb ? <EmptyKb kb={kb} /> : <Empty title="未找到匹配结果">{noResultsHint}</Empty>)}
           {items.length > 0 && (
             <ol ref={listRef} onKeyDown={onListKey} aria-label="结果列表">
               {items.map((item, index) => (
@@ -538,7 +546,6 @@ export default function SearchPage() {
                 下一页
                 <ChevronRight />
               </Button>
-              <span>读取已保存的结果。</span>
             </div>
           )}
           {response && <Completeness response={response} className="px-3.5 py-2.5" />}
@@ -556,13 +563,12 @@ export default function SearchPage() {
               {readTarget ? (
                 <Reader target={readTarget} terms={terms} className="min-h-[360px] flex-1" />
               ) : (
-                <Empty mark={false} title="选中一条结果，在这里对照原文">原文来自结果引用固定的文件版本，引用行会被标出。</Empty>
+                <Empty title={response && items.length === 0 ? '没有可显示的原文' : '选择结果查看原文'} />
               )}
             </TabsContent>
             <TabsContent value="call" className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-3">
               {calls ? (
                 <>
-                  <p className="text-xs leading-relaxed text-dim">这次检索的等价调用，网页、CLI、HTTP 和 MCP 走同一组接口。</p>
                   <CodeBlock label="CLI" meta={`xrag Client · profile ${profile}`} code={calls.cli} />
                   <CodeBlock label="HTTP" meta={submittedSpec?.path} code={calls.http} />
                   <CodeBlock label="MCP" meta={`tools/call · ${submittedSpec?.tool} · ${submittedSpec?.group} 工具组`} code={calls.mcp} />
@@ -571,7 +577,7 @@ export default function SearchPage() {
                     <button type="button" className="mx-1 text-dim underline underline-offset-2 hover:text-fg" onClick={() => navigate('/access')}>
                       接入
                     </button>
-                    页修改。Key 用环境变量占位，不会出现在页面里。
+                    页修改。调用时请设置 <code>XRAG_KEY</code> 环境变量。
                   </p>
                 </>
               ) : (

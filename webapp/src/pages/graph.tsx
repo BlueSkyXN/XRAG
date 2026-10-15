@@ -113,7 +113,7 @@ export default function GraphPage() {
     <Page>
       <PageHeader
         title="关系"
-        desc="沿关系查看上下文。每条边都带出处；选定范围同样约束关系的支撑块。"
+        desc="查询实体关系，查看原文出处。"
         cli={spec ? invocation(spec, action === 'graph.path' ? { kbs: [kb], from_id: name || '起点', to_id: to || '终点', direction, max_hops: hops } : { kbs: [kb], name: name || '实体', ...(action === 'graph.neighbors' ? { direction, hops } : {}) }, profile).cli : undefined}
       />
 
@@ -154,7 +154,7 @@ export default function GraphPage() {
           </span>
           {scope ? (
             <span className="inline-flex items-center gap-1.5 text-dim">
-              严格限制在范围 <code className="text-fg">{tail(scope.handle, 10)}</code> {scope.label}
+              检索范围 <code className="text-fg">{tail(scope.handle, 10)}</code> {scope.label}
               <button type="button" onClick={() => setScope(null)} className="rounded p-0.5 hover:text-fg" aria-label="清除范围">
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -173,7 +173,7 @@ export default function GraphPage() {
           <div className="space-y-3">
             {edges.length > 0 && (
               <Panel>
-                <PanelHeader title="关系图" meta={<span>只画这次返回的 {edges.length} 条边</span>} />
+                <PanelHeader title="关系图" meta={<span>本次返回 {edges.length} 条关系</span>} />
                 <PanelBody>
                   <GraphDiagram edges={edges} start={action === 'graph.path' ? name : name} />
                 </PanelBody>
@@ -181,7 +181,15 @@ export default function GraphPage() {
             )}
             <Panel>
               <PanelHeader title={`${response.returned} 项`} meta={<span>{actionInfo[action]}</span>} />
-              {items.length === 0 && <Empty title="当前范围内没有找到">调整方向或展开深度，或清除范围后再查。</Empty>}
+              {items.length === 0 && (
+                <Empty title="未找到匹配结果">
+                  {scope
+                    ? '调整实体名称，或清除范围后再查。'
+                    : action === 'graph.neighbors' || action === 'graph.path'
+                      ? '调整实体名称、方向或展开层数后再查。'
+                      : '换一个实体名再查。'}
+                </Empty>
+              )}
               <ul>
                 {items.map((item, i) => (
                   <li key={item.ref ?? i} className="border-b px-4 py-3">
@@ -259,9 +267,7 @@ export default function GraphPage() {
       )}
       {!response && !error && (
         <Panel>
-          <Empty mark title="输入一个实体名开始">
-            默认关系来自原文里 <code>[[A]] --关系--&gt; [[B]]</code> 这样的显式标注；可以在“设置”里改用模型或插件抽取。
-          </Empty>
+          <Empty mark title="输入一个实体名开始" />
         </Panel>
       )}
       <ReaderSheet target={reading} onClose={() => setReading(null)} />
