@@ -20,6 +20,7 @@ import { Empty, ErrorLine, Panel, PanelHeader } from '../components/panel'
 import { Pipeline } from '../components/pipeline'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/tabs'
 import { FeedbackDialog } from '../features/feedback-dialog'
+import { EmptyKb } from '../features/empty-kb'
 import { Reader, ReaderSheet } from '../features/reader'
 import { Completeness, itemRoutes, itemView, pipelineStages, rankingLabels, totalDuration, translateNote } from '../features/result-meta'
 
@@ -308,6 +309,7 @@ export default function SearchPage() {
     ? { ref: current.ref, kb, path: current.path, title: itemView(current).title + (itemView(current).section ? ` › ${itemView(current).section}` : ''), lineStart: current.line_start, lineEnd: current.line_end }
     : null
   const disc = discover.data?.data
+  const emptyKb = disc !== undefined && disc.documents === 0
 
   return (
     <Page>
@@ -484,10 +486,9 @@ export default function SearchPage() {
               )
             }
           />
-          {!response && !busy && (
-            <Empty
-              title="从一个编号、术语或问题开始"
-              action={
+          {!response && !busy && emptyKb && <EmptyKb kb={kb} />}
+          {!response && !busy && !emptyKb && (
+            <Empty mark title="从一个编号、术语或问题开始" action={
                 kb === 'demo'
                   ? examples.map(x => (
                       <Button
@@ -507,9 +508,7 @@ export default function SearchPage() {
               结果保留文件路径、行号和版本，可以直接对照原文核查。按 <Kbd>/</Kbd> 回到检索框，<Kbd>⌘K</Kbd> 查看全部动作。
             </Empty>
           )}
-          {response && items.length === 0 && (
-            <Empty title="当前范围内没有命中">没有命中不代表现实中不存在。可以换用文件中的完整编号、放宽字段筛选，或清除范围后再查。</Empty>
-          )}
+          {response && items.length === 0 && (emptyKb ? <EmptyKb kb={kb} /> : <Empty title="当前范围内没有命中">没有命中不代表现实中不存在。可以换用文件中的完整编号、放宽字段筛选，或清除范围后再查。</Empty>)}
           {items.length > 0 && (
             <ol ref={listRef} onKeyDown={onListKey} aria-label="结果列表">
               {items.map((item, index) => (
