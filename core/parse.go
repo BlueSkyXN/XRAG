@@ -328,3 +328,37 @@ func DictionaryQuery(q string, words []string) (string, error) {
 	}
 	return strings.Join(quoted, " AND "), nil
 }
+
+var questionWords = strings.NewReplacer(
+	"怎么样", " ", "为什么", " ", "有没有", " ", "是不是", " ",
+	"怎么", " ", "怎样", " ", "如何", " ", "什么", " ", "哪些", " ",
+	"哪个", " ", "哪里", " ", "为何", " ", "是否", " ", "能否", " ",
+	"可以", " ", "请问", " ", "的", " ", "了", " ", "吗", " ", "呢", " ", "吧", " ",
+)
+var queryWords = regexp.MustCompile(`[\pL\pN_]+`)
+var englishQuestionWords = regexp.MustCompile(`(?i)^(what|how|why|which|where|who|is|are|does|do|the|a|an|of|to|in|for)$`)
+
+// RelaxedDictionaryQuery 用于问句召回；保留词典分词，按原顺序取前 48 个不同词元。
+func RelaxedDictionaryQuery(q string, words []string) (string, error) {
+	stripped := queryWords.ReplaceAllStringFunc(questionWords.Replace(q), func(word string) string {
+		if englishQuestionWords.MatchString(word) {
+			return " "
+		}
+		return word
+	})
+	terms := Unique(DictionaryTerms(stripped, words, true))
+	if len(terms) == 0 {
+		terms = Unique(DictionaryTerms(q, words, true))
+	}
+	if len(terms) == 0 {
+		return "", Err("INVALID_ARGUMENT", "query needs 1..48 terms", 400)
+	}
+	if len(terms) > 48 {
+		terms = terms[:48]
+	}
+	quoted := make([]string, 0, len(terms))
+	for _, term := range terms {
+		quoted = append(quoted, "\""+strings.ReplaceAll(term, "\"", "\"\"")+"\"")
+	}
+	return strings.Join(quoted, " OR "), nil
+}

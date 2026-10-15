@@ -79,6 +79,9 @@ def main(browser):
             ask = op('/v1/ask', {'kbs': ['demo'], 'q': '组件B', 'graph': True, 'trace': True})
             routes = {tuple(item.get('routes', [])) for item in ask['items']}
             ck('+ask reports which routes found each result', ('keyword', 'graph') in routes and ('keyword',) in routes, sorted(routes))
+            question = json.loads((ROOT / 'examples/eval-questions.json').read_text())['cases'][0]
+            answer = op('/v1/ask', {'kbs': ['demo'], 'q': question['question'], 'limit': 5})
+            ck('+ask recalls the expected file for a natural-language question', bool(answer['items']) and question['expected'][0]['path'] in [item['path'] for item in answer['items']])
             chunk = op('/v1/ask', {'kbs': ['demo'], 'q': 'E203', 'limit': 1})['items'][0]
             window = op('/v1/files/read', {'kbs': ['demo'], 'ref': chunk['ref'], 'context_lines': 3})['data']['window']
             ck('files.read returns cited lines with context', window['cite_start'] == chunk['line_start'] and window['line_start'] < window['cite_start'], window)

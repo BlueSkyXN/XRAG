@@ -23,6 +23,12 @@ type Engine struct {
 	MaxItems int
 	External ExternalSearch
 }
+
+// RelaxedLexical 是 +ask 可选的词法召回接口，未实现的仓库沿用 Lexical。
+type RelaxedLexical interface {
+	RelaxedLexical(context.Context, View, string) ([]Ranked, error)
+}
+
 type scopeData struct {
 	Refs  []Ref    `json:"refs,omitempty"`
 	Files bool     `json:"files,omitempty"`
@@ -371,7 +377,11 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 			complete = false
 			resp.Coverage.Approximate = true
 		} else {
-			rs, er := e.Repo.Lexical(ctx, view, q.Q)
+			lexical := e.Repo.Lexical
+			if relaxed, ok := e.Repo.(RelaxedLexical); action == "+ask" && ok {
+				lexical = relaxed.RelaxedLexical
+			}
+			rs, er := lexical(ctx, view, q.Q)
 			if er != nil {
 				return resp, er
 			}
