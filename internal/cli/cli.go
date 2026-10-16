@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -217,6 +218,7 @@ func Main(args []string, out, errout io.Writer) error {
 	kb := f.String("kb", "", "comma separated KBs")
 	data := f.String("data", "", "JSON object or @file")
 	recipeFile := f.String("recipe", "", "recipe JSON/YAML file; local input conversion only")
+	imageFiles := f.String("images", "", "comma separated image files for image describe")
 	ref := f.String("ref", "", "source ref")
 	within := f.String("within", "", "scope handle")
 	path := f.String("path", "", "relative path")
@@ -465,8 +467,60 @@ func Main(args []string, out, errout io.Writer) error {
 			used = 2
 		}
 	}
-	if a, ok := contracts.Find(command); ok {
-		args := rest[used:]
+		if a, ok := contracts.Find(command); ok {
+			if a.Action == "image.describe" {
+				if p.Type != "server" {
+					return core.Err("MODE_UNSUPPORTED", "image describe requires a Server profile", 422)
+				}
+				if *imageFiles == "" {
+					return core.Err("INVALID_ARGUMENT", "--images file1[,file2...] is required for image describe", 400)
+				}
+				images := []map[string]any{}
+				for _, fp := range strings.Split(*imageFiles, ",") {
+					fp = strings.TrimSpace(fp)
+					if fp == "" {
+						continue
+					}
+					b, e := os.ReadFile(fp)
+					if e != nil {
+						return e
+					}
+					if len(b) > 4<<20 {
+						return core.Err("SOURCE_LIMIT", filepath.Base(fp)+" exceeds 4 MiB", 422)
+					}
+					mime := "image/png"
+					switch strings.ToLower(filepath.Ext(fp)) {
+					case ".jpg", ".jpeg":
+						mime = "image/jpeg"
+					case ".webp":
+						mime = "image/webp"
+					case ".gif":
+						mime = "image/gif"
+					}
+					images = append(images, map[string]any{"mime": mime, "data_base64": base64.StdEncoding.EncodeToString(b)})
+				}
+				if len(images) == 0 {
+					return core.Err("INVALID_ARGUMENT", "no readable image files", 400)
+				}
+				opts["images"] = images
+				if len(rest) > used {
+					opts["prompt"] = strings.Join(rest[used:], " ")
+				}
+				if *dry {
+					return print(out, map[string]any{"action": a.Action, "mode": p.Type, "images": len(images), "will_execute": false, "endpoint": p.URL})
+				}
+				var payload map[string]any
+				if b, e := json.Marshal(opts); e == nil {
+					_ = json.Unmarshal(b, &payload)
+				}
+				payload["kb"] = p.KBs[0]
+				v, e := Remote(ctx, p, "POST", a.Path, payload, "")
+				if e != nil {
+					return e
+				}
+				return print(out, v)
+			}
+			args := rest[used:]
 		set := func(k string, v any, flag string) {
 			if visited[flag] {
 				opts[k] = v

@@ -1,3 +1,11 @@
+# 未发布
+
+## 图像识别
+
+- 新增 `image.describe`：HTTP `POST /v1/describe`，CLI `xrag image describe --images 文件[,文件…] "提问"`。用该知识库已配置的 Chat 模型识别图片并返回文本描述；不写入知识库、不入索引。
+- 适配层 `ChatImage` 按 OpenAI `chat/completions` content parts 发送图片，`image_url` 只用 `data:` URI base64，不转发调用方 URL；纯文本调用保持原有两条字符串消息格式。
+- 限制：单图 base64 ≤ 700000 字符，一次最多 4 张，解码后合计 ≤ 8 MiB；支持 png/jpeg/webp/gif。知识库未配置 Chat 时返回 `CAPABILITY_UNAVAILABLE`。
+
 # 0.10.3（2026-10-16）
 
 ## 检索与发布
