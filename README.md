@@ -1,6 +1,6 @@
-# XRAG 0.10.1
+# XRAG 0.10.2
 
-这是 0.10.1 实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
+这是 0.10.2 实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
 
 它不是生产发行。磁盘格式仍使用 Demo.9 的 `store_schema=demo9`，响应里的 `schema_version` 仍是 `0.7-demo`。不迁移更早的数据目录。真实 Qdrant、Neo4j、商业模型和 S3/WeKnora 现场联调仍未完成。
 
@@ -18,7 +18,7 @@ bash demo.sh
 
 前端源码在 `webapp/`（React + Tailwind + Radix），`make web` 构建到 `internal/server/web/dist/`（不进 Git）；开发时 `make web-dev` 启动 Vite（端口 5173，`/v1` 代理到 8765）。发布包和 Docker 镜像在构建时内嵌产物；裸 `go build` 得到的二进制没有界面（`/` 返回 503 提示，API 与 MCP 正常）。只用系统字体，不打包字体文件。
 
-Linux amd64 预编译包运行 `bash run-linux.sh`。纯Client包不含 Server、不需要C/SQLite；macOS/Windows/ARM包是交叉编译产物，未做对应实机测试。
+从 [Releases](https://github.com/BlueSkyXN/XRAG/releases) 下载 Linux amd64 完整包，解压后运行 `bash run-linux.sh`。需要 GLIBC 2.34+ 和带 FTS5 的 libsqlite3，Git 来源还需要 git。纯 Client 包不含 Server，不需要 C/SQLite；提供 macOS、Windows amd64 和 Linux arm64 版本。下载后可用随附的 `SHA256SUMS` 校验附件。
 
 ## 2. 用 Docker 运行
 
@@ -27,6 +27,8 @@ docker run -d --name xrag -p 8765:8765 -v xrag-data:/data ghcr.io/blueskyxn/xrag
 ```
 
 镜像按提交打标签（`sha-<短SHA>`）、`main` 跟随主干、版本 tag 跟随发布；任何情况下都不打 `latest`。数据落在卷的 `/data/xrag`，端口默认 `8765`，可用 `XRAG_LISTEN` 覆盖。
+
+首次启动会导入示例，并排队构建 `demo` 库。设置 `XRAG_BUILD_ON_START=<kb>` 后，每次启动都会排队构建该库；KB ID 为 1–64 位字母、数字、下划线或连字符，首位为字母或数字。数据目录中有 `RESTORE_INFO.json` 的恢复副本跳过自动构建。
 
 bind mount 宿主目录时（`-v /host/path:/data`），该目录需要对容器内用户（UID 1000）可写。
 
@@ -116,10 +118,10 @@ python3 scripts/package.py --out /tmp/xrag-release
 python3 scripts/package_clients.py --out /tmp/xrag-release
 ```
 
-`package.py` 从 Git 跟踪文件生成源码包；完整 Linux 包还会检查 `bin/xrag` 与 `bin/xrag-server` 是否为 Linux amd64 构建。在 macOS 等其他平台可加 `--source-only` 仅生成源码 ZIP。源码、Linux 和 Client 包名均包含当前版本号；Linux CI 会重新解包源码和完整包，执行构建、测试、服务启动与工作台检查。
+`package.py` 要求工作区干净（包括未忽略的未跟踪文件），从 Git 跟踪清单生成源码包；被过滤规则排除的已跟踪文件会列出并报错。完整 Linux 包还会检查 `bin/xrag` 与 `bin/xrag-server` 的 Linux amd64 平台、Go 程序路径和编译时注入的当前提交。在 macOS 等其他平台可加 `--source-only` 仅生成源码 ZIP。源码、Linux 和 Client 包名均包含当前版本号；Linux CI 会重新解包源码和完整包，执行构建、测试、服务启动与工作台检查。
 
 `--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行（先 `make web`）。`go test` 用注入的假前端产物，不依赖 Node。
 
 ## 10. 许可与数据
 
-见 [LICENSE_NOTICE.md](LICENSE_NOTICE.md)。本次不替用户决定许可证，不修改本机仓库。包里没有模型权重、字体、运行数据或真实凭据。
+本项目按 [GPL-3.0](LICENSE) 发布，说明见 [LICENSE_NOTICE.md](LICENSE_NOTICE.md)。包里没有模型权重、字体、运行数据或真实凭据。

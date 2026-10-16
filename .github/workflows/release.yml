@@ -1,0 +1,105 @@
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xrag-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate tag, main ancestry, and absent Release
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^const Version = "\([^"]*\)"$/\1/p' core/types.go)"
+          test "$TAG" = "v${version}"
+          git merge-base --is-ancestor HEAD origin/main
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --include > "$RUNNER_TEMP/release-check.txt" 2>&1; then
+            echo "Release ${TAG} already exists; refusing to overwrite it" >&2
+            exit 1
+          fi
+          grep -Eq '^HTTP/[0-9.]+ 404' "$RUNNER_TEMP/release-check.txt" || { cat "$RUNNER_TEMP/release-check.txt"; exit 1; }
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
+      - run: npm ci && npm run build
+        working-directory: webapp
+      - run: make build
+      - name: Build and verify source, Linux, and Client packages
+        run: |
+          set -euo pipefail
+          python3 scripts/package.py --out dist
+          python3 scripts/check_release.py --source dist/*-source.zip --linux dist/*-linux-amd64.tar.gz
+          python3 scripts/package_clients.py --out dist
+      - name: Check required GLIBC version
+        run: |
+          set -euo pipefail
+          required="$(objdump -T bin/xrag-server | sed -n 's/.*(GLIBC_\([0-9.]*\)).*/\1/p' | sort -Vu | tail -1)"
+          test -n "$required"
+          echo "Linux amd64 requires GLIBC >= ${required}" >> "$GITHUB_STEP_SUMMARY"
+          test "$(printf '%s\n' "$required" 2.35 | sort -V | tail -1)" = 2.35
+      - name: Generate and verify checksums
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          test "$(find . -maxdepth 1 -type f | wc -l)" -eq 6
+          sha256sum ./*.zip ./*.tar.gz > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - name: Compose Release notes
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          version = os.environ['TAG'][1:]
+          sections = Path('docs/CHANGELOG.md').read_text().split('\n# ')
+          section = next(s for s in sections if s.removeprefix('# ').startswith(version + '（'))
+          notes = '# ' + section.removeprefix('# ').strip() + '\n\n'
+          notes += f'''## 下载与校验
+
+          下载本 Release 的源码包、Linux amd64 完整包或对应平台 Client 包，同时下载 `SHA256SUMS`。
+          下载全部附件后，在同一目录执行：
+
+          ```bash
+          gh release download v{version} --repo BlueSkyXN/XRAG
+          sha256sum -c SHA256SUMS
+          ```
+
+          Linux amd64 包需要 GLIBC 2.34+、带 FTS5 的 libsqlite3；Git 来源需要 git。
+          Client 包包含 darwin arm64/amd64、windows amd64、linux arm64。
+
+          ## 镜像
+
+          `ghcr.io/blueskyxn/xrag:{version}`
+          '''
+          Path(os.environ['RUNNER_TEMP'], 'release-notes.md').write_text(notes)
+          PY
+      - name: Create draft, upload seven assets, then publish
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" --draft --verify-tag --title "XRAG ${TAG}" --notes-file "$RUNNER_TEMP/release-notes.md"
+          gh release upload "$TAG" dist/*.zip dist/*.tar.gz dist/SHA256SUMS
+          count="$(gh release view "$TAG" --json assets --jq '.assets | length')"
+          test "$count" -eq 7
+          gh release edit "$TAG" --draft=false --latest
