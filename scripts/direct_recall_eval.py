@@ -139,9 +139,12 @@ def evaluate(qdrant, report_path, baseline_server=None, baseline_client=None, ve
             origin = ref['o']
             origin_hash = hashlib.sha256(json.dumps(origin, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()[:8]
             legacy_collection = f'xrag_demo_{origin_hash}_demo_{ref["g"][:12]}'
-            alias = f'xrag_{origin_hash}_demo'
-            aliases = http_json(qdrant + '/aliases')['result']['aliases']
-            collection = next(a['collection_name'] for a in aliases if a['alias_name'] == alias)
+            collections = http_json(qdrant + '/collections')['result']['collections']
+            candidates = [c['name'] for c in collections if c['name'] == legacy_collection
+                          or c['name'].startswith(legacy_collection + '_')]
+            if len(candidates) != 1:
+                raise RuntimeError('expected one physical collection for the fixture generation')
+            collection = candidates[0]
             info = http_json(qdrant + '/collections/' + collection)
             report['collection'] = collection
             report['payload_schema'] = info['result']['payload_schema']
