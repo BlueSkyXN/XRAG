@@ -106,6 +106,24 @@ jobs:
           test "$ok" = 1
           test "$(curl --connect-timeout 1 --max-time 2 -s http://127.0.0.1:7860/v1/login)" = '{"mode":"key"}'
           test "$(curl --connect-timeout 1 --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7860/v1/system)" = 401
+          key="$(docker exec xrag-ci cat /data/xrag/admin.key)"
+          base=http://127.0.0.1:7860
+          wait_demo() {
+            for _ in $(seq 1 60); do
+              if curl --connect-timeout 1 --max-time 5 -fsS \
+                -H "Authorization: Bearer $key" -H 'Content-Type: application/json' \
+                -d '{"kbs":["demo"],"q":"分页样本记录"}' \
+                "${base}/v1/search/keyword" > "$RUNNER_TEMP/demo.json" \
+                && jq -e '.total.value == 37 and .total.accuracy == "exact"' "$RUNNER_TEMP/demo.json" >/dev/null; then
+                echo 'demo keyword total: 37 (exact)'
+                return 0
+              fi
+              sleep 2
+            done
+            echo 'demo did not reach 37 results' >&2
+            return 1
+          }
+          wait_demo
           docker rm -f xrag-ci >/dev/null
           trap - EXIT
 
@@ -180,6 +198,27 @@ jobs:
             -o /dev/null http://127.0.0.1:7861/v1/session
           grep -i '^set-cookie: xrag_session=' "$RUNNER_TEMP/headers.txt" | grep -q '; Secure' \
             || { echo 'session cookie is missing Secure behind the trusted proxy'; exit 1; }
+          key="$(docker exec xrag-hf-ci cat /data/xrag/admin.key)"
+          base=http://127.0.0.1:7861
+          wait_demo() {
+            for _ in $(seq 1 60); do
+              if curl --connect-timeout 1 --max-time 5 -fsS \
+                -H "Authorization: Bearer $key" -H 'Content-Type: application/json' \
+                -d '{"kbs":["demo"],"q":"分页样本记录"}' \
+                "${base}/v1/search/keyword" > "$RUNNER_TEMP/demo.json" \
+                && jq -e '.total.value == 37 and .total.accuracy == "exact"' "$RUNNER_TEMP/demo.json" >/dev/null; then
+                echo 'demo keyword total: 37 (exact)'
+                return 0
+              fi
+              sleep 2
+            done
+            echo 'demo did not reach 37 results' >&2
+            return 1
+          }
+          wait_demo
+          docker restart xrag-hf-ci >/dev/null
+          wait_demo
+          curl --connect-timeout 1 --max-time 5 -fsS "${base}/healthz" | jq -e ' .version and .commit'
           docker rm -f xrag-hf-ci >/dev/null
           trap - EXIT
 
@@ -256,5 +295,5 @@ jobs:
             echo "- Image: \`${IMAGE_NAME}\`"
             echo "- Digest: \`${{ steps.push.outputs.digest }}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- Pin/rollback: run the \`publish-space\` workflow with \`image_digest=${{ steps.push.outputs.digest }}\`; otherwise the Space follows :main"
+            echo "- 部署：运行 \`publish-space\` 并填 \`image_digest=${{ steps.push.outputs.digest }}\`；HF Rebuild 只会重建当前固定的 digest"
           } >> "$GITHUB_STEP_SUMMARY"
