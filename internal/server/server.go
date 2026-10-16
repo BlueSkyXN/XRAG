@@ -377,6 +377,9 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if a.taskRoutes(w, r, p) {
 		return
 	}
+	if a.imageDescribe(w, r, p) {
+		return
+	}
 	if a.writeToolRoute(w, r, p) {
 		return
 	}

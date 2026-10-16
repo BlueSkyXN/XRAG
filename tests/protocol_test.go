@@ -297,7 +297,7 @@ func TestWikiNoModelNoFakeContent(t *testing.T) {
 	}
 }
 func TestContractRegistryIsSingleActionSource(t *testing.T) {
-	if len(contracts.All) != 16 {
+	if len(contracts.All) != 17 {
 		t.Fatal(len(contracts.All))
 	}
 	seen := map[string]bool{}

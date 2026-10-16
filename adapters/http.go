@@ -4,6 +4,7 @@ package adapters
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -343,6 +344,18 @@ func (r *Reranker) Rank(ctx context.Context, q string, items []core.Item) ([]cor
 	return out, nil
 }
 func Chat(ctx context.Context, ep Endpoint, system, prompt string) (string, any, error) {
+	return ChatImage(ctx, ep, system, prompt, nil)
+}
+
+// ImagePart is one image attachment for a vision chat call. Data holds the raw
+// image bytes; Mime must describe them. Only data URIs are sent upstream, so no
+// caller-supplied URL reaches the model backend.
+type ImagePart struct {
+	Data []byte
+	Mime string
+}
+
+func ChatImage(ctx context.Context, ep Endpoint, system, prompt string, images []ImagePart) (string, any, error) {
 	h, e := Auth(ep.Key)
 	if e != nil {
 		return "", nil, e
@@ -355,9 +368,22 @@ func Chat(ctx context.Context, ep Endpoint, system, prompt string) (string, any,
 		} `json:"choices"`
 		Usage map[string]any `json:"usage"`
 	}
-	e = Call(ctx, "POST", strings.TrimRight(ep.URL, "/")+"/chat/completions", h, map[string]any{"model": ep.Model, "messages": []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": prompt}}, "max_tokens": 1800, "temperature": 0}, &res)
+	body := map[string]any{"model": ep.Model, "max_tokens": 1800, "temperature": 0}
+	if len(images) == 0 {
+		body["messages"] = []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": prompt}}
+	} else {
+		parts := []map[string]any{{"type": "text", "text": prompt}}
+		for _, img := range images {
+			parts = append(parts, map[string]any{"type": "image_url", "image_url": map[string]any{
+				"url":    "data:" + img.Mime + ";base64," + base64.StdEncoding.EncodeToString(img.Data),
+				"detail": "auto",
+			}})
+		}
+		body["messages"] = []map[string]any{{"role": "system", "content": system}, {"role": "user", "content": parts}}
+	}
+	e = Call(ctx, "POST", strings.TrimRight(ep.URL, "/")+"/chat/completions", h, body, &res)
 	if e != nil {
-		return "", nil, e
+		return "", res.Usage, e
 	}
 	if len(res.Choices) != 1 || strings.TrimSpace(res.Choices[0].Message.Content) == "" {
 		return "", res.Usage, core.Err("MODEL_RESPONSE_INVALID", "chat returned no content", 502)

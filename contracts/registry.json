@@ -142,5 +142,14 @@
     "group": "external",
     "description": "Search explicitly configured external knowledge services; live results retain their provider binding.",
     "input": "search_external.json"
+  },
+  {
+    "action": "image.describe",
+    "path": "/v1/describe",
+    "cli": "image describe",
+    "tool": "image_describe",
+    "group": "core",
+    "description": "用已配置的 Chat 模型识别图片，返回文本描述；不写入知识库",
+    "input": "image.describe.json"
   }
 ]
