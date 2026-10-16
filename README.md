@@ -118,7 +118,7 @@ python3 scripts/package.py --out /tmp/xrag-release
 python3 scripts/package_clients.py --out /tmp/xrag-release
 ```
 
-`package.py` 要求工作区干净（包括未忽略的未跟踪文件），从 Git 跟踪清单生成源码包；被过滤规则排除的已跟踪文件会列出并报错。完整 Linux 包还会检查 `bin/xrag` 与 `bin/xrag-server` 的 Linux amd64 平台、Go 程序路径和编译时注入的当前提交。在 macOS 等其他平台可加 `--source-only` 仅生成源码 ZIP。源码、Linux 和 Client 包名均包含当前版本号；Linux CI 会重新解包源码和完整包，执行构建、测试、服务启动与工作台检查。
+`package.py` 要求工作区干净（包括未忽略的未跟踪文件），从 Git 跟踪清单生成源码包；被过滤规则排除的已跟踪文件会列出并报错。完整 Linux 包还会检查 `bin/xrag` 与 `bin/xrag-server` 的 Linux amd64 平台、Go 程序路径、构建记录中的当前提交及干净状态；解包验收还会核对运行中 Server 的提交。在 macOS 等其他平台可加 `--source-only` 仅生成源码 ZIP。源码、Linux 和 Client 包名均包含当前版本号；Linux CI 会重新解包源码和完整包，执行构建、测试、服务启动与工作台检查。
 
 `--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行（先 `make web`）。`go test` 用注入的假前端产物，不依赖 Node。
 

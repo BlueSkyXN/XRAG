@@ -11,6 +11,7 @@ def main(src,lin):
   if not v:raise AssertionError(n)
   rows.append({'name':n,'passed':True})
  def run(c,cwd=None):return subprocess.run(c,cwd=cwd,check=True,text=True,capture_output=True,timeout=120).stdout
+ expected_commit=run(['git','-C',str(ROOT),'rev-parse','HEAD']).strip()
  with tempfile.TemporaryDirectory(prefix='xrag-release9-') as t:
   t=Path(t);s=t/'source';s.mkdir()
   with zipfile.ZipFile(src) as z:
@@ -35,6 +36,7 @@ def main(src,lin):
    def api(path,body=None,binary=False):
     req=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'})
     with urllib.request.urlopen(req,timeout=30) as r:return r.read() if binary else json.load(r)
+   ck('packaged server reports the current commit',api('/healthz')['commit']==expected_commit)
    ck('packaged server serves the workbench',b'id="root"'in api('/',binary=True))
    for _ in range(100):
     result=api('/v1/search/keyword',{'kbs':['demo'],'q':'分页样本记录'})

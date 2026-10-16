@@ -3,7 +3,6 @@
 from pathlib import Path
 import argparse
 import re
-import shlex
 import subprocess
 import tarfile
 import zipfile
@@ -72,15 +71,9 @@ def linux_binaries():
         expected_path = f'github.com/BlueSkyXN/XRAG/cmd/{path.name}'
         if re.search(r'^\s*path\s+' + re.escape(expected_path) + r'\s*$', result.stdout, re.MULTILINE) is None:
             raise SystemExit(f'{path.name} 的 Go path 不是 {expected_path}，请重新构建')
-        flags = []
-        for line in result.stdout.splitlines():
-            fields = shlex.split(line)
-            if len(fields) == 2 and fields[0] == 'build' and fields[1].startswith('-ldflags='):
-                flags = shlex.split(fields[1].split('=', 1)[1])
-        target = f'github.com/BlueSkyXN/XRAG/core.Commit={commit}'
-        if not any(flag == '-X=' + target or (flag == '-X' and flags[i+1:i+2] == [target])
-                   for i, flag in enumerate(flags)):
-            raise SystemExit(f'{path.name} 的 -ldflags 未注入当前 Commit={commit}，请运行 make build')
+        for setting in (f'vcs.revision={commit}', 'vcs.modified=false'):
+            if re.search(r'^\s*build\s+' + re.escape(setting) + r'\s*$', result.stdout, re.MULTILINE) is None:
+                raise SystemExit(f'{path.name} 的 Go 构建信息缺少 {setting}，请在干净工作区运行 make build')
     return binaries
 
 

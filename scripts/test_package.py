@@ -99,7 +99,7 @@ class PackageTests(unittest.TestCase):
                     package.main(output)
                 self.assertFalse(output.exists())
 
-    def check_build_info(self, wrong_path=False, wrong_commit=False):
+    def check_build_info(self, wrong_path=False, wrong_commit=False, modified=False):
         header = b'\x7fELF\x02\x01' + b'\0' * 12 + (62).to_bytes(2, 'little') + b'\0' * 44
         (self.root / 'bin').mkdir(exist_ok=True)
         for name in ('xrag', 'xrag-server'):
@@ -112,7 +112,8 @@ class PackageTests(unittest.TestCase):
             name = 'other' if wrong_path else Path(args[-1]).name
             sha = '0' * 40 if wrong_commit else commit
             output = (f'\tpath\tgithub.com/BlueSkyXN/XRAG/cmd/{name}\n'
-                      f'\tbuild\t-ldflags="-X github.com/BlueSkyXN/XRAG/core.Commit={sha}"\n'
+                      f'\tbuild\tvcs.revision={sha}\n'
+                      f'\tbuild\tvcs.modified={str(modified).lower()}\n'
                       '\tbuild\tGOOS=linux\n\tbuild\tGOARCH=amd64\n')
             return subprocess.CompletedProcess(args, 0, stdout=output)
         with patch.object(package.subprocess, 'run', side_effect=fake_run):
@@ -123,8 +124,12 @@ class PackageTests(unittest.TestCase):
             self.check_build_info(wrong_path=True)
 
     def test_build_commit_must_match_head(self):
-        with self.assertRaisesRegex(SystemExit, 'Commit='):
+        with self.assertRaisesRegex(SystemExit, 'vcs.revision='):
             self.check_build_info(wrong_commit=True)
+
+    def test_modified_build_is_rejected(self):
+        with self.assertRaisesRegex(SystemExit, 'vcs.modified=false'):
+            self.check_build_info(modified=True)
 
     def test_matching_build_info_is_accepted(self):
         self.assertEqual(len(self.check_build_info()), 2)
