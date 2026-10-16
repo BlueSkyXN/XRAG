@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,6 +12,32 @@ import (
 	"github.com/BlueSkyXN/XRAG/adapters"
 	"github.com/BlueSkyXN/XRAG/core"
 )
+
+func TestLocalTwentyThousandFileBoundary(t *testing.T) {
+	root := t.TempDir()
+	for i := 0; i < 20000; i++ {
+		must(t, os.WriteFile(filepath.Join(root, fmt.Sprintf("%05d.md", i)), nil, 0600))
+	}
+	repo := &adapters.Local{Root: root, Origin: "local-limit", KB: "demo", CacheDir: t.TempDir()}
+	view, err := repo.Snapshot(ctx, []string{"demo"})
+	must(t, err)
+	if len(view.Documents) != 20000 {
+		t.Fatal(len(view.Documents))
+	}
+	must(t, os.WriteFile(filepath.Join(root, "20000.md"), nil, 0600))
+	_, err = repo.Snapshot(ctx, []string{"demo"})
+	code(t, err, "SOURCE_LIMIT")
+}
+
+func TestLocalFileByteLimitRemains(t *testing.T) {
+	root := t.TempDir()
+	p := filepath.Join(root, "large.md")
+	must(t, os.WriteFile(p, nil, 0600))
+	must(t, os.Truncate(p, (5<<20)+1))
+	repo := &adapters.Local{Root: root, Origin: "local-limit", KB: "demo", CacheDir: t.TempDir()}
+	_, err := repo.Snapshot(ctx, []string{"demo"})
+	code(t, err, "SOURCE_LIMIT")
+}
 
 func TestLocalQuestionRecallAndKeywordBaseline(t *testing.T) {
 	var suite struct {

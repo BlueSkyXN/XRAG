@@ -2,9 +2,9 @@ package adapters
 
 import (
 	"context"
+	"github.com/BlueSkyXN/XRAG/core"
 	"sync"
 	"time"
-	"github.com/BlueSkyXN/XRAG/core"
 )
 
 // Direct reads an explicitly named XRAG Demo physical collection. It never reads Server SQLite.
@@ -154,10 +154,10 @@ func (d *Direct) Search(ctx context.Context, v core.View, q string) ([]core.Rank
 	if d.Q == nil || d.Q.Embed == nil {
 		return nil, core.Err("CAPABILITY_UNAVAILABLE", "direct semantic needs an embedding model", 422)
 	}
-	if d.Collection != d.Q.Collection(d.KB) {
+	if d.Collection != d.Q.Collection(d.KB) && d.Collection != d.Q.legacyCollection(d.KB) {
 		return nil, core.Err("MODEL_MISMATCH", "unexpected physical collection", 409)
 	}
-	return d.Q.Search(ctx, v, q)
+	return d.Q.searchCollection(ctx, v, q, d.Collection)
 }
 
 func (d *Direct) Supports(ctx context.Context, v core.View) ([]core.Support, error) {

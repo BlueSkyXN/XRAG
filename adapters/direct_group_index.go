@@ -2,9 +2,8 @@ package adapters
 
 import (
 	"context"
-	"sort"
-	"time"
 	"github.com/BlueSkyXN/XRAG/core"
+	"time"
 )
 
 func (g *DirectGroup) CompactSemantic() {}
@@ -61,12 +60,7 @@ func (g *DirectGroup) SelectIndex(ctx context.Context, action string, q core.Req
 		}
 		out.SelectedTotal += p.SelectedTotal
 	}
-	sort.Slice(out.Items, func(i, j int) bool {
-		if out.Items[i].Score == out.Items[j].Score {
-			return out.Items[i].Ref < out.Items[j].Ref
-		}
-		return out.Items[i].Score > out.Items[j].Score
-	})
+	sortDirectItems(out.Items)
 	if action == "search.semantic" && len(out.Items) > 200 {
 		out.Items = out.Items[:200]
 		out.SelectedTotal = len(out.Items)

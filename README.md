@@ -1,6 +1,6 @@
-# XRAG 0.10.2
+# XRAG 0.10.3
 
-这是 0.10.2 实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
+这是 0.10.3 实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
 
 它不是生产发行。磁盘格式仍使用 Demo.9 的 `store_schema=demo9`，响应里的 `schema_version` 仍是 `0.7-demo`。不迁移更早的数据目录。真实 Qdrant、Neo4j、商业模型和 S3/WeKnora 现场联调仍未完成。
 
@@ -99,7 +99,8 @@ python3 scripts/mcp_probe.py --url http://127.0.0.1:8765/mcp \
 - [66项功能表](docs/FEATURE_MATRIX.md)、[当前范围](docs/STATUS.md)、[阶段完成情况](docs/COMPLETION.md)。
 - [专业连接说明](docs/CONNECTIONS.md)、[真实联调说明](docs/LIVE_INTEGRATION.md)。
 - [数据恢复](docs/DATA_RECOVERY.md)、[历史整理](docs/HISTORY_MAINTENANCE.md)、[Demo.8投影恢复](docs/DEMO8_OPERATIONS.md)。
-- [实际测试报告](checks/REPORT.md)。历史批次文档仅说明当时增量，以当前STATUS和新操作说明为准。
+
+历史批次文档仅说明当时增量，以当前STATUS和新操作说明为准。
 
 ## 8. 还没有完成的内容
 

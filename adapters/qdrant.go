@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/BlueSkyXN/XRAG/core"
 	"sort"
 	"strings"
-	"github.com/BlueSkyXN/XRAG/core"
 )
 
 func SortRanks(rs []core.Ranked) {
@@ -40,9 +40,12 @@ func (q *Qdrant) call(ctx context.Context, method, path string, body, out any) e
 	return Call(ctx, method, strings.TrimRight(q.Endpoint.URL, "/")+path, h, body, out)
 }
 func (q *Qdrant) Collection(kb string) string {
+	return q.legacyCollection(kb) + "_" + core.LexicalSchema
+}
+func (q *Qdrant) legacyCollection(kb string) string {
 	return "xrag_demo_" + core.Hash(q.Origin)[:8] + "_" + kb + "_" + q.Embed.Config.SemanticID()[:12]
 }
-func (q *Qdrant) ensure(ctx context.Context, name string, dim int) error {
+func (q *Qdrant) ensure(ctx context.Context, name string, dim int, lexical bool) error {
 	var res struct {
 		Result struct {
 			Exists bool `json:"exists"`
@@ -52,22 +55,28 @@ func (q *Qdrant) ensure(ctx context.Context, name string, dim int) error {
 		return e
 	}
 	if !res.Result.Exists {
-		return q.call(ctx, "PUT", "/collections/"+name, map[string]any{"vectors": map[string]any{"size": dim, "distance": "Cosine"}}, nil)
+		body := map[string]any{"vectors": map[string]any{"size": dim, "distance": "Cosine"}}
+		if lexical {
+			body["sparse_vectors"] = map[string]any{core.LexicalVectorName: map[string]any{"modifier": "idf"}}
+		}
+		return q.call(ctx, "PUT", "/collections/"+name, body, nil)
 	}
 	return nil
 }
 func (q *Qdrant) Write(ctx context.Context, d core.Document) error {
 	collection := q.Collection(d.KB)
-	if e := q.ensure(ctx, collection, q.Embed.Config.Dimension); e != nil {
+	if e := q.ensure(ctx, collection, q.Embed.Config.Dimension, true); e != nil {
 		return e
 	}
 	if e := q.call(ctx, "PUT", "/collections/"+collection+"/index?wait=true", map[string]any{"field_name": "text", "field_schema": map[string]any{"type": "text", "tokenizer": "word", "lowercase": true}}, nil); e != nil {
 		return e
 	}
-	if e := q.ensure(ctx, "xrag_demo_meta", 1); e != nil {
+	if e := q.ensure(ctx, "xrag_demo_meta", 1, false); e != nil {
 		return e
 	}
 	descriptor := map[string]any{"physical_collection": collection, "payload_schema": "demo8", "model_identity": q.Embed.Config.SemanticID(), "model": q.Embed.Config.Model, "dimension": q.Embed.Config.Dimension, "revision": q.Embed.Config.Revision, "origin_id": q.Origin, "kb": d.KB, "doc_prefix": q.Embed.Config.DocPrefix, "query_prefix": q.Embed.Config.QueryPrefix}
+	descriptor["lexical_schema"] = core.LexicalSchema
+	descriptor["lexical_avgdl"] = core.LexicalAverageLength
 	if e := q.call(ctx, "PUT", "/collections/xrag_demo_meta/points?wait=true", map[string]any{"points": []any{map[string]any{"id": core.UUID(collection), "vector": []float64{1}, "payload": descriptor}}}, nil); e != nil {
 		return e
 	}
@@ -82,7 +91,7 @@ func (q *Qdrant) Write(ctx context.Context, d core.Document) error {
 		payload["origin_id"] = q.Origin
 		payload["physical_collection"] = collection
 		payload["query_mentions"] = append([]string{}, core.Mentions(c)...)
-		pts = append(pts, map[string]any{"id": c.ID, "vector": c.Vector, "payload": payload})
+		pts = append(pts, map[string]any{"id": c.ID, "vector": map[string]any{"": c.Vector, core.LexicalVectorName: core.LexicalSparse(c.Title+" "+c.Text, false)}, "payload": payload})
 	}
 	if len(pts) == 0 {
 		return nil
@@ -92,6 +101,9 @@ func (q *Qdrant) Write(ctx context.Context, d core.Document) error {
 func (q *Qdrant) CompactSemantic() {}
 func (q *Qdrant) Label() string    { return "qdrant_cosine" }
 func (q *Qdrant) Search(ctx context.Context, v core.View, text string) ([]core.Ranked, error) {
+	return q.searchCollection(ctx, v, text, "")
+}
+func (q *Qdrant) searchCollection(ctx context.Context, v core.View, text, physical string) ([]core.Ranked, error) {
 	vec, _, e := q.Embed.Embed(ctx, []string{text}, true)
 	if e != nil {
 		return nil, e
@@ -107,6 +119,10 @@ func (q *Qdrant) Search(ctx context.Context, v core.View, text string) ([]core.R
 	}
 	out := []core.Ranked{}
 	for kb, ids := range perKB {
+		collection := physical
+		if collection == "" {
+			collection = q.Collection(kb)
+		}
 		for start := 0; start < len(ids); start += 500 {
 			end := start + 500
 			if end > len(ids) {
@@ -120,7 +136,7 @@ func (q *Qdrant) Search(ctx context.Context, v core.View, text string) ([]core.R
 					} `json:"points"`
 				} `json:"result"`
 			}
-			e = q.call(ctx, "POST", "/collections/"+q.Collection(kb)+"/points/query", map[string]any{"query": vec[0], "filter": map[string]any{"must": []any{map[string]any{"has_id": ids[start:end]}}}, "limit": 200, "with_payload": false}, &res)
+			e = q.call(ctx, "POST", "/collections/"+collection+"/points/query", map[string]any{"query": vec[0], "filter": map[string]any{"must": []any{map[string]any{"has_id": ids[start:end]}}}, "limit": 200, "with_payload": false}, &res)
 			if e != nil {
 				return nil, e
 			}

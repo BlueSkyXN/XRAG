@@ -1,0 +1,52 @@
+name: direct-recall
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'adapters/direct*.go'
+      - 'adapters/qdrant.go'
+      - 'core/*.go'
+      - 'tests/demo8_direct_test.go'
+      - 'examples/docs/**'
+      - 'examples/eval-questions.json'
+      - '.github/workflows/direct-recall.yml'
+      - 'scripts/direct_recall_eval.py'
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      qdrant:
+        image: qdrant/qdrant:v1.13.6@sha256:bd67306b6cc77c98122cada2321eb60b20d00b19d26cb61c86681e7bd5951498
+        ports:
+          - 6333:6333
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
+      - run: make build
+      - name: Build the pinned 0.10.2 baseline
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/xrag-baseline" aa23de04503286a3c3bed1c05d99a4aac0270fe6
+          make -C "$RUNNER_TEMP/xrag-baseline" build
+      - name: Evaluate Server and direct with real Qdrant and fixed hash vectors
+        run: |
+          python3 scripts/direct_recall_eval.py --report checks/direct-recall.json --verify \
+            --baseline-server "$RUNNER_TEMP/xrag-baseline/bin/xrag-server" \
+            --baseline-client "$RUNNER_TEMP/xrag-baseline/bin/xrag"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: direct-recall-baseline
+          path: checks/direct-recall.json
+          if-no-files-found: error

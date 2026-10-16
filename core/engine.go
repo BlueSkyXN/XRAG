@@ -377,24 +377,35 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 			complete = false
 			resp.Coverage.Approximate = true
 		} else {
-			lexical := e.Repo.Lexical
-			if relaxed, ok := e.Repo.(RelaxedLexical); action == "+ask" && ok {
-				lexical = relaxed.RelaxedLexical
-			}
-			rs, er := lexical(ctx, view, q.Q)
-			if er != nil {
-				return resp, er
-			}
-			items = appendRanks(rs, "bm25")
-			if e.Mode == "local" {
-				for i := range items {
-					items[i].Ranking = "scan_heuristic"
+			var er error
+			if reader, ok := e.Repo.(ScopedLexicalReader); action == "+ask" && ok {
+				selection, er := reader.SelectLexical(ctx, subsetView(view, chunks), q.Q)
+				if er != nil {
+					return resp, er
 				}
-			}
-			if e.Mode == "direct" {
+				items = selection.Items
+				resp.Notes = append(resp.Notes, selection.Notes...)
 				complete = false
-				for i := range items {
-					items[i].Ranking = "none"
+			} else {
+				lexical := e.Repo.Lexical
+				if relaxed, ok := e.Repo.(RelaxedLexical); action == "+ask" && ok {
+					lexical = relaxed.RelaxedLexical
+				}
+				rs, er := lexical(ctx, view, q.Q)
+				if er != nil {
+					return resp, er
+				}
+				items = appendRanks(rs, "bm25")
+				if e.Mode == "local" {
+					for i := range items {
+						items[i].Ranking = "scan_heuristic"
+					}
+				}
+				if e.Mode == "direct" {
+					complete = false
+					for i := range items {
+						items[i].Ranking = "none"
+					}
 				}
 			}
 			trace = append(trace, Step{Stage: "keyword", Count: len(items), IDs: itemIDs(items, 30)})
@@ -459,23 +470,8 @@ func (e *Engine) Run(ctx context.Context, action string, q Request, owner string
 				}
 				items = Fuse(routes)
 				resp.Strategy["ranked_routes"] = len(routes)
-				if e.Mode == "direct" { // direct lexical is deliberately not fused as a relevance-ranked route
-					ranked := [][]Item{}
-					for _, r := range routes {
-						if len(r) > 0 && r[0].Ranking != "none" {
-							ranked = append(ranked, r)
-						}
-					}
-					items = Fuse(ranked)
-					seen := map[string]bool{}
-					for _, it := range items {
-						seen[it.ChunkID] = true
-					}
-					for _, it := range routes[0] {
-						if !seen[it.ChunkID] {
-							items = append(items, it)
-						}
-					}
+				if e.Mode == "direct" {
+					items = FuseRanked(routes)
 				}
 				trace = append(trace, Step{Stage: "fusion", Count: len(items), IDs: itemIDs(items, 30)})
 				if Bool(q.Rerank) {
@@ -820,6 +816,37 @@ func Fuse(routes [][]Item) []Item {
 		}
 		return out[i].Score > out[j].Score
 	})
+	return out
+}
+
+// FuseRanked 只融合有相关性排序的条目，再补入旧文本索引的无排序结果。
+func FuseRanked(routes [][]Item) []Item {
+	ranked := [][]Item{}
+	unranked := []Item{}
+	for _, route := range routes {
+		part := []Item{}
+		for _, it := range route {
+			if it.Ranking == "none" {
+				unranked = append(unranked, it)
+			} else {
+				part = append(part, it)
+			}
+		}
+		if len(part) > 0 {
+			ranked = append(ranked, part)
+		}
+	}
+	out := Fuse(ranked)
+	seen := map[string]bool{}
+	for _, it := range out {
+		seen[itemKey(it)] = true
+	}
+	for _, it := range unranked {
+		if !seen[itemKey(it)] {
+			out = append(out, it)
+			seen[itemKey(it)] = true
+		}
+	}
 	return out
 }
 

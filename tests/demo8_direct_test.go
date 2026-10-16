@@ -3,6 +3,8 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/BlueSkyXN/XRAG/adapters"
+	"github.com/BlueSkyXN/XRAG/core"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,8 +12,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"github.com/BlueSkyXN/XRAG/adapters"
-	"github.com/BlueSkyXN/XRAG/core"
 )
 
 // queryBackend8 is an explicitly controlled protocol fixture, not Qdrant.
@@ -68,6 +68,13 @@ func (f *queryBackend8) serve(w http.ResponseWriter, r *http.Request) {
 		clauses, _ := filter["must"].([]any)
 		for _, v := range clauses {
 			cond := v.(map[string]any)
+			if scope, ok := cond["has_id"].([]any); ok {
+				found := false
+				for _, allowed := range scope {
+					found = found || allowed == id
+				}
+				matches = matches && found
+			}
 			key, _ := cond["key"].(string)
 			mt, _ := cond["match"].(map[string]any)
 			actual := p[key]
@@ -262,4 +269,86 @@ func TestDemo8DirectMetadataProjectionRejectsLegacyPayload(t *testing.T) {
 	}
 	_, err := d.QueryView(ctx, []string{"demo"}, nil, false)
 	code(t, err, "PAYLOAD_SCHEMA_UNSUPPORTED")
+}
+
+func TestDirectSparseAskProtocolAndLegacy(t *testing.T) {
+	for _, sparse := range []bool{false, true} {
+		t.Run(fmt.Sprint(sparse), func(t *testing.T) {
+			e, d, f := direct8(t, 8)
+			d.Q.Embed = nil
+			e.Semantic = nil
+			if sparse {
+				f.desc["lexical_schema"] = core.LexicalSchema
+			}
+			r := run(t, e, "+ask", core.Request{Q: "needle 是什么", Limit: 5, Filters: []core.Filter{{Field: "path", Op: "eq", Value: "file-003.md"}}})
+			if sparse {
+				if r.Returned != 1 || r.Items[0].Ranking != "rrf" || r.Items[0].Path != "file-003.md" {
+					t.Fatal(r)
+				}
+			} else if !strings.Contains(strings.Join(r.Notes, " "), "集合缺少稀疏词法索引，需要重建") {
+				t.Fatal(r.Notes)
+			}
+			queries := 0
+			for _, request := range f.requests {
+				if strings.HasSuffix(request["path"].(string), "/points/query") {
+					queries++
+					body := request["body"].(map[string]any)
+					if body["using"] != core.LexicalVectorName || body["limit"] != float64(200) || body["with_vector"] != false || body["with_payload"] == true || core.JSON(body["query"]) != core.JSON(core.LexicalSparse("needle 是什么", true)) {
+						t.Fatal(body)
+					}
+				}
+			}
+			if sparse && queries != 1 || !sparse && queries != 0 {
+				t.Fatal("sparse calls", queries)
+			}
+			f.requests = nil
+			keyword := run(t, e, "search.keyword", core.Request{Q: "needle", Limit: 5})
+			if keyword.Returned != 5 || keyword.Items[0].Ranking != "none" {
+				t.Fatal(keyword)
+			}
+			for _, request := range f.requests {
+				if strings.HasSuffix(request["path"].(string), "/points/query") {
+					t.Fatal("keyword switched to sparse")
+				}
+			}
+		})
+	}
+}
+
+func TestDirectSparseScopedAskAndGroup(t *testing.T) {
+	for _, grouped := range []bool{false, true} {
+		t.Run(fmt.Sprint(grouped), func(t *testing.T) {
+			e, d, f := direct8(t, 8)
+			d.Q.Embed = nil
+			e.Semantic = nil
+			f.desc["lexical_schema"] = core.LexicalSchema
+			if grouped {
+				e.Repo = &adapters.DirectGroup{Readers: map[string]*adapters.Direct{"demo": d}, CacheDir: t.TempDir()}
+			}
+			// prefix 过滤走共享 planner，稀疏查询必须受已筛选 chunk IDs 限制。
+			r := run(t, e, "+ask", core.Request{Q: "needle 是什么", Filters: []core.Filter{{Field: "path", Op: "prefix", Value: "file-003.md"}}})
+			if r.Returned != 1 || r.Items[0].Path != "file-003.md" || r.Items[0].Ranking != "rrf" {
+				t.Fatal(r)
+			}
+			found := false
+			for _, request := range f.requests {
+				if strings.HasSuffix(request["path"].(string), "/points/query") {
+					body := request["body"].(map[string]any)
+					if body["using"] != core.LexicalVectorName || !strings.Contains(core.JSON(body["filter"]), "has_id") {
+						t.Fatal(body)
+					}
+					found = true
+				}
+			}
+			if !found {
+				t.Fatal("missing scoped sparse query")
+			}
+			if grouped {
+				r = run(t, e, "+ask", core.Request{Q: "needle 是什么", Limit: 5})
+				if r.Returned != 5 || r.Items[0].Ranking != "direct_model_rank_fusion" {
+					t.Fatal(r)
+				}
+			}
+		})
+	}
 }

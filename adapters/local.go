@@ -49,8 +49,8 @@ func (l *Local) Snapshot(ctx context.Context, kbs []string) (core.View, error) {
 		}
 		count++
 		totalBytes += info.Size()
-		if count > 5000 || info.Size() > 5<<20 || totalBytes > 50<<20 {
-			return core.Err("SOURCE_LIMIT", "local scan exceeds 5000 files, 5 MiB per file, or 50 MiB total", 422)
+		if count > 20000 || info.Size() > 5<<20 || totalBytes > 50<<20 {
+			return core.Err("SOURCE_LIMIT", "local scan exceeds 20000 files, 5 MiB per file, or 50 MiB total", 422)
 		}
 		b, e := os.ReadFile(p)
 		if e != nil {

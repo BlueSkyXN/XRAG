@@ -1,0 +1,28 @@
+name: corpus-eval
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
+      - run: make build
+      - name: Measure Server and local with 1000 and 10000 distractor documents
+        run: python3 scripts/corpus_eval.py --report checks/corpus-eval.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corpus-eval
+          path: checks/corpus-eval.*
+          if-no-files-found: error

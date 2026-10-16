@@ -3,17 +3,17 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/BlueSkyXN/XRAG/adapters"
+	"github.com/BlueSkyXN/XRAG/core"
+	"github.com/BlueSkyXN/XRAG/internal/build"
+	"github.com/BlueSkyXN/XRAG/internal/maintenance"
+	"github.com/BlueSkyXN/XRAG/internal/store"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
-	"github.com/BlueSkyXN/XRAG/adapters"
-	"github.com/BlueSkyXN/XRAG/core"
-	"github.com/BlueSkyXN/XRAG/internal/build"
-	"github.com/BlueSkyXN/XRAG/internal/maintenance"
-	"github.com/BlueSkyXN/XRAG/internal/store"
 )
 
 type recoveryBackend8 struct {
@@ -135,7 +135,11 @@ func TestDemo8RecoveryReplaysSavedVectorsAndGraphWithoutModels(t *testing.T) {
 		t.Fatal(len(f.points), len(f.supports))
 	}
 	for _, c := range d.Chunks {
-		v := f.points[c.ID]["vector"].([]any)
+		vectors := f.points[c.ID]["vector"].(map[string]any)
+		v := vectors[""].([]any)
+		if core.JSON(vectors[core.LexicalVectorName]) != core.JSON(core.LexicalSparse(c.Title+" "+c.Text, false)) {
+			t.Fatal(vectors)
+		}
 		if v[0] != float64(1) || v[1] != .25 {
 			t.Fatal(v)
 		}
