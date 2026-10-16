@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""真实 Qdrant 的 direct 召回基线；固定哈希向量仅验证融合流程，无召回阈值。"""
+"""真实 Qdrant 的 direct 召回基线；固定哈希向量仅验证融合流程；可核对词法召回和同数据的旧版行为。"""
 from __future__ import annotations
 
 import argparse
@@ -68,7 +68,7 @@ def measure(response, case):
                        'routes': i.get('routes', [])} for i in response['items']]}
 
 
-def evaluate(qdrant, report_path):
+def evaluate(qdrant, report_path, baseline_server=None, baseline_client=None, verify=False):
     suite_bytes = (ROOT / 'examples/eval-questions.json').read_bytes()
     suite = json.loads(suite_bytes)
     report = {'status': 'running', 'question_sha256': hashlib.sha256(suite_bytes).hexdigest(),
@@ -104,10 +104,10 @@ def evaluate(qdrant, report_path):
             base = f'http://127.0.0.1:{port}'
             def api(path, body=None):
                 return http_json(base + path, body, token)
-            def start(config):
+            def start(config, binary=server):
                 nonlocal process
                 providers.write_text(json.dumps(config))
-                process = subprocess.Popen([str(server), 'serve', '--data', str(data), '--listen',
+                process = subprocess.Popen([str(binary), 'serve', '--data', str(data), '--listen',
                     f'127.0.0.1:{port}', '--config', str(providers)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 for _ in range(100):
                     if process.poll() is not None:
@@ -132,24 +132,36 @@ def evaluate(qdrant, report_path):
                 time.sleep(.2)
             if result['state'] != 'succeeded':
                 raise RuntimeError('Qdrant build did not succeed: ' + result['state'])
+            report['initial_build'] = result
             sample = api('/v1/search/keyword', {'kbs': ['demo'], 'q': 'E203', 'limit': 5})
             encoded = sample['items'][0]['ref'].split(':', 1)[1]
             ref = json.loads(base64.urlsafe_b64decode(encoded + '=' * (-len(encoded) % 4)))
             origin = ref['o']
             origin_hash = hashlib.sha256(json.dumps(origin, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()[:8]
-            collection = f'xrag_demo_{origin_hash}_demo_{ref["g"][:12]}'
+            legacy_collection = f'xrag_demo_{origin_hash}_demo_{ref["g"][:12]}'
+            alias = f'xrag_{origin_hash}_demo'
+            aliases = http_json(qdrant + '/aliases')['result']['aliases']
+            collection = next(a['collection_name'] for a in aliases if a['alias_name'] == alias)
             info = http_json(qdrant + '/collections/' + collection)
             report['collection'] = collection
             report['payload_schema'] = info['result']['payload_schema']
-            for mode in ('fusion', 'lexical'):
-                if mode == 'lexical':
+            report['vector_config'] = info['result']['config']['params']
+            # 旧版 Server 仍按旧集合名查询；别名使前后比较复用同一组点和向量。
+            if baseline_server and legacy_collection != collection:
+                http_json(qdrant + '/collections/aliases', {'actions': [{'create_alias': {
+                    'collection_name': collection, 'alias_name': legacy_collection}}]})
+            versions = [('results', server)]
+            if baseline_server:
+                versions.append(('baseline_results', baseline_server))
+            for result_key, binary in versions:
+                for mode in ('fusion', 'lexical'):
                     stop()
-                    start({})
-                for row in report['cases']:
-                    row['results']['server_' + mode] = {}
-                    for action, route in (('ask', '/v1/ask'), ('keyword', '/v1/search/keyword')):
-                        response = api(route, {'kbs': ['demo'], 'q': row['question'], 'limit': 5})
-                        row['results']['server_' + mode][action] = measure(response, row)
+                    start(cfg if mode == 'fusion' else {}, binary)
+                    for row in report['cases']:
+                        row.setdefault(result_key, {})['server_' + mode] = {}
+                        for action, route in (('ask', '/v1/ask'), ('keyword', '/v1/search/keyword')):
+                            response = api(route, {'kbs': ['demo'], 'q': row['question'], 'limit': 5})
+                            row[result_key]['server_' + mode][action] = measure(response, row)
             stop()
             report['server_stopped_during_direct'] = True
             for mode in ('lexical', 'fusion'):
@@ -159,12 +171,16 @@ def evaluate(qdrant, report_path):
                     profile['embedding'] = cfg['embedding']
                 config = root / f'direct-{mode}.json'
                 config.write_text(json.dumps({'default_profile': 'baseline', 'profiles': {'baseline': profile}}))
-                for row in report['cases']:
-                    row['results']['direct_' + mode] = {}
-                    for action, argv in (('ask', ['+ask']), ('keyword', ['search', 'keyword'])):
-                        response = json.loads(command(client, *argv, row['question'], '--limit', '5', '--config', config))
-                        row['results']['direct_' + mode][action] = measure(response, row)
-            # 用实际 payload 文本索引核对词与完整问句；不修改 direct 检索实现。
+                versions = [('results', client)]
+                if baseline_client:
+                    versions.append(('baseline_results', baseline_client))
+                for result_key, binary in versions:
+                    for row in report['cases']:
+                        row.setdefault(result_key, {})['direct_' + mode] = {}
+                        for action, argv in (('ask', ['+ask']), ('keyword', ['search', 'keyword'])):
+                            response = json.loads(command(binary, *argv, row['question'], '--limit', '5', '--config', config))
+                            row[result_key]['direct_' + mode][action] = measure(response, row)
+            # 严格 keyword 索引保持原样，核对词与完整问句的实际计数。
             report['word_probes'] = {}
             for text in ('E203', '日志丢失', '日志丢失怎么排查', '如何排查日志丢失', '分页样本记录'):
                 result = http_json(qdrant + '/collections/' + collection + '/points/count',
@@ -179,7 +195,21 @@ def evaluate(qdrant, report_path):
                     rows = [r for r in report['cases'] if r['id'].startswith(prefix)]
                     groups[group] = {'passed': sum(r['results'][mode][action]['hit_at_5'] for r in rows), 'total': len(rows)}
                 report['totals'][mode][action] = groups
-        report['status'] = 'completed'
+        failures = []
+        if verify:
+            if not baseline_server or not baseline_client:
+                raise ValueError('--verify requires both baseline binaries')
+            for row in report['cases']:
+                if not row['results']['direct_lexical']['ask']['hit_at_5']:
+                    failures.append(row['id'] + ': direct lexical miss')
+                for mode in ('server_lexical', 'server_fusion', 'direct_lexical', 'direct_fusion'):
+                    actions = ('ask', 'keyword') if mode.startswith('server_') else ('keyword',)
+                    for action in actions:
+                        if row['results'][mode][action] != row['baseline_results'][mode][action]:
+                            failures.append(f'{row["id"]}: {mode} {action} changed')
+            report['validation'] = {'failures': failures, 'paired_same_points': True,
+                'compared': 'Server ask+keyword and direct keyword: paths, order, IDs, scores, routes, totals, strategy'}
+        report['status'] = 'validation_failed' if failures else 'completed'
     except Exception as exc:
         report['status'] = 'infrastructure_failed'
         report['error'] = {'type': type(exc).__name__, 'message': str(exc)[:500]}
@@ -203,5 +233,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--qdrant', default='http://127.0.0.1:6333')
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--baseline-server', type=Path)
+    parser.add_argument('--baseline-client', type=Path)
+    parser.add_argument('--verify', action='store_true')
     args = parser.parse_args()
-    raise SystemExit(evaluate(args.qdrant.rstrip('/'), args.report))
+    raise SystemExit(evaluate(args.qdrant.rstrip('/'), args.report, args.baseline_server, args.baseline_client, args.verify))

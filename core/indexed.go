@@ -33,6 +33,12 @@ type IndexedReader interface {
 	OriginID() string
 }
 
+// ScopedLexicalReader 在已筛选的范围内返回带排序信息的问句候选。
+// 旧集合可返回 Ranking=none 和重建提示，避免把 ID 顺序当成相关性。
+type ScopedLexicalReader interface {
+	SelectLexical(context.Context, View, string) (IndexSelection, error)
+}
+
 func (e *Engine) indexed(ctx context.Context, action string, q Request, owner string, resp Response, ir IndexedReader) (Response, error) {
 	start := time.Now()
 	sel, err := ir.SelectIndex(ctx, action, q, e.capacity())

@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/BlueSkyXN/XRAG/core"
 	"sort"
 	"strings"
 	"time"
-	"github.com/BlueSkyXN/XRAG/core"
 )
 
 var directMetadataFields = []string{"chunk_id", "chunk_key", "kb", "path", "edition_id", "file_hash", "title", "heading_path", "char_start", "char_end", "line_start", "line_end", "fields", "generation", "origin_id", "physical_collection", "query_mentions", "vector_state", "graph_state"}
@@ -305,10 +305,14 @@ func (d *Direct) CanSelectIndex(action string, q core.Request) bool {
 	return true
 }
 func (d *Direct) SelectIndex(ctx context.Context, action string, q core.Request, capacity int) (core.IndexSelection, error) {
-	out := core.IndexSelection{Items: []core.Item{}, Dependencies: []core.Ref{}, Unit: "chunks", Basis: "candidate", Execution: "backend_query_then_page_hydration", Notes: []string{"Direct reads a live backend, including retained/staging points; it does not inherit Server publication or withdrawal state."}}
 	if action == "+ask" {
 		return d.selectAsk(ctx, q, capacity)
 	}
+	return d.selectIndex(ctx, action, q, capacity, nil)
+}
+
+func (d *Direct) selectIndex(ctx context.Context, action string, q core.Request, capacity int, ids []string) (core.IndexSelection, error) {
+	out := core.IndexSelection{Items: []core.Item{}, Dependencies: []core.Ref{}, Unit: "chunks", Basis: "candidate", Execution: "backend_query_then_page_hydration", Notes: []string{"Direct reads a live backend, including retained/staging points; it does not inherit Server publication or withdrawal state."}}
 	origin, e := d.checkIdentity(ctx)
 	out.Origin = origin
 	if e != nil {
@@ -321,10 +325,28 @@ func (d *Direct) SelectIndex(ctx context.Context, action string, q core.Request,
 	if e != nil {
 		return out, e
 	}
+	if ids != nil {
+		filter["must"] = append(filter["must"].([]any), map[string]any{"has_id": ids})
+	}
 	var pts []directPoint
 	metric := core.Unknown("chunks", "live backend query")
 	out.Metric = &metric
-	if action == "search.semantic" {
+	if action == "search.lexical" {
+		vec := core.LexicalSparse(q.Q, true)
+		if len(vec.Indices) == 0 {
+			return out, core.Err("INVALID_ARGUMENT", "query needs at least one term", 400)
+		}
+		var res struct {
+			Result struct {
+				Points []directPoint `json:"points"`
+			} `json:"result"`
+		}
+		e = d.Q.call(ctx, "POST", "/collections/"+d.Collection+"/points/query", map[string]any{"using": core.LexicalVectorName, "query": vec, "filter": filter, "limit": min(200, capacity), "with_payload": directMetadataFields, "with_vector": false}, &res)
+		if e != nil {
+			return out, e
+		}
+		pts = res.Result.Points
+	} else if action == "search.semantic" {
 		if d.Q.Embed == nil {
 			return out, core.Err("CAPABILITY_UNAVAILABLE", "direct semantic requires its matching embedding model", 422)
 		}
@@ -374,9 +396,16 @@ func (d *Direct) SelectIndex(ctx context.Context, action string, q core.Request,
 			offset = res.Result.Next
 		}
 	}
+	allowed := map[string]bool{}
+	for _, id := range ids {
+		allowed[id] = true
+	}
 	seen := map[string]bool{}
 	per := map[string]int{}
 	for _, p := range pts {
+		if ids != nil && !allowed[p.ID] {
+			return out, core.Err("BACKEND_FILTER_MISMATCH", "backend returned a candidate outside the requested scope", 503)
+		}
 		if seen[p.ID] {
 			return out, core.Err("BACKEND_UNAVAILABLE", "duplicate candidate", 503)
 		}
@@ -403,6 +432,8 @@ func (d *Direct) SelectIndex(ctx context.Context, action string, q core.Request,
 		it.Ranking = "none"
 		if action == "search.semantic" {
 			it.Ranking = "qdrant_cosine"
+		} else if action == "search.lexical" {
+			it.Ranking = "qdrant_bm25"
 		}
 		out.Items = append(out.Items, it)
 	}
@@ -412,6 +443,9 @@ func (d *Direct) SelectIndex(ctx context.Context, action string, q core.Request,
 	}
 	if len(out.Items) > capacity {
 		out.Items = out.Items[:capacity]
+	}
+	if action == "search.lexical" {
+		sortDirectItems(out.Items)
 	}
 	if action == "search.keyword" {
 		sort.Slice(out.Items, func(i, j int) bool { return out.Items[i].ChunkID < out.Items[j].ChunkID })
@@ -428,7 +462,7 @@ func (d *Direct) SelectIndex(ctx context.Context, action string, q core.Request,
 func (d *Direct) selectAsk(ctx context.Context, q core.Request, capacity int) (core.IndexSelection, error) {
 	part := q
 	part.PerFile = 0
-	lex, err := d.SelectIndex(ctx, "search.keyword", part, min(capacity, 200))
+	lex, err := d.selectLexical(ctx, part, min(capacity, 200), nil)
 	if err != nil {
 		return lex, err
 	}
@@ -436,26 +470,22 @@ func (d *Direct) selectAsk(ctx context.Context, q core.Request, capacity int) (c
 	out.Execution = "direct_native_combination_then_page_hydration"
 	out.Dependencies = nil
 	out.Items = nil
-	seen := map[string]bool{}
+	for i := range lex.Items {
+		lex.Items[i].Routes = []string{"keyword"}
+	}
+	routes := [][]core.Item{lex.Items}
 	if d.Q.Embed != nil {
 		sem, e := d.SelectIndex(ctx, "search.semantic", part, min(capacity, 200))
 		if e != nil {
 			return out, e
 		}
 		out.Approximate = true
-		for _, it := range sem.Items {
-			out.Items = append(out.Items, it)
-			seen[it.ChunkID] = true
+		for i := range sem.Items {
+			sem.Items[i].Routes = []string{"semantic"}
 		}
+		routes = append(routes, sem.Items)
 	}
-	// Payload text filtering has no relevance score. Keep it as an unranked
-	// complementary list, rather than inventing a BM25 score for its ID order.
-	for _, it := range lex.Items {
-		if !seen[it.ChunkID] {
-			out.Items = append(out.Items, it)
-			seen[it.ChunkID] = true
-		}
-	}
+	out.Items = core.FuseRanked(routes)
 	per := q.PerFile
 	if per == 0 {
 		per = 3
@@ -478,7 +508,6 @@ func (d *Direct) selectAsk(ctx context.Context, q core.Request, capacity int) (c
 		r, _ := core.DecodeRef(it.Ref)
 		out.Dependencies = append(out.Dependencies, r)
 	}
-	out.Notes = append(out.Notes, "Combination uses bounded semantic candidates and unranked text-filter supplements; this is not a complete matching corpus.")
 	return out, nil
 }
 
