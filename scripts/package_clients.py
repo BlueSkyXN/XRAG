@@ -12,11 +12,12 @@ def main(out):
   rec={'os':system,'arch':arch,'build_exit':p.returncode,'seconds':round(time.time()-t,2),'native_execution':'not_run'}
   if p.returncode:rec['error']=p.stderr;records.append(rec);break
   readme=f'''# XRAG {version}：仅 Client，{system}/{arch}\n\n本包不包含 Server，不需要 C 编译器和 SQLite 开发库。交叉编译通过，未在此操作系统实机运行。\n\n连接已有 XRAG 服务：\n\n```sh\n./{name} profile add team --server http://YOUR_SERVER:8765 --key-file /YOUR/KEY/FILE --kb demo\n./{name} search keyword 日志 --profile team\n./{name} mcp --profile team --toolsets core,graph,files,utility,research\n./{name} jobs watch JOB_ID --profile team\n```\n\n本地只读 MD/TXT：`./{name} search keyword 日志 --local ./docs --kb demo`。\n该模式不启动 Server、不创建持久向量/图索引。Research/Recipe 持久任务在 Server 执行。\nMac 需允许执行该下载程序；未签名/公证。不修改用户机器系统设置。\nWindows 在 PowerShell 用 `./xrag.exe` 及本机路径。Server 的 Windows 原生移植不在本包中。\n许可证决定见 LICENSE_NOTICE.md。\n'''
-  dest=out/f'XRAG_V0.7_Demo9_Client_{system}_{arch}.zip'
+  dest=out/f'{stem}.zip'
   with zipfile.ZipFile(dest,'w',zipfile.ZIP_DEFLATED,compresslevel=8)as z:
    z.write(binary,stem+'/'+name);z.writestr(stem+'/README.md',readme);z.write(ROOT/'LICENSE_NOTICE.md',stem+'/LICENSE_NOTICE.md')
   rec.update({'artifact':dest.name,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'artifact_sha256':hashlib.sha256(dest.read_bytes()).hexdigest(),'bytes':dest.stat().st_size});records.append(rec)
  report={'scope':'pure Go Client cross-compilation and zip creation only; no native target runtime','platforms':records}
+ (ROOT/'checks/demo9').mkdir(parents=True,exist_ok=True)
  (ROOT/'checks/demo9/client-builds.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print(json.dumps(report,ensure_ascii=False))
  if any(r['build_exit']for r in records):raise SystemExit(1)
 if __name__=='__main__':
