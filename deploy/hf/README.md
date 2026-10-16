@@ -12,23 +12,21 @@ license: gpl-3.0
 
 # HF Space 部署
 
-这个 Space 从 GHCR 镜像运行 XRAG，不再从源码构建。镜像由源仓库 `main` 的 CI 自动构建并推送；本 Space 的文件（README、Dockerfile、entrypoint.sh）由源仓库的部署 workflow 渲染并上传，不要在 Space 里直接改。
+这个 Space 从 GHCR 镜像运行 XRAG。镜像由源仓库 `main` 和版本 tag 的 CI 构建并推送；本 Space 的文件（README、Dockerfile、entrypoint.sh）由源仓库的部署 workflow 渲染并上传，修改这些文件应在源仓库完成后重新部署。
 
 - 源仓库：<https://github.com/BlueSkyXN/XRAG>
-- 运行的镜像：`ghcr.io/blueskyxn/xrag`（默认跟随 `:main` 标签，回退时按 digest 钉死；见 `Dockerfile` 的 `FROM` 与下文“更新与回退”）。
+- 运行的镜像：`ghcr.io/blueskyxn/xrag`，实际部署版本以 Space 的 `Dockerfile` 中固定的 digest 为准。
 
 ## 更新与回退
 
-镜像由 GitHub Actions 构建并推送（PR 只测不推，`main` 只在全部冒烟通过后推送 `sha-<短SHA>` 和 `main` 标签）；HF 侧不依赖 Actions 的部署也能拿到新镜像。
+镜像通过容器冒烟后才会推送；PR 只执行构建和检查。`main` 发布 `sha-<短SHA>` 与 `main` 标签，版本 tag 发布对应的版本镜像。
 
-**日常更新（跟随 :main，推荐）**：Space 的 Dockerfile 渲染为 `FROM ghcr.io/blueskyxn/xrag:main`（浮动标签）。镜像更新后，在 HF Space 页面点 **Rebuild**（或 Factory rebuild），构建器会拉取 `:main` 当前指向的镜像并重启——不需要动 GitHub Actions。前提：GitHub 侧 image workflow 已成功推送过 `main` 标签。
-
-**经 Actions 部署（可指定版本）**：在 [Actions 页面](https://github.com/BlueSkyXN/XRAG/actions/workflows/publish-space.yml) 对 `main` 运行 `publish-space`：
+**更新**：确认 image workflow 成功后，在 [Actions 页面](https://github.com/BlueSkyXN/XRAG/actions/workflows/publish-space.yml) 对 `main` 运行 `publish-space`：
 
 - `image_digest` 留空：部署 `:main` 当前指向的镜像（workflow 会先解析出 digest 并钉死再上传）；
-- 填 `sha256:...`：部署指定版本，用于回退或停在某个已知好版本。
+- 填 `sha256:...`：部署指定版本。正式发版时填写该版本 tag 构建输出的 digest，回退时填写上一个可用版本的 digest。
 
-Actions 部署会把 Space 文件重新渲染上传（含按 digest 钉死的 `FROM`）；要回到“跟随 :main”，再空跑一次 publish-space 即可。
+每次 Actions 部署都会固定 digest。之后点击 HF 的 **Rebuild** 会重建该固定版本；要更新到新的 `main` 镜像，需再次运行 `publish-space` 并留空 `image_digest`。
 
 - **回退**：用上一个 digest 再运行一次。同一个 digest 重复部署不会改变 Space 内容（workflow 会以“Space commit did not change”失败）；只想重启 Space 时请在 HF 页面操作，不要重跑部署。
 

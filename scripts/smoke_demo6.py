@@ -36,7 +36,7 @@ def main(browser=False):
      if api('/healthz')[0]==200:break
     except OSError:pass
     time.sleep(.1)
-   ck('fresh installed version is demo.6',op('/healthz')['version']=='0.10.0')
+   ck('fresh installed version is demo.6',op('/healthz')['version']=='0.10.1')
    pol=op('/v1/maintenance/policy');ck('maintenance defaults disabled',not pol['policy']['enabled'])
    ck('maintenance requires admin',api('/v1/maintenance/policy',token='invalid')[0]==401)
    req=op('/v1/maintenance/runs',{'confirm':True,'backup':True});time.sleep(.25);runs=op('/v1/maintenance/runs')['items'];ck('API-only queues maintenance without execution',runs[0]['state']=='queued'and op('/v1/backups')['items']==[])

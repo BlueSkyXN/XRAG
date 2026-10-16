@@ -1,6 +1,6 @@
-# XRAG 0.10.0
+# XRAG 0.10.1
 
-这是 0.10.0 实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
+这是 0.10.1 实验版。功能以 Demo.9 为实现基线：目录和 Git 来源、文件版发布、关键词/语义/图检索、三种 Client、MCP、知识草稿与 Wiki、反馈评测，以及有界 Research/Recipe。
 
 它不是生产发行。磁盘格式仍使用 Demo.9 的 `store_schema=demo9`，响应里的 `schema_version` 仍是 `0.7-demo`。不迁移更早的数据目录。真实 Qdrant、Neo4j、商业模型和 S3/WeKnora 现场联调仍未完成。
 
@@ -115,6 +115,8 @@ python3 scripts/smoke_workbench.py --browser
 python3 scripts/package.py --out /tmp/xrag-release
 python3 scripts/package_clients.py --out /tmp/xrag-release
 ```
+
+`package.py` 从 Git 跟踪文件生成源码包；完整 Linux 包还会检查 `bin/xrag` 与 `bin/xrag-server` 是否为 Linux amd64 构建。在 macOS 等其他平台可加 `--source-only` 仅生成源码 ZIP。源码、Linux 和 Client 包名均包含当前版本号；Linux CI 会重新解包源码和完整包，执行构建、测试、服务启动与工作台检查。
 
 `--browser` 另需Playwright/Chromium（`XRAG_CHROMIUM` 可指定浏览器路径），Schema检查需jsonschema。默认产品启动不依赖测试工具。旧smoke脚本编号是添加批次，执行的是当前程序与新的临时库，不是兼容测试；其中 demo.8 及更早批次的 `--browser` 针对已移除的经典界面，浏览器检查只在 `smoke_demo9.py` 与 `smoke_workbench.py` 中维护。`smoke_workbench.py` 不加参数时只检查工作台依赖的 HTTP 契约，CI 中运行（先 `make web`）。`go test` 用注入的假前端产物，不依赖 Node。
 

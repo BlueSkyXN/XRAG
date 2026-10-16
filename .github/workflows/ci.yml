@@ -34,5 +34,12 @@ jobs:
         working-directory: webapp
       - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
       - run: CGO_ENABLED=1 go test ./...
+      - run: python3 -m unittest discover -s scripts -p 'test_package.py'
       - run: make build && python3 scripts/smoke_workbench.py
       - run: bash scripts/static-check.sh
+      - name: Verify source and Linux release packages
+        run: |
+          python3 scripts/package.py --out "$RUNNER_TEMP/xrag-release"
+          python3 scripts/check_release.py \
+            --source "$RUNNER_TEMP/xrag-release/"*-source.zip \
+            --linux "$RUNNER_TEMP/xrag-release/"*-linux-amd64.tar.gz

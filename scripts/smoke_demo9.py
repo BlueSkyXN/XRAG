@@ -59,7 +59,7 @@ def main(browser=False):
      if api('/healthz')[0]==200:break
     except OSError:pass
     time.sleep(.1)
-   ck('fresh Demo.9 starts',op('/healthz')['version']=='0.10.0')
+   ck('fresh Demo.9 starts',op('/healthz')['version']=='0.10.1')
    ck('runtime advertises actual MCP features',op('/v1/system')['mcp']['oauth_resource_server']and op('/v1/system')['investigation']['resume']=='explicit_checkpoint')
    worker=subprocess.Popen([str(ROOT/'bin/xrag-server'),'worker','--data',str(data)],stdout=log,stderr=log,env=env)
    ck('real worker builds baseline corpus',wait(op('/v1/kbs/demo/builds',{}))['state']=='succeeded')
