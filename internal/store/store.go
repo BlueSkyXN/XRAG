@@ -342,6 +342,21 @@ func (s *Store) Read(ctx context.Context, r core.Ref) (core.Document, *core.Chun
 	return d, ch, fresh, e
 }
 func (s *Store) Lexical(ctx context.Context, v core.View, q string) ([]core.Ranked, error) {
+	return s.lexical(ctx, v, q, false)
+}
+
+// RelaxedLexical 按词典分组取 BM25 最靠前的 500 个候选，供 +ask 融合。
+func (s *Store) RelaxedLexical(ctx context.Context, v core.View, q string) ([]core.Ranked, error) {
+	return s.lexical(ctx, v, q, true)
+}
+
+func (s *Store) lexical(ctx context.Context, v core.View, q string, relaxed bool) ([]core.Ranked, error) {
+	query := core.DictionaryQuery
+	sql := "SELECT chunk_id,bm25(fts) AS score FROM fts WHERE fts MATCH ? AND chunk_id IN(SELECT value FROM json_each(?)) ORDER BY score,chunk_id LIMIT 50001"
+	if relaxed {
+		query = core.RelaxedDictionaryQuery
+		sql = "SELECT chunk_id,bm25(fts) AS score FROM fts WHERE fts MATCH ? AND chunk_id IN(SELECT value FROM json_each(?)) ORDER BY score,chunk_id LIMIT 500"
+	}
 	groups := map[string]map[string]bool{}
 	words := map[string][]string{}
 	for _, d := range v.Documents {
@@ -355,23 +370,23 @@ func (s *Store) Lexical(ctx context.Context, v core.View, q string) ([]core.Rank
 		}
 	}
 	if len(groups) == 0 {
-		if _, e := core.FTSQuery(q); e != nil {
+		if _, e := query(q, nil); e != nil {
 			return nil, e
 		}
 		return []core.Ranked{}, nil
 	}
 	out := []core.Ranked{}
 	for k, ids := range groups {
-		expression, e := core.DictionaryQuery(q, words[k])
+		expression, e := query(q, words[k])
 		if e != nil {
 			return nil, e
 		}
 		e = s.DB.Do(ctx, func(c *db.Conn) error {
-			rows, e := c.Query("SELECT chunk_id,bm25(fts) AS score FROM fts WHERE fts MATCH ? AND chunk_id IN(SELECT value FROM json_each(?)) ORDER BY score,chunk_id LIMIT 50001", expression, core.JSON(sortedMapIDs(ids)))
+			rows, e := c.Query(sql, expression, core.JSON(sortedMapIDs(ids)))
 			if e != nil {
 				return e
 			}
-			if len(rows) > 50000 {
+			if !relaxed && len(rows) > 50000 {
 				return core.Err("CANDIDATE_LIMIT", "keyword candidate limit reached", 422)
 			}
 			for _, row := range rows {
