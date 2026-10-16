@@ -42,7 +42,7 @@ def main(browser=False):
     time.sleep(.1)
    raise AssertionError('task timeout')
   try:
-   check('demo.3 binary current binary reports its version',api('/healthz')[1]['version']=='0.10.2')
+   check('demo.3 binary current binary reports its version',api('/healthz')[1]['version']=='0.10.3')
    job=wait(post('/v1/kbs/demo/builds',{'mode':'incremental'}));check('existing corpus builds',job['state']=='succeeded')
    search=post('/v1/search/keyword',{'kbs':['demo'],'q':'E203'});ref=search['items'][0]['ref'];before=post('/v1/files/read',{'kbs':['demo'],'ref':ref})
    overview=api('/v1/overview')[1];check('overview reports real corpus counts',overview['counts']['files']==7)

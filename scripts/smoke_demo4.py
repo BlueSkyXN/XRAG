@@ -54,7 +54,7 @@ def main(browser=False):
    for _ in range(100):
     try:api('/healthz');break
     except Exception:time.sleep(.1)
-   ck('current binary reports demo.6',api('/healthz')[1]['version']=='0.10.2')
+   ck('current binary reports demo.6',api('/healthz')[1]['version']=='0.10.3')
    ck('base corpus builds',wait(post('/v1/kbs/demo/builds',{'mode':'incremental'}))['state']=='succeeded')
    live_prune=subprocess.run([str(ROOT/'bin/xrag-server'),'prune','--data',str(data)],capture_output=True,text=True);ck('offline prune refuses a running Server',live_prune.returncode!=0 and 'WORKSPACE_BUSY' in live_prune.stderr)
    gen=wait(post('/v1/kbs/demo/wiki',{'topic':'日志'}));ck('Wiki executes outline and draft calls',gen['state']=='succeeded' and gen['result']['generation_stages']==2 and len(Fixture.calls)==2,gen.get('error'))
