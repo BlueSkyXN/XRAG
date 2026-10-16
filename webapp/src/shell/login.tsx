@@ -48,7 +48,7 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
           </div>
         </div>
         <h1 className="text-[20px] font-semibold leading-snug tracking-tight">可组合的多路知识检索</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-dim">按问题选择查法，结果保留原文、行号和版本。网页、CLI 与 MCP 调用同一组接口。</p>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-dim">检索资料，查看原文、行号和版本。</p>
 
         <form id={mode === 'key' ? 'key-form' : 'password-form'} onSubmit={submit} className="mt-7 space-y-3.5 rounded-xl border border-line bg-panel p-5">
           {mode === 'key' ? (
@@ -71,7 +71,6 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
             {!busy && <ArrowRight />}
           </Button>
         </form>
-        <p className="mt-4 text-xs leading-relaxed text-faint">登录只建立浏览器会话，不调用任何模型。CLI 和 MCP 继续使用 API Key。</p>
       </div>
     </main>
   )

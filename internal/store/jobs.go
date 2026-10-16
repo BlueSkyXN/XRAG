@@ -246,7 +246,7 @@ func (s *Store) UsageStart(ctx context.Context, j Job, kind string) (string, err
 			return e
 		}
 		if db.Int(r[0], "n") >= 200 {
-			return core.Err("BUDGET_EXHAUSTED", "Demo job cap: 200 external calls", 422)
+			return core.Err("BUDGET_EXHAUSTED", "job cap: 200 external calls per job", 422)
 		}
 		return c.Exec("INSERT INTO call_usage(id,job_id,kind,state,usage,created) VALUES(?,?,?,'sent','{}',?)", id, j.ID, kind, time.Now().Unix())
 	})

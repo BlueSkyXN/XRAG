@@ -98,8 +98,27 @@ export function useFeedback() {
   return value
 }
 
+// 只映射能由错误码确定含义的错误；通用码保留服务端的具体原因。
+const errorMessages: Record<string, string> = {
+  LAST_ADMIN: '不能停用最后一把永久管理员 Key，请先创建另一把永久管理员 Key',
+  CONFIG_EXTERNAL: '服务使用了 --config 配置文件，请修改该文件，或移除 --config 并重启服务后使用网页设置',
+  CANDIDATE_LIMIT: '关键词候选数量已达上限，请缩小知识库或文件范围后重试',
+  EXPORT_LIMIT: '导出最多支持 64 MiB、10000 个已发布文件，请缩小知识库后导出',
+  IDEMPOTENCY_CONFLICT: '同一幂等键对应了不同请求，请核对原请求',
+  JOB_EXPIRED: '任务已结束，其详细记录已清理',
+  ORIGIN_MISMATCH: '这条反馈属于其他数据来源，请切换到原服务后查看',
+  EVAL_DRAFT_UNAPPROVED: '请先审核确认预期结果，再发布题集',
+  EVAL_SPLIT_OVERLAP: '同一题集系列的开发集和留出集包含重复问题，请移除重复题目',
+  CHECKPOINT_MISSING: '任务没有可用于续跑的检查点，请重新提交任务',
+  TASK_CONFIGURATION_CHANGED: '任务配置已改变，请恢复原配置或重新提交任务',
+  TASK_DEADLINE_EXCEEDED: '原任务的执行期限已过，请重新提交任务'
+}
+
 export function errorText(error: unknown) {
-  if (error instanceof ApiError) return error.code && !/^\d+$/.test(error.code) ? `${error.code} · ${error.message}` : error.message
+  if (error instanceof ApiError) {
+    if (Object.hasOwn(errorMessages, error.code)) return `${errorMessages[error.code]}（${error.code}）`
+    return error.code && !/^\d+$/.test(error.code) ? `${error.code} · ${error.message}` : error.message
+  }
   return error instanceof Error ? error.message : String(error)
 }
 

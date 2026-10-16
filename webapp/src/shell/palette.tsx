@@ -25,6 +25,26 @@ const groupNames: Record<string, string> = {
   external: '外部 · external'
 }
 
+// 命令面板使用操作摘要；完整协议说明保留在 schema 与 MCP 工具描述中。
+const actionDescriptions: Record<string, string> = {
+  'kb.discover': '查看知识库能力与字段',
+  'search.keyword': '按关键词或编号查找资料',
+  'search.semantic': '按语义相似度查找资料',
+  'files.tree': '浏览已发布文件',
+  'files.grep': '用正则表达式匹配原文',
+  'files.read': '阅读文件与引用片段',
+  'graph.entity': '按名称查找实体',
+  'graph.neighbors': '查找相邻实体与关系',
+  'graph.path': '查找两个实体间的路径',
+  'graph.chunks': '查看实体的原文出处',
+  '+ask': '组合关键词、语义与关系检索',
+  '+context': '查看实体、关系与相关原文',
+  'handles.describe': '查看已保存的检索范围',
+  'results.page': '读取下一页结果',
+  'scope.expand': '扩展到相关实体的提及片段',
+  'search.external': '查询外部知识服务'
+}
+
 export function Palette({
   open,
   onOpenChange,
@@ -85,7 +105,7 @@ export function Palette({
         key: `action:${a.action}`,
         group: groupNames[a.group] ?? a.group,
         name: a.cli,
-        desc: a.description,
+        desc: actionDescriptions[a.action] ?? '',
         tag: a.group,
         disabled: unavailable(a.action),
         run: () => navigate(pageForAction(a.action))

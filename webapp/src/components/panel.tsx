@@ -27,12 +27,12 @@ export function PanelBody({ className, ...props }: React.HTMLAttributes<HTMLDivE
   return <div className={cn('p-4', className)} {...props} />
 }
 
-/** 空状态：说明现在是什么情况、下一步可以做什么。详情区里的占位提示传 mark={false}，不重复显示页面色块。 */
+/** 空状态：说明现在是什么情况、下一步可以做什么。页面色块只用于每页的主空状态（mark），详情区占位一律不带。 */
 export function Empty({
   title,
   children,
   action,
-  mark = true,
+  mark = false,
   className
 }: {
   title: React.ReactNode

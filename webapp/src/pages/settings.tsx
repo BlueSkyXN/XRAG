@@ -1,5 +1,5 @@
-import { SyntheticEvent, useEffect, useState } from 'react'
-import { Download, RefreshCw, Save } from 'lucide-react'
+import { Fragment, SyntheticEvent, useEffect, useState } from 'react'
+import { ArrowRight, DatabaseBackup, Download, Eraser, Eye, RefreshCw, Save } from 'lucide-react'
 import { api, download, downloadJSON, KbSettings, MaintenancePolicy, ProviderConfig, ProviderState } from '../lib/api'
 import { useData, useFeedback, useRun } from '../lib/feedback'
 import { navigate, useLocation } from '../lib/router'
@@ -16,16 +16,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/tabs'
 
 /* ---------- 能力 ---------- */
 
+/** 与 KbConfig 表单的图抽取方式取值对应， capabilities 卡片显示中文状态；未知取值原样显示。 */
+const graphModeLabels: Record<string, string> = { '': '显式标注', explicit: '显式标注', llm: 'Chat 抽取', plugin: '插件抽取' }
+
+function graphModeLabel(mode: string | undefined) {
+  if (!mode) return graphModeLabels['']
+  return graphModeLabels[mode] ?? mode
+}
+
 function Capabilities() {
-  const { system, caps, kb } = useSession()
+  const { system, caps, kb, may } = useSession()
   const discover = useData(() => (kb ? api.discover(kb) : Promise.resolve(null)), [kb])
   const d = discover.data?.data
-  const rows: { name: string; on: boolean; state: string; desc: string }[] = [
+  const rows: { name: string; on: boolean; state: string; desc: string; toProviders?: boolean }[] = [
     { name: '关键词', on: true, state: '已启用', desc: system.keyword ?? 'FTS5 BM25' },
-    { name: '语义 / 向量', on: Boolean(caps.embedding), state: caps.embedding ? '已配置' : '未配置', desc: caps.qdrant ? 'Qdrant 后端；需要真实联调' : '配置 Embedding 后可做本地精确余弦检索' },
-    { name: '重排', on: Boolean(caps.rerank), state: caps.rerank ? '已配置' : '未配置', desc: '组合检索的可选重排步骤' },
-    { name: '关系', on: true, state: caps.graph_mode || '显式标注', desc: caps.graph_backend || system.graph_backend },
-    { name: 'Chat / Wiki', on: Boolean(caps.wiki), state: caps.wiki ? '已配置' : '未配置', desc: '固定生成流程 → 草稿 → 显式发布；委托调查也需要它' },
+    { name: '语义 / 向量', on: Boolean(caps.embedding), state: caps.embedding ? '已配置' : '未配置', desc: caps.qdrant ? 'Qdrant 后端' : caps.embedding ? '本地向量检索' : '配置 Embedding 后启用', toProviders: !caps.embedding },
+    { name: '重排', on: Boolean(caps.rerank), state: caps.rerank ? '已配置' : '未配置', desc: '组合检索的可选重排步骤', toProviders: !caps.rerank },
+    { name: '关系', on: true, state: graphModeLabel(caps.graph_mode), desc: caps.graph_backend || system.graph_backend },
+    { name: 'Chat / Wiki', on: Boolean(caps.wiki), state: caps.wiki ? '已配置' : '未配置', desc: '生成 Wiki 草稿与执行委托调查', toProviders: !caps.wiki },
     { name: '执行器', on: system.workers, state: system.workers ? '运行中' : '已关闭', desc: system.workers ? '构建、Wiki、评测在本进程执行' : '任务排队；可单独运行 xrag-server worker' }
   ]
   return (
@@ -40,11 +48,17 @@ function Capabilities() {
             </p>
             <p className="mt-1 text-[15px] font-semibold">{r.state}</p>
             <p className="mt-1 text-xs leading-relaxed text-faint">{r.desc}</p>
+            {r.toProviders && may('admin') && (
+              <Button size="sm" variant="ghost" className="mt-2 self-start" onClick={() => navigate('/settings/providers', true)}>
+                去配置
+                <ArrowRight />
+              </Button>
+            )}
           </Panel>
         ))}
       </div>
       <Panel>
-        <PanelHeader title={`知识库 ${kb}`} meta={<span>kb discover · 只读取已登记元数据，不调用模型</span>} />
+        <PanelHeader title={`知识库 ${kb}`} meta={<span>资料与字段</span>} />
         <PanelBody>
           {d ? (
             <KeyValues
@@ -61,7 +75,7 @@ function Capabilities() {
           )}
         </PanelBody>
       </Panel>
-      <JsonBlock value={system} summary="服务实际信息（/v1/system）" />
+      <JsonBlock value={system} summary="服务信息（/v1/system）" />
     </div>
   )
 }
@@ -135,12 +149,12 @@ function Providers() {
       ? '当前由启动参数 --config 文件管理。这里只读；改用内置配置需要去掉 --config 并重启。'
       : s.restart_required
         ? '待启用配置与当前进程不同：重启 Server 和所有 Worker 后生效。向量模型改变后请显式重建向量。'
-        : '待启用配置与运行配置一致。保存不会探测外部服务，也不会调用模型。'
+        : '待启用配置与运行配置一致。'
 
   return (
     <form onSubmit={save} className="space-y-3">
       <p className={`rounded-md border px-3 py-2 text-[13px] ${s.restart_required ? 'border-warn/30 bg-warn/[0.06] text-warn' : 'border-line text-fg-soft'}`}>{banner}</p>
-      <Note>只保存 env:/file: 引用，不在这里填真实密钥；引用在 Server 或 Worker 所在机器上解析。保存成功不代表外部服务已经测试通过。</Note>
+      <Note>只保存 env:/file: 引用，不在这里填真实密钥；引用在 Server 或 Worker 所在机器上解析。</Note>
       <div className="grid gap-3 xl:grid-cols-2">
         {providerSpecs.map(p => {
           const on = Boolean(cfg[p.id])
@@ -182,7 +196,7 @@ function Providers() {
           导出引用配置
         </Button>
         <span className="font-mono text-xs text-faint">
-          修订 {s.revision} · {s.updated ? when(s.updated) : '尚未保存'} · 模型调用 {String((s as unknown as Record<string, unknown>).model_calls ?? 0)}
+          修订 {s.revision} · {s.updated ? `最近保存 ${when(s.updated)}` : '最近保存 —'} · 模型调用 {String((s as unknown as Record<string, unknown>).model_calls ?? 0)}
         </span>
       </div>
       <JsonBlock value={s.active} summary="当前进程实际配置" />
@@ -286,6 +300,10 @@ function KbConfig() {
   }
 
   async function rebuild(mode: string) {
+    if (mode === 'full') {
+      const ok = await confirm({ title: `完整重建知识库 ${kb}？`, body: '重新处理全部已发布文件；配置了模型时会按预算产生调用。', confirm: '完整重建' })
+      if (!ok) return
+    }
     const job = await run(() => api.build(kb, mode))
     if (job) navigate(`/jobs?id=${job.id}`)
   }
@@ -337,7 +355,7 @@ function KbConfig() {
               <Field label="领域词典（每行一个）">
                 <Textarea rows={2} value={f.dictionary} onChange={set('dictionary')} />
               </Field>
-              <Field label="字段类型（JSON）" hint="string / number / boolean / date。不满足类型时文件保持旧发布版本，不会悄悄丢弃字段。" className="sm:col-span-2">
+              <Field label="字段类型（JSON）" hint="string / number / boolean / date。类型不符时保留文件的旧发布版本。" className="sm:col-span-2">
                 <Textarea mono rows={3} value={f.fields} onChange={set('fields')} spellCheck={false} />
               </Field>
               <Field label="图抽取方式">
@@ -406,8 +424,11 @@ function KbConfig() {
                     <Input type="number" min={0} value={f.day_tokens} onChange={set('day_tokens')} />
                   </Field>
                 </div>
-                <Note>发送前按请求字节和输出上限保守预留，收到 usage 后结算；响应未知时保留预留额。预留不是精确分词，也不是供应商账单。</Note>
-                <Button type="submit">保存预算</Button>
+                <Note>发送前按请求字节和输出上限保守预留，收到 usage 后结算；响应未知时保留预留额。</Note>
+                <Button type="submit">
+                  <Save />
+                  保存预算
+                </Button>
               </form>
             </PanelBody>
           </Panel>
@@ -420,31 +441,6 @@ function KbConfig() {
                 <Button onClick={() => void rebuild('full')}>完整重建</Button>
               </div>
               <Note>专项重建使用已发布正文。向量模式准备好全部文件后一次切换；失败时保持原来的查询模型和资料。</Note>
-            </PanelBody>
-          </Panel>
-          <Panel>
-            <PanelHeader title="名称与删除" />
-            <PanelBody className="space-y-3">
-              <form
-                className="flex items-end gap-2"
-                onSubmit={async e => {
-                  e.preventDefault()
-                  const ok = await run(() => api.renameKb(kb, name.trim()), '名称已修改；ID 与引用不变')
-                  if (ok !== undefined) await refresh()
-                }}
-              >
-                <Field label="显示名称" className="flex-1">
-                  <Input required value={name} onChange={e => setName(e.target.value)} />
-                </Field>
-                <Button type="submit" disabled={!name.trim() || name.trim() === kbName}>
-                  改名
-                </Button>
-              </form>
-              {may('admin') && (
-                <Button variant="danger" onClick={() => void remove()}>
-                  删除知识库
-                </Button>
-              )}
             </PanelBody>
           </Panel>
           <Panel>
@@ -474,6 +470,48 @@ function KbConfig() {
             )}
             {usage.data && <JsonBlock value={usage.data} summary="完整记录" className="m-3" />}
           </Panel>
+          <Panel>
+            <PanelHeader title="导出当前知识库" />
+            <PanelBody className="space-y-3">
+              <p className="text-[13px] text-fg-soft">导出 {kb} 全部已发布的 MD/TXT 和来源清单。</p>
+              <Button variant="outline" onClick={() => void run(() => download(api.exportPath(kb), `xrag-${kb}-published.zip`), '文件已交给浏览器保存')}>
+                <Download />
+                下载已发布资料 ZIP
+              </Button>
+              <Note>上限 10,000 份文件、正文 64 MiB；不含草稿、密钥与向量。</Note>
+            </PanelBody>
+          </Panel>
+          <Panel>
+            <PanelHeader title="显示名称" />
+            <PanelBody>
+              <form
+                className="flex items-end gap-2"
+                onSubmit={async e => {
+                  e.preventDefault()
+                  const ok = await run(() => api.renameKb(kb, name.trim()), '名称已修改；ID 与引用不变')
+                  if (ok !== undefined) await refresh()
+                }}
+              >
+                <Field label="显示名称" className="flex-1">
+                  <Input required value={name} onChange={e => setName(e.target.value)} />
+                </Field>
+                <Button type="submit" disabled={!name.trim() || name.trim() === kbName}>
+                  改名
+                </Button>
+              </form>
+            </PanelBody>
+          </Panel>
+          {may('admin') && (
+            <Panel className="border-err/40">
+              <PanelHeader title="删除知识库" />
+              <PanelBody className="space-y-3">
+                <p className="text-[13px] text-fg-soft">停止返回这个知识库的当前资料和历史引用，不删除源目录。知识库 ID 以后不能再用。</p>
+                <Button variant="danger" onClick={() => void remove()}>
+                  删除知识库
+                </Button>
+              </PanelBody>
+            </Panel>
+          )}
         </div>
       </div>
     </div>
@@ -483,7 +521,7 @@ function KbConfig() {
 /* ---------- 数据 ---------- */
 
 function DataPane() {
-  const { kb, may } = useSession()
+  const { may } = useSession()
   const run = useRun()
   const { confirm } = useFeedback()
   const admin = may('admin')
@@ -507,21 +545,10 @@ function DataPane() {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel>
-          <PanelHeader title="导出当前知识库" />
-          <PanelBody className="space-y-3">
-            <p className="text-[13px] text-fg-soft">导出 {kb} 全部已发布的 MD/TXT 和来源清单，不只是某次搜索的前 K 项。不包含草稿、密钥或向量。</p>
-            <Button variant="primary" onClick={() => void run(() => download(api.exportPath(kb), `xrag-${kb}-published.zip`), '文件已交给浏览器保存')}>
-              <Download />
-              下载已发布资料 ZIP
-            </Button>
-            <Note>上限 10,000 份文件、正文 64 MiB。这是内容导出，不是完整系统备份。</Note>
-          </PanelBody>
-        </Panel>
-        {admin && (
+      {admin && (
+        <div className="grid gap-3 lg:grid-cols-2">
           <Panel>
-            <PanelHeader title="数据库快照" meta={backups.data && <span>最多保留 {backups.data.max_snapshots} 个</span>} actions={<Button size="sm" variant="primary" disabled={busy} onClick={() => void createBackup()}>{busy ? '创建中…' : '创建快照'}</Button>} />
+            <PanelHeader title="数据库快照" meta={backups.data && <span>最多保留 {backups.data.max_snapshots} 个</span>} actions={<Button size="sm" variant="outline" disabled={busy} onClick={() => void createBackup()}>{busy ? '创建中…' : <><DatabaseBackup />创建快照</>}</Button>} />
             {backups.data && backups.data.items.length === 0 && <Empty title="还没有快照" />}
             {backups.data && backups.data.items.length > 0 && (
               <Table>
@@ -561,14 +588,10 @@ function DataPane() {
               </Table>
             )}
           </Panel>
-        )}
-      </div>
-      {admin && (
-        <div className="grid gap-3 lg:grid-cols-2">
           <Panel>
             <PanelHeader title="恢复到一个新目录" />
             <PanelBody className="space-y-3">
-              <p className="text-[13px] text-fg-soft">恢复必须在命令行显式执行，网页不能覆盖运行中的库。新目录会生成恢复管理员 Key，并关闭原自动扫描与模型配置。</p>
+              <p className="text-[13px] text-fg-soft">在命令行恢复到新目录。恢复后生成管理员 Key，自动扫描与模型配置默认关闭。</p>
               <CodeBlock label="命令" code={'./bin/xrag-server restore --from snapshot.sqlite \\\n  --data /新的/不存在的目录 --confirm'} />
               <Note>文档身份和旧引用保留；原 Key 停用、排队任务停止。外部来源路径要重新确认后再启用。</Note>
             </PanelBody>
@@ -578,7 +601,10 @@ function DataPane() {
             <PanelBody className="space-y-3">
               <p className="text-[13px] text-fg-soft">只清理已过期的结果页、范围句柄和查询摘要；不删除知识、历史文件、模型缓存或任务。</p>
               <div className="flex gap-2">
-                <Button onClick={async () => setCache((await run(() => api.cachePreview())) ?? null)}>查看可清理数量</Button>
+                <Button variant="ghost" onClick={async () => setCache((await run(() => api.cachePreview())) ?? null)}>
+                  <Eye />
+                  查看可清理数量
+                </Button>
                 <Button
                   variant="danger"
                   onClick={async () => {
@@ -586,7 +612,8 @@ function DataPane() {
                     setCache((await run(() => api.cacheClean(), '已清理')) ?? null)
                   }}
                 >
-                  确认清理
+                  <Eraser />
+                  清理
                 </Button>
               </div>
               {cache != null && <JsonBlock value={cache} open summary="结果" />}
@@ -658,7 +685,7 @@ function Maintenance() {
               <div className="flex items-end pb-1.5">
                 <Check label="允许按原绑定清理外部文件版" checked={p.content_external} onChange={e => setP({ ...p, content_external: e.target.checked })} />
               </div>
-              <Note className="sm:col-span-2">已结算用量先汇总再整理；结果未知的调用不清除。知识依据和人工题集不直接删除；手动快照不会被计划删除；关闭计划不取消正在执行的任务。</Note>
+              <Note className="sm:col-span-2">清理前汇总已结算用量；保留结果未知的调用、知识依据、人工题集和手动快照。关闭计划后，正在执行的任务继续运行。</Note>
               <div className="sm:col-span-2">
                 <Button type="submit" variant="primary">
                   <Save />
@@ -671,12 +698,35 @@ function Maintenance() {
         <Panel>
           <PanelHeader title="现在运行一次" />
           <PanelBody className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={async () => setPreview((await run(() => api.maintenanceRecords())) ?? null)}>预览旧记录</Button>
-              <Button onClick={async () => setPreview((await run(() => api.maintenanceContent())) ?? null)}>预览历史内容</Button>
-              <Button onClick={() => void runOnce({ backup: true }, '排队创建一次 SQLite 快照，并按保留数整理计划快照？')}>备份一次</Button>
-              <Button onClick={() => void runOnce({ records: true }, '排队整理一批过期操作记录？保留用量汇总，不删除正文与依据。')}>整理一批记录</Button>
-              <Button onClick={() => void runOnce({ content: true }, '整理一批超过保留期、没有引用持有的历史内容？本批次会短暂阻挡内容操作。')}>整理一批内容</Button>
+            <div className="space-y-2">
+              <p className="text-xs text-dim">预览</p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" onClick={async () => setPreview((await run(() => api.maintenanceRecords())) ?? null)}>
+                  <Eye />
+                  预览旧记录
+                </Button>
+                <Button variant="ghost" onClick={async () => setPreview((await run(() => api.maintenanceContent())) ?? null)}>
+                  <Eye />
+                  预览历史内容
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-dim">执行</p>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => void runOnce({ backup: true }, '排队创建一次 SQLite 快照，并按保留数整理计划快照？')}>
+                  <DatabaseBackup />
+                  备份一次
+                </Button>
+                <Button onClick={() => void runOnce({ records: true }, '排队整理一批过期操作记录？保留用量汇总，不删除正文与依据。')}>
+                  <Eraser />
+                  整理一批记录
+                </Button>
+                <Button onClick={() => void runOnce({ content: true }, '整理一批超过保留期、没有引用持有的历史内容？本批次会短暂阻挡内容操作。')}>
+                  <Eraser />
+                  整理一批内容
+                </Button>
+              </div>
             </div>
             <KeyValues
               rows={[
@@ -691,7 +741,7 @@ function Maintenance() {
       </div>
       <Panel>
         <PanelHeader title="最近维护任务" actions={<Button size="sm" variant="ghost" onClick={() => void runs.reload()}><RefreshCw />刷新</Button>} />
-        {runs.data && runs.data.items.length === 0 && <Empty title="还没有维护任务">默认不会自动删除或备份。</Empty>}
+        {runs.data && runs.data.items.length === 0 && <Empty title="还没有维护任务" />}
         {runs.data && runs.data.items.length > 0 && (
           <Table>
             <thead>
@@ -724,12 +774,13 @@ function Maintenance() {
 
 /* ---------- 页面 ---------- */
 
+/* 服务级页签在前，知识库级在后；两组之间在 TabsList 里渲染竖线分隔（见 SettingsPage）。 */
 const tabs = [
   { id: 'capabilities', label: '能力', min: 'reader' as const },
   { id: 'providers', label: '模型与后端', min: 'admin' as const },
-  { id: 'kb', label: '知识库配置', min: 'maintainer' as const },
-  { id: 'data', label: '数据', min: 'maintainer' as const },
-  { id: 'maintenance', label: '自动维护', min: 'admin' as const }
+  { id: 'data', label: '数据', min: 'admin' as const },
+  { id: 'maintenance', label: '自动维护', min: 'admin' as const },
+  { id: 'kb', label: '知识库配置', min: 'maintainer' as const, kb: true }
 ]
 
 export default function SettingsPage() {
@@ -746,13 +797,22 @@ export default function SettingsPage() {
   }
   return (
     <Page>
-      <PageHeader title="设置" desc="能力、模型连接、知识库处理方式和数据维护。打开设置不会探测网络或调用模型。" cli={cli[current]} />
+      <PageHeader title="设置" desc="服务能力、模型连接、数据与维护；知识库页签只影响当前知识库。" cli={cli[current]} />
       <Tabs value={current} onValueChange={v => navigate(`/settings/${v}`, true)}>
         <TabsList className="-mx-1 px-1">
-          {visible.map(t => (
-            <TabsTrigger key={t.id} value={t.id}>
-              {t.label}
-            </TabsTrigger>
+          {visible.map((t, i) => (
+            <Fragment key={t.id}>
+              {i > 0 && t.kb && <span aria-hidden className="mx-1 h-4 w-px self-center bg-line" />}
+              <TabsTrigger value={t.id}>
+                {t.kb ? (
+                  <>
+                    知识库 · <span className="font-mono">{kb}</span>
+                  </>
+                ) : (
+                  t.label
+                )}
+              </TabsTrigger>
+            </Fragment>
           ))}
         </TabsList>
         <TabsContent value="capabilities" className="pt-3">
@@ -763,19 +823,19 @@ export default function SettingsPage() {
             <Providers />
           </TabsContent>
         )}
-        {may('maintainer') && (
-          <TabsContent value="kb" className="pt-3">
-            {kb ? <KbConfig /> : <Empty title="先选择一个知识库" />}
-          </TabsContent>
-        )}
-        {may('maintainer') && (
+        {may('admin') && (
           <TabsContent value="data" className="pt-3">
-            {kb ? <DataPane /> : <Empty title="先选择一个知识库" />}
+            <DataPane />
           </TabsContent>
         )}
         {may('admin') && (
           <TabsContent value="maintenance" className="pt-3">
             <Maintenance />
+          </TabsContent>
+        )}
+        {may('maintainer') && (
+          <TabsContent value="kb" className="pt-3">
+            {kb ? <KbConfig /> : <Empty title="先选择一个知识库" />}
           </TabsContent>
         )}
       </Tabs>

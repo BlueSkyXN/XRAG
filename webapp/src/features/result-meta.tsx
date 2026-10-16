@@ -26,7 +26,7 @@ export function pipelineStages(response: QueryResponse, semanticConfigured: bool
   const steps = response.trace ?? []
   const stages: Stage[] = steps.map(step => {
     const info = stageNames[step.stage] ?? { label: step.stage }
-    return { label: info.label, value: step.count, unit: info.unit, route: info.route, title: step.note }
+    return { label: info.label, value: step.count, unit: info.unit, route: info.route, title: step.note ? translateNote(step.note) ?? undefined : undefined }
   })
   // 组合检索在未配置语义模型时不会产生语义阶段；补一格“跳过”，避免误以为语义路线执行后没有结果。
   if (response.action === '+ask' && !semanticConfigured && !steps.some(s => s.stage === 'semantic')) {
@@ -41,10 +41,15 @@ export function totalDuration(response: QueryResponse) {
   return `${ms} ms`
 }
 
-const noteText: [RegExp, (m: RegExpMatchArray) => string][] = [
-  [/^Semantic is not configured; this run uses lexical retrieval\.?$/, () => '未配置语义模型，本次只走词法检索'],
-  [/^semantic branch unavailable: (.+)$/, m => `语义分支不可用：${m[1]}`],
-  [/^per_file limits selected results, not the complete keyword count$/, () => '每文件上限只影响返回的结果，不影响关键词总数']
+// 页面展示影响结果或下一步操作的说明，其他诊断信息保留在完整响应中。
+const noteText: [RegExp, (m: RegExpMatchArray) => string | null][] = [
+  [/^Semantic is not configured; this run uses lexical retrieval\.?$/, () => '未配置向量模型，本次使用关键词检索'],
+  [/^semantic branch unavailable: (.+)$/, m => `语义检索失败：${m[1]}`],
+  [/^per_file limits selected results, not the complete keyword count$/, () => '已按每个文件的条数上限筛选结果'],
+  [/^The saved result window is bounded; total accuracy and scope are stated separately\. Narrow the query for additional members\.$/, () => '结果超过保存上限，请缩小检索范围。'],
+  [/^hybrid retrieval uses at most (\d+) lexical candidates; not an exhaustive result$/, m => `关键词候选上限：${m[1]} 条`],
+  [/^removed (\d+) candidates by per-file limit$/, m => Number(m[1]) > 0 ? `按每文件上限移除 ${m[1]} 条候选` : null],
+  [/^Scope was explicitly expanded to mentions in the selected knowledge bases\.$/, () => '已扩展到相关实体的提及片段']
 ]
 
 export function translateNote(note: string) {
@@ -52,7 +57,7 @@ export function translateNote(note: string) {
     const match = note.match(pattern)
     if (match) return render(match)
   }
-  return note
+  return null
 }
 
 export const unitLabels: Record<string, string> = {
@@ -82,7 +87,7 @@ const consistencyLabels: Record<string, string> = {
 const scopeLabels: Record<string, string> = {
   corpus: '全库',
   enumerated: '指定范围',
-  candidates: '候选集合',
+  candidate: '候选集合',
   expanded: '扩展范围'
 }
 

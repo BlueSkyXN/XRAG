@@ -30,7 +30,7 @@ func Restore(ctx context.Context, from, destination string) (map[string]any, err
 		return nil, fmt.Errorf("backup must be a regular SQLite file")
 	}
 	if st.Size() > 2<<30 {
-		return nil, core.Err("BACKUP_LIMIT", "Demo restore accepts a snapshot up to 2 GiB", 422)
+		return nil, core.Err("BACKUP_LIMIT", "restore accepts a snapshot up to 2 GiB", 422)
 	}
 	header := make([]byte, 16)
 	if _, e = io.ReadFull(in, header); e != nil || string(header) != "SQLite format 3\x00" {
@@ -84,7 +84,7 @@ func Restore(ctx context.Context, from, destination string) (map[string]any, err
 		}
 		rs, e = c.Query("SELECT v FROM meta WHERE k='origin'")
 		if e != nil || len(rs) != 1 || db.String(rs[0], "v") == "" {
-			return core.Err("INVALID_BACKUP", "not an XRAG Demo database", 400)
+			return core.Err("INVALID_BACKUP", "not an XRAG database snapshot", 400)
 		}
 		for _, table := range []string{"file", "edition", "kb", "api_key", "job"} {
 			rs, e = c.Query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table)

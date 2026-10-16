@@ -234,7 +234,7 @@ func (d *Direct) QueryView(ctx context.Context, kbs []string, refs []core.Ref, w
 				return v, er
 			}
 			if c.MentionNames == nil {
-				return v, core.Err("PAYLOAD_SCHEMA_UNSUPPORTED", "rebuild with Demo.8 metadata before compact direct graph queries", 409)
+				return v, core.Err("PAYLOAD_SCHEMA_UNSUPPORTED", "rebuild with demo8 metadata before compact direct graph queries", 409)
 			}
 			v.Documents = append(v.Documents, chunkDocument(c))
 			if len(v.Documents) > 200000 {

@@ -61,7 +61,7 @@ function Keys() {
   async function rename(event: SyntheticEvent) {
     event.preventDefault()
     if (!renaming) return
-    const ok = await run(() => api.renameKey(renaming.id, newName.trim()), '名称已修改；身份和已有引用不变')
+    const ok = await run(() => api.renameKey(renaming.id, newName.trim()), '名称已修改')
     if (ok !== undefined) {
       setRenaming(null)
       void keys.reload()
@@ -90,7 +90,7 @@ function Keys() {
               <Field label="过期时间（留空为不过期）">
                 <Input type="datetime-local" value={form.expires} onChange={e => setForm({ ...form, expires: e.target.value })} />
               </Field>
-              <Field label="知识库（逗号分隔）" hint={form.role === 'admin' ? 'Admin 对全部知识库生效。' : '显式留空不等于全部；多个知识库请求有一个不允许就整体报错。'} className="sm:col-span-2">
+              <Field label="知识库（逗号分隔）" hint={form.role === 'admin' ? 'Admin 对全部知识库生效。' : '至少填写一个知识库，多个用逗号分隔。'} className="sm:col-span-2">
                 <Input mono required={form.role !== 'admin'} disabled={form.role === 'admin'} value={form.role === 'admin' ? '' : form.kbs} onChange={e => setForm({ ...form, kbs: e.target.value })} />
               </Field>
               <div className="sm:col-span-2">
@@ -119,7 +119,6 @@ function Keys() {
             ) : (
               <p className="text-[13px] leading-relaxed text-fg-soft">为不同应用分别创建 Key。更换时先创建新 Key、接入成功后再停用旧的。停用后，现有会话的下一次请求也会失效。</p>
             )}
-            <Note>系统不会停用最后一把永久管理员 Key，避免关闭所有管理入口。一把 Key 就是一个调用身份，没有单独的用户密码目录。</Note>
           </PanelBody>
         </Panel>
       </div>
@@ -192,7 +191,7 @@ function Keys() {
           <DialogTitle>修改 Key 名称</DialogTitle>
           <form onSubmit={rename} className="contents">
             <DialogBody>
-              <Field label="新的显示名称" hint="不改变身份和已有引用。">
+              <Field label="新的显示名称">
                 <Input required maxLength={120} value={newName} onChange={e => setNewName(e.target.value)} />
               </Field>
             </DialogBody>
@@ -218,7 +217,7 @@ export default function AccessPage() {
   const mcp = system.mcp
   return (
     <Page>
-      <PageHeader title="接入" desc="把同一组检索能力交给 CLI、MCP 客户端和你的应用。浏览器登录只用于网页；程序调用使用 API Key。" cli={`xrag keys list --profile ${profile}`} />
+      <PageHeader title="接入" desc="配置 CLI、MCP 和 API 访问。" cli={`xrag keys list --profile ${profile}`} />
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel>
           <PanelHeader title="Client 连接" />
@@ -238,7 +237,7 @@ export default function AccessPage() {
                   保存
                 </Button>
               </form>
-              <p className="text-xs leading-relaxed text-faint">只保存在这个浏览器里，用来生成页面上的 CLI 示例。</p>
+              <p className="text-xs leading-relaxed text-faint">用于本浏览器中的 CLI 示例。</p>
             </div>
             <CodeBlock
               label="登记 profile"
@@ -262,7 +261,7 @@ export default function AccessPage() {
               ]}
             />
             <CodeBlock label="stdio" code={`xrag mcp --profile ${profile} --toolsets core,graph,files,utility,research`} />
-            <Note>只承诺上面列出的协议修订，不宣称支持 2026 新协议的全部行为；没有自建授权登录服务。使用指南随源码提供：skills/xrag-retrieval/SKILL.md。</Note>
+            <Note>使用指南：skills/xrag-retrieval/SKILL.md。</Note>
           </PanelBody>
         </Panel>
       </div>

@@ -178,7 +178,7 @@ func (q *Qdrant) Scroll(ctx context.Context, collection string) ([]core.Chunk, s
 			var m map[string]any
 			_ = json.Unmarshal(pt.Payload, &m)
 			if c.ID == "" || c.Edition == "" {
-				return nil, "", core.Err("MODEL_MISMATCH", "not an XRAG Demo payload", 409)
+				return nil, "", core.Err("MODEL_MISMATCH", "not an XRAG payload", 409)
 			}
 			if x, ok := m["origin_id"].(string); ok {
 				if origin != "" && origin != x {
@@ -189,7 +189,7 @@ func (q *Qdrant) Scroll(ctx context.Context, collection string) ([]core.Chunk, s
 			out = append(out, c)
 		}
 		if len(out) > 10000 {
-			return nil, "", core.Err("VIEW_TOO_LARGE", "direct Demo limits scroll to 10000 chunks", 422)
+			return nil, "", core.Err("VIEW_TOO_LARGE", "direct mode limits scroll to 10000 chunks", 422)
 		}
 		if res.Result.Next == nil {
 			break

@@ -245,7 +245,7 @@ func (a *App) productRoutes(w http.ResponseWriter, r *http.Request, p store.Prin
 			total += len(d.Body)
 		}
 		if total > 64<<20 || len(v.Documents) > 10000 {
-			a.fail(w, core.Err("EXPORT_LIMIT", "Demo export is limited to 64 MiB and 10000 published files", 422))
+			a.fail(w, core.Err("EXPORT_LIMIT", "export is limited to 64 MiB and 10000 published files", 422))
 			return true
 		}
 		var buf bytes.Buffer

@@ -77,7 +77,7 @@ func ParseWithLimit(kb, p, body, edition, source string, maxChars int) (Document
 			k = strings.TrimSpace(k)
 			v = strings.TrimSpace(v)
 			if !ok || k == "" || v == "" {
-				return d, Err("INVALID_FRONTMATTER", "Demo accepts scalar keys and single-line lists only", 400)
+				return d, Err("INVALID_FRONTMATTER", "front matter accepts scalar keys and single-line lists only", 400)
 			}
 			var value any
 			if json.Unmarshal([]byte(v), &value) != nil {

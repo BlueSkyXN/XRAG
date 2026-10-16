@@ -47,7 +47,7 @@ func Open(dir string) (*Store, error) {
 				return err
 			}
 			if len(version) != 1 || db.String(version[0], "v") != "demo9" {
-				return core.Err("STORAGE_VERSION_UNSUPPORTED", "use a fresh Demo.9 data directory or a Demo.9 snapshot; previous layouts are not migrated", 409)
+				return core.Err("STORAGE_VERSION_UNSUPPORTED", "use a fresh data directory or a Demo.9 snapshot; previous layouts are not migrated", 409)
 			}
 		}
 		for _, q := range append(append(append(append(append(append(append(append([]string{}, schema...), extensionSchema...), productSchema...), featureSchema...), iteration5Schema...), iteration6Schema...), housekeepingSchema...), append(append(feedbackEvalSchema, iteration7Schema...), generationRegistrySchema...)...) {

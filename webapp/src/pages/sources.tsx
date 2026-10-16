@@ -79,7 +79,7 @@ function RegisterSource({ open, onOpenChange, onDone }: { open: boolean; onOpenC
         <DialogTitle>登记来源</DialogTitle>
         <form onSubmit={submit} className="contents">
           <DialogBody className="grid gap-4 sm:grid-cols-2">
-            <Field label="来源 ID" hint="英文、数字、下划线；登记后不能改。">
+            <Field label="来源 ID" hint="英文、数字、下划线或短横线；登记后不能修改。">
               <Input mono required pattern="[A-Za-z0-9_-]+" value={form.id} onChange={set('id')} placeholder="project-docs" />
             </Field>
             <Field label="类型">
@@ -97,12 +97,12 @@ function RegisterSource({ open, onOpenChange, onDone }: { open: boolean; onOpenC
               <Input mono required value={form.mount} onChange={set('mount')} placeholder="project" />
             </Field>
             {kind === 'git' && (
-              <Field label="分支 / 标签 / 提交" hint="只读取已提交的文件树，不切换源仓库分支。">
+              <Field label="分支 / 标签 / 提交" hint="读取已提交的文件树。">
                 <Input mono value={form.git_ref} onChange={set('git_ref')} />
               </Field>
             )}
             {remoteTemplates[kind] && (
-              <Field label="连接选项 JSON" hint="凭据只填 env:/file: 引用。登记不会读取来源；远程来源尚未在真实云端实例联调。" className="sm:col-span-2">
+              <Field label="连接选项 JSON" hint="凭据使用 env:/file: 引用。" className="sm:col-span-2">
                 <Textarea mono rows={7} value={form.remote} onChange={set('remote')} spellCheck={false} />
               </Field>
             )}
@@ -139,7 +139,7 @@ function PolicyDialog({ detail, onClose, onDone }: { detail: SourceDetail | null
       policy.hook_repository = ''
       policy.hook_ref = ''
     }
-    const ok = await run(() => api.sourcePolicy(kb, s.id, policy), '自动更新设置已保存。没有变化时不会创建构建任务。')
+    const ok = await run(() => api.sourcePolicy(kb, s.id, policy), '自动更新设置已保存')
     if (ok !== undefined) {
       onClose()
       onDone()
@@ -206,7 +206,7 @@ function PolicyDialog({ detail, onClose, onDone }: { detail: SourceDetail | null
                   </>
                 )}
               </div>
-              <Note>通知只安排重新扫描已登记的来源，不读取请求里的仓库地址，也不执行提交中的命令。</Note>
+              <Note>webhook 触发已登记来源的重新扫描。</Note>
             </div>
           </DialogBody>
           <DialogFooter>
@@ -264,7 +264,7 @@ function PatternDialog({ detail, onClose, onDone }: { detail: SourceDetail | nul
             <Field label="exclude（每行一个 glob）">
               <Textarea mono rows={3} value={exclude} onChange={e => setExclude(e.target.value)} />
             </Field>
-            <Note>保存不扫描来源。</Note>
+            <Note>新设置将在下次扫描时使用。</Note>
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={onClose}>
@@ -391,7 +391,7 @@ export default function SourcesPage() {
     <Page>
       <PageHeader
         title="资料与来源"
-        desc="登记来源、构建并发布。新版本准备好之后才替换当前文件；查询始终读取已发布的文件版本。"
+        desc="管理资料来源、构建与已发布文件。"
         cli={`xrag build run ${kb} --mode incremental --wait --profile ${profile}`}
         actions={
           maintainer && (
@@ -451,7 +451,7 @@ export default function SourcesPage() {
             {sources.loading && !sources.data && <Loading />}
             <ErrorLine className="m-4">{sources.error}</ErrorLine>
             {sources.data && details.length === 0 && (
-              <Empty title="还没有来源">上传文件会自动建立“上传”来源；也可以登记服务器目录、Git 仓库、S3 或 WeKnora。</Empty>
+              <Empty mark title="还没有来源">上传文件会自动建立“上传”来源；也可以登记服务器目录、Git 仓库、S3 或 WeKnora。</Empty>
             )}
             {details.length > 0 && (
               <Table>
@@ -566,13 +566,13 @@ export default function SourcesPage() {
           meta={
             <>
               <span>{files.data ? `${files.data.total.value ?? files.data.returned} 个文件版本` : ''}</span>
-              <span>按文件发布 · 草稿不在这里</span>
+              <span>按文件发布</span>
             </>
           }
         />
         {files.loading && !files.data && <Loading />}
         <ErrorLine className="m-4">{files.error}</ErrorLine>
-        {files.data && files.data.items.length === 0 && <Empty title="还没有已发布文件">登记来源或上传文件后，构建成功的文件会出现在这里。</Empty>}
+        {files.data && files.data.items.length === 0 && <Empty mark title="还没有已发布文件">登记来源或上传文件后，构建成功的文件会出现在这里。</Empty>}
         {files.data && files.data.items.length > 0 && (
           <Table>
             <thead>
@@ -628,7 +628,7 @@ export default function SourcesPage() {
             <p className="text-[13px] text-fg-soft">
               {String(estimate?.files ?? '—')} 个文件 · {String(estimate?.characters ?? '—')} 字符 · 预计 {String(estimate?.estimated_chunks ?? '—')} 块 · 模型调用 {String(estimate?.models_called ?? 0)} 次
             </p>
-            <Note>估算只读取来源，不写入任何索引。Git 来源可能会更新本机仓库缓存。</Note>
+            <Note>估算不写入索引；Git 来源可能更新本机仓库缓存。</Note>
             <JsonBlock value={estimate} />
           </DialogBody>
         </DialogContent>
