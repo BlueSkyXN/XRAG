@@ -129,7 +129,7 @@ body = {"reason":"可选说明"}
 
 默认 k=5，可设1～50。策略：keyword、semantic、ask、ask_graph、ask_rerank。graph/rerank/external 不采用现场 auto；external始终关闭，只有选定 graph/rerank策略才启用相应开关。纯语义或重排没有模型时在提交阶段拒绝。
 
-不配模型时 keyword/ask 可能执行相同或接近的词法路径，报告仍记录实际 strategy；相同表现不证明混合检索无价值。题集是合成回归样例，不是业务效果实验。
+在 Server 上，`ask` 使用宽松词法召回（OR、BM25），`keyword` 保持严格匹配（AND）和精确计数；不配置模型时，两者的结果也可能明显不同。报告仍记录实际 strategy。题集用于合成语料回归，业务效果需结合真实语料和自建题集评估。
 
 每个正例必须有至少一个预期路径及可选 anchor；负例必须显式 `expected_empty=true`。未写 expected 不会自动当负例。重复目标拒绝。题集重新导入生成新 ID/内容修订，不原地修改旧报告所用题集。
 
