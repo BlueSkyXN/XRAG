@@ -25,7 +25,7 @@ LABEL org.opencontainers.image.title="XRAG" \
       org.opencontainers.image.licenses="GPL-3.0-only" \
       org.opencontainers.image.revision="${GIT_SHA}"
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl libsqlite3-0 tini util-linux \
+    && apt-get install -y --no-install-recommends ca-certificates curl git libsqlite3-0 tini util-linux \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 1000 xrag \
     && useradd --uid 1000 --gid 1000 --home /data/xrag --shell /usr/sbin/nologin xrag \
