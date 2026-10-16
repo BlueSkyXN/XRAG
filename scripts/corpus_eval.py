@@ -18,6 +18,9 @@ import urllib.request
 
 from gen_corpus import generate, ROOT
 
+# 本脚本只调用刚启动的本机 Server，避免系统代理干扰回环请求。
+LOOPBACK = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
 
 def percentile(values, fraction):
     ordered = sorted(values)
@@ -35,7 +38,7 @@ def call(url, body=None, token=None):
     if token:
         headers['Authorization'] = 'Bearer ' + token
     req = urllib.request.Request(url, data=None if body is None else json.dumps(body).encode(), headers=headers)
-    with urllib.request.urlopen(req, timeout=60) as response:
+    with LOOPBACK.open(req, timeout=60) as response:
         return json.load(response)
 
 
@@ -70,6 +73,7 @@ def evaluate_size(docs, seed, build_timeout, result, server_only=False):
     with tempfile.TemporaryDirectory(prefix='xrag-corpus-') as tmp:
         root = Path(tmp)
         corpus, data = root / 'corpus', root / 'data'
+        result['stage'] = 'generate'
         result['corpus'] = generate(docs, seed, corpus)
         server, client = ROOT / 'bin/xrag-server', ROOT / 'bin/xrag'
         command(server, 'init', '--data', data)
@@ -83,6 +87,7 @@ def evaluate_size(docs, seed, build_timeout, result, server_only=False):
         client_config = root / 'client.json'
         client_config.write_text('{}')
         try:
+            result['stage'] = 'server_start'
             process = subprocess.Popen([str(server), 'serve', '--data', str(data), '--listen', f'127.0.0.1:{port}',
                                         '--config', str(config)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             for _ in range(100):
@@ -95,11 +100,14 @@ def evaluate_size(docs, seed, build_timeout, result, server_only=False):
                     time.sleep(.1)
             else:
                 raise TimeoutError('Server readiness timeout')
+            result['stage'] = 'source_registration'
             for source in result['corpus']['sources']:
                 call(base + '/v1/kbs/demo/sources', {'id': source['id'], 'root': str(corpus / source['path']),
                      'mount': source['path'], 'kind': 'path'}, token)
             started = time.perf_counter()
+            result['stage'] = 'build_submit'
             job = call(base + '/v1/kbs/demo/builds', {'mode': 'full'}, token)
+            result['stage'] = 'build_poll'
             while time.perf_counter() - started < build_timeout:
                 state = call(base + '/v1/jobs/' + job['id'], token=token)
                 if state['state'] not in ('queued', 'running'):
@@ -118,6 +126,7 @@ def evaluate_size(docs, seed, build_timeout, result, server_only=False):
             result['sqlite_bytes_after_build'] = pages * page_size
             result['sqlite_files_after_build'] = {p.name: p.stat().st_size for p in data.glob('xrag.sqlite*')}
             print(json.dumps({'docs': docs, 'stage': 'built', 'seconds': result['build_seconds']}, ensure_ascii=False), flush=True)
+            result['stage'] = 'server_queries'
             result['server'] = []
             for case in cases:
                 started = time.perf_counter()
@@ -131,6 +140,7 @@ def evaluate_size(docs, seed, build_timeout, result, server_only=False):
                 result['keyword'].append({'term': marker, 'expected': expected, 'actual': total, 'exact': exact})
                 if not exact:
                     raise RuntimeError('keyword count mismatch: ' + marker)
+            result['stage'] = 'local_queries'
             result['local'] = []
             for case in ([] if server_only else cases):
                 started = time.perf_counter()
@@ -139,6 +149,7 @@ def evaluate_size(docs, seed, build_timeout, result, server_only=False):
                 result['local'].append(measurement(response, case, time.perf_counter() - started))
             result['local_status'] = 'not_requested' if server_only else 'completed'
             result['summary'] = {mode: summary(result[mode]) for mode in ('server', 'local') if result[mode]}
+            result['stage'] = 'completed'
             result['status'] = 'completed'
         finally:
             if process:
