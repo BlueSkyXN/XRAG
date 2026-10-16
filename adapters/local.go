@@ -3,13 +3,14 @@ package adapters
 import (
 	"context"
 	"encoding/json"
+	"github.com/BlueSkyXN/XRAG/core"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
-	"github.com/BlueSkyXN/XRAG/core"
 )
 
 type Local struct{ Root, Origin, KB, CacheDir string }
@@ -159,6 +160,81 @@ func (l *Local) Lexical(ctx context.Context, v core.View, q string) ([]core.Rank
 		}
 		return out[i].Score > out[j].Score
 	})
+	return out, nil
+}
+
+// RelaxedLexical 对问句做 OR 召回，以 BM25 排序后保留前 500 个候选。
+func (l *Local) RelaxedLexical(ctx context.Context, v core.View, q string) ([]core.Ranked, error) {
+	terms := core.Unique(core.Terms(core.StripQuestion(q), true))
+	if len(terms) == 0 {
+		terms = core.Unique(core.Terms(q, true))
+	}
+	if len(terms) == 0 {
+		return nil, core.Err("INVALID_ARGUMENT", "empty query", 400)
+	}
+	if len(terms) > 48 {
+		terms = terms[:48]
+	}
+	type candidate struct {
+		id          string
+		length      int
+		frequencies map[string]int
+	}
+	candidates := []candidate{}
+	df := map[string]int{}
+	totalLength, count := 0, 0
+	for _, d := range v.Documents {
+		for _, c := range d.Chunks {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			tokens := core.Terms(c.Title+" "+c.Text, false)
+			have := map[string]int{}
+			for _, token := range tokens {
+				have[token]++
+			}
+			count++
+			totalLength += len(tokens)
+			matches := map[string]int{}
+			for _, term := range terms {
+				if have[term] > 0 {
+					matches[term] = have[term]
+					df[term]++
+				}
+			}
+			if len(matches) > 0 {
+				candidates = append(candidates, candidate{c.ID, len(tokens), matches})
+			}
+		}
+	}
+	out := []core.Ranked{}
+	if len(candidates) == 0 {
+		return out, nil
+	}
+	avgLength := float64(totalLength) / float64(count)
+	const k1, b = 1.2, 0.75
+	for _, c := range candidates {
+		score := 0.0
+		// 按查询顺序累加，避免 map 迭代次序影响浮点分数及并列排序。
+		for _, term := range terms {
+			tf := float64(c.frequencies[term])
+			if tf == 0 {
+				continue
+			}
+			idf := math.Log(1 + (float64(count-df[term])+0.5)/(float64(df[term])+0.5))
+			score += idf * tf * (k1 + 1) / (tf + k1*(1-b+b*float64(c.length)/avgLength))
+		}
+		out = append(out, core.Ranked{ID: c.id, Score: score})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Score == out[j].Score {
+			return out[i].ID < out[j].ID
+		}
+		return out[i].Score > out[j].Score
+	})
+	if len(out) > 500 {
+		out = out[:500]
+	}
 	return out, nil
 }
 func (l *Local) PutCache(ctx context.Context, id string, c core.Cache) error {
