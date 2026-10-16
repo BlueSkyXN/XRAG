@@ -189,6 +189,36 @@ def evaluate(qdrant, report_path, baseline_server=None, baseline_client=None, ve
                 result = http_json(qdrant + '/collections/' + collection + '/points/count',
                     {'filter': {'must': [{'key': 'text', 'match': {'text': text}}]}, 'exact': True})
                 report['word_probes'][text] = result['result']['count']
+            if baseline_server:
+                # 同点前后比较已经完成；另核对真实旧集合的 vectors_only 升级和保留。
+                if legacy_collection != collection:
+                    http_json(qdrant + '/collections/aliases', {'actions': [
+                        {'delete_alias': {'alias_name': legacy_collection}}]})
+                rebuild = {}
+                for mode, binary in (('full', baseline_server), ('vectors_only', server)):
+                    start(cfg, binary)
+                    job = api('/v1/kbs/demo/builds', {'mode': mode})
+                    for _ in range(300):
+                        result = api('/v1/jobs/' + job['id'])
+                        if result['state'] not in ('queued', 'running'):
+                            break
+                        time.sleep(.2)
+                    rebuild[mode] = result
+                    if result['state'] != 'succeeded':
+                        raise RuntimeError('legacy rebuild failed: ' + mode + ' ' + result['state'])
+                    count = http_json(qdrant + '/collections/' + legacy_collection + '/points/count',
+                                      {'exact': True})['result']['count']
+                    if mode == 'full':
+                        rebuild['legacy_points_before'] = count
+                    else:
+                        rebuild['legacy_points_after'] = count
+                        if count != rebuild['legacy_points_before']:
+                            raise RuntimeError('vectors_only changed the retained legacy collection')
+                        sample = api('/v1/search/keyword', {'kbs': ['demo'], 'q': 'E203', 'limit': 5})
+                        if sample['total'].get('value') != 3:
+                            raise RuntimeError('published keyword count changed after vectors_only')
+                    stop()
+                report['upgrade'] = rebuild
         report['totals'] = {}
         for mode in ('server_lexical', 'server_fusion', 'direct_lexical', 'direct_fusion'):
             report['totals'][mode] = {}
