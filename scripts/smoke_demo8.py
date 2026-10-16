@@ -61,7 +61,7 @@ def main(browser=False):
      if api('/healthz')[0]==200:break
     except OSError:pass
     time.sleep(.1)
-   ck('fresh Demo.8 starts',op('/healthz')['version']=='0.9.0')
+   ck('fresh Demo.8 starts',op('/healthz')['version']=='0.10.0')
    setting=op('/v1/maintenance/policy');ck('content maintenance initially disabled',not setting['policy']['enabled']and setting['policy']['content_every_seconds']==0)
    preview=json.loads(cli('maintenance','content').stdout);ck('online preview is read-only',preview['dry_run'])
    maint=op('/v1/maintenance/runs',{'confirm':True,'content':True});time.sleep(.15);ck('API-only does not execute content collection',op('/v1/maintenance/runs')['items'][0]['state']=='queued')

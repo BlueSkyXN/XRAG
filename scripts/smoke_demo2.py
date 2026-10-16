@@ -52,7 +52,7 @@ def main(browser=False):
     try:
      if api('/healthz')[0]==200:break
     except Exception:time.sleep(.1)
-   record('demo2 version reported',api('/healthz')[1]['version']=='0.9.0')
+   record('demo2 version reported',api('/healthz')[1]['version']=='0.10.0')
    cp=cli('source','add','--kind','git','--root',str(repo),'--git-ref','main','--id','gitrepo','--mount','gitdocs');record('real CLI registers Git source',json.loads(cp.stdout)['kind']=='git')
    j=post('/v1/kbs/demo/builds',{'mode':'incremental'});time.sleep(.2);record('API alone queues build',api('/v1/jobs/'+j['id'])[1]['state']=='queued')
    worker=subprocess.Popen([str(ROOT/'bin/xrag-server'),'worker','--data',str(data)],stdout=logs,stderr=logs)
