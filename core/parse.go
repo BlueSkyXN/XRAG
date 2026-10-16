@@ -338,15 +338,19 @@ var questionWords = strings.NewReplacer(
 var queryWords = regexp.MustCompile(`[\pL\pN_]+`)
 var englishQuestionWords = regexp.MustCompile(`(?i)^(what|how|why|which|where|who|is|are|does|do|the|a|an|of|to|in|for)$`)
 
-// RelaxedDictionaryQuery 用于问句召回；保留词典分词，按原顺序取前 48 个不同词元。
-func RelaxedDictionaryQuery(q string, words []string) (string, error) {
-	stripped := queryWords.ReplaceAllStringFunc(questionWords.Replace(q), func(word string) string {
+// StripQuestion 剥离中英文问句词，供 Server 和 local 的问句召回共用。
+func StripQuestion(q string) string {
+	return queryWords.ReplaceAllStringFunc(questionWords.Replace(q), func(word string) string {
 		if englishQuestionWords.MatchString(word) {
 			return " "
 		}
 		return word
 	})
-	terms := Unique(DictionaryTerms(stripped, words, true))
+}
+
+// RelaxedDictionaryQuery 用于问句召回；保留词典分词，按原顺序取前 48 个不同词元。
+func RelaxedDictionaryQuery(q string, words []string) (string, error) {
+	terms := Unique(DictionaryTerms(StripQuestion(q), words, true))
 	if len(terms) == 0 {
 		terms = Unique(DictionaryTerms(q, words, true))
 	}

@@ -17,5 +17,6 @@ fi
 port="${PORT:-8765}"
 export XRAG_LISTEN="0.0.0.0:${port}"
 export XRAG_TRUST_FORWARDED_PROTO=1
+export XRAG_BUILD_ON_START="${XRAG_BUILD_ON_START:-demo}"
 
 exec /usr/local/bin/xrag-entrypoint

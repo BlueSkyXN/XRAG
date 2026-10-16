@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -34,9 +34,17 @@ jobs:
         working-directory: webapp
       - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
       - run: CGO_ENABLED=1 go test ./...
-      - run: python3 -m unittest discover -s scripts -p 'test_package.py'
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - run: make build && python3 scripts/smoke_workbench.py
       - run: bash scripts/static-check.sh
+      - name: Check Linux GLIBC requirement before release
+        run: |
+          set -euo pipefail
+          required="$(objdump -T bin/xrag-server | sed -n 's/.*(GLIBC_\([0-9.]*\)).*/\1/p' | sort -Vu | tail -1)"
+          test -n "$required"
+          echo "Linux amd64 requires GLIBC >= ${required}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Required GLIBC: ${required}"
+          test "$(printf '%s\n' "$required" 2.35 | sort -V | tail -1)" = 2.35
       - name: Verify source and Linux release packages
         run: |
           python3 scripts/package.py --out "$RUNNER_TEMP/xrag-release"

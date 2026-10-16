@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""按 Git 跟踪清单打包源码，并校验 Linux amd64 二进制的平台。"""
+"""按 Git 跟踪清单打包源码，并校验 Linux amd64 二进制的平台、程序和提交。"""
 from pathlib import Path
 import argparse
 import re
@@ -32,16 +32,30 @@ def eligible(path):
     )
 
 
+def require_clean():
+    result = subprocess.run(
+        ['git', '-C', str(ROOT), 'status', '--porcelain=v1', '--untracked-files=normal'],
+        check=True, capture_output=True, text=True,
+    )
+    if result.stdout:
+        raise SystemExit('打包要求工作区干净，请先提交或移走以下改动：\n' + result.stdout)
+
+
 def source_files():
     result = subprocess.run(
         ['git', '-C', str(ROOT), 'ls-files', '-z'],
         check=True, capture_output=True,
     )
     paths = [ROOT / name.decode('utf-8') for name in result.stdout.split(b'\0') if name]
-    return sorted(path for path in paths if eligible(path))
+    excluded = [path.relative_to(ROOT).as_posix() for path in paths if not eligible(path)]
+    if excluded:
+        raise SystemExit('以下已跟踪文件被打包规则排除，请先核对 Git 清单：\n' + '\n'.join(excluded))
+    return sorted(paths)
 
 
 def linux_binaries():
+    commit = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'],
+                            check=True, capture_output=True, text=True).stdout.strip()
     binaries = [ROOT / 'bin' / name for name in ('xrag', 'xrag-server')]
     for path in binaries:
         if not path.is_file() or path.is_symlink():
@@ -54,10 +68,17 @@ def linux_binaries():
         for setting in ('GOOS=linux', 'GOARCH=amd64'):
             if re.search(r'^\s*build\s+' + setting + r'\s*$', result.stdout, re.MULTILINE) is None:
                 raise SystemExit(f'{path.name} 的 Go 构建信息缺少 {setting}，请重新构建')
+        expected_path = f'github.com/BlueSkyXN/XRAG/cmd/{path.name}'
+        if re.search(r'^\s*path\s+' + re.escape(expected_path) + r'\s*$', result.stdout, re.MULTILINE) is None:
+            raise SystemExit(f'{path.name} 的 Go path 不是 {expected_path}，请重新构建')
+        for setting in (f'vcs.revision={commit}', 'vcs.modified=false'):
+            if re.search(r'^\s*build\s+' + re.escape(setting) + r'\s*$', result.stdout, re.MULTILINE) is None:
+                raise SystemExit(f'{path.name} 的 Go 构建信息缺少 {setting}，请在干净工作区运行 make build')
     return binaries
 
 
 def main(out, source_only=False):
+    require_clean()
     version = release_version()
     stem = f'xrag-{version}'
     files = source_files()

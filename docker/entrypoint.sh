@@ -38,9 +38,20 @@ fi
 mkdir -p "${data_dir}"
 test -w "${data_dir}" || fail "XRAG data directory ${data_dir} is not writable"
 
+build_kb="${XRAG_BUILD_ON_START:-}"
+[[ -z "${build_kb}" || "${build_kb}" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$ ]] \
+  || fail "XRAG_BUILD_ON_START must be a KB ID (1..64 letters, digits, underscores or hyphens; first character alphanumeric)"
+
 if [[ ! -f "${data_dir}/xrag.sqlite" ]]; then
   # init writes admin.key and prints its path; the key value stays out of logs.
   "${server_bin}" init --data "${data_dir}" --examples "${examples_dir}" >/dev/null
+  build_kb="${build_kb:-demo}"
 fi
 
-exec "${server_bin}" serve --data "${data_dir}" --listen "${listen}" --workers embedded
+args=(serve --data "${data_dir}" --listen "${listen}" --workers embedded)
+if [[ -f "${data_dir}/RESTORE_INFO.json" ]]; then
+  printf '[xrag-entrypoint] Restored copy: skipping automatic build.\n'
+elif [[ -n "${build_kb}" ]]; then
+  args+=(--build "${build_kb}")
+fi
+exec "${server_bin}" "${args[@]}"

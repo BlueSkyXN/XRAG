@@ -36,6 +36,7 @@ workflow 会校验 digest 存在、渲染部署文件、上传到本 Space、等
 
 ## 运行约定
 
+- 首次启动会导入示例并构建 `demo` 库；HF 默认设置 `XRAG_BUILD_ON_START=demo`，已有空库会在下次启动时构建。可将该变量设为其他 KB ID，以便每次启动构建指定库；恢复副本（数据目录有 `RESTORE_INFO.json`）跳过自动构建。demo 库需要登录后使用。
 - 登录密码由 Space secret 提供（`ADMIN_USERNAME`、`ADMIN_PASSWORD`），不写入仓库。
 - 数据卷挂在 `/data`，服务数据在 `/data/xrag`，与镜像的默认路径一致。
 - `/healthz` 是公开存活检查，返回版本和提交 SHA。

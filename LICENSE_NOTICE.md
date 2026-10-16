@@ -1,5 +1,5 @@
-# License decision pending
+# XRAG 许可证说明
 
-本目录是为本次对话新写的 XRAG Demo 源码。没有擅自采用之前样例包的 MIT，也没有替换用户本地仓库的 GPL-3.0。正式导入、发布或分发前，请项目所有者明确许可证并保持第三方义务。
+XRAG 按 GNU General Public License version 3（GPL-3.0）发布，完整条款见 [LICENSE](LICENSE)。源码包、完整 Linux 包和 Client 包均包含该许可证。
 
-本Demo使用Go标准库和宿主系统SQLite，没有复制/打包字体、模型权重或第三方Go模块源码。SQLite系统库独立由运行环境提供。该说明不是新的开源授权条款，也不对用户作法律结论。
+Server 使用运行环境提供的 SQLite 系统库；发布包不包含 SQLite 库文件、模型权重、字体、运行数据或真实凭据。

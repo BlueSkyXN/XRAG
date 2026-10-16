@@ -1,0 +1,985 @@
+{
+  "empty01": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "empty02": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q01": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q02": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q03": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q04": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q05": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q06": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q07": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q08": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q09": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q10": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q11": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q12": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q13": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "q14": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [],
+    "returned": 0,
+    "total": {
+      "value": 0,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "short01": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAyLWVycm9ycy5tZCIsImUiOiJsb2NhbF84MTQ4ZTU3MzdjMjBmOGIxYjQzMWYxNGQ5Mzg5Y2Q0ZCIsImMiOiI1OWI0MjNjOS00YThiLWEzM2ItNTNjMi05MmMzZjRlZWE3OGUiLCJoIjoiMmI1ZGUyMTQwNWUxOGIyODk2NjUxNDRiMWE0M2FjMjJiNzBkZTNkOTA2OTJlOTQ2NTQwOTNhZTNiZjQ4ODA1MCJ9",
+        "kb": "demo",
+        "path": "02-errors.md",
+        "edition_id": "local_8148e5737c20f8b1b431f14d9389cd4d",
+        "chunk_id": "59b423c9-4a8b-a33b-53c2-92c3f4eea78e",
+        "chunk_key": "k8c77c4b928795f2f5f368f93820eadc5",
+        "file_hash": "2b5de21405e18b289665144b1a43ac22b70de3d90692e94654093ae3bf488050",
+        "title": "日志与错误码",
+        "text": "## E203\nE203 表示日志写入队列已满。请先检查日志目录剩余空间及写入频率。不要仅凭 E203 判断硬件故障。\n\n",
+        "score": 3,
+        "ranking": "scan_heuristic",
+        "line_start": 8,
+        "line_end": 10,
+        "fields": {
+          "product": "Alpha",
+          "title": "日志与错误码",
+          "version": "1.2"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAyLWVycm9ycy5tZCIsImUiOiJsb2NhbF84MTQ4ZTU3MzdjMjBmOGIxYjQzMWYxNGQ5Mzg5Y2Q0ZCIsImMiOiIyYTBjYmIwNy1kNTliLTEwYzMtMGE5YS1lOWYwZGI3NmUwZmYiLCJoIjoiMmI1ZGUyMTQwNWUxOGIyODk2NjUxNDRiMWE0M2FjMjJiNzBkZTNkOTA2OTJlOTQ2NTQwOTNhZTNiZjQ4ODA1MCJ9",
+        "kb": "demo",
+        "path": "02-errors.md",
+        "edition_id": "local_8148e5737c20f8b1b431f14d9389cd4d",
+        "chunk_id": "2a0cbb07-d59b-10c3-0a9a-e9f0db76e0ff",
+        "chunk_key": "k93c2b7a71308e0f12b61b5c8220ba86a",
+        "file_hash": "2b5de21405e18b289665144b1a43ac22b70de3d90692e94654093ae3bf488050",
+        "title": "日志与错误码",
+        "text": "## E2030\nE2030 表示远程采集服务握手失败，和 E203 不同。检索 E203 时，不应该只因为前缀相同就命中 E2030。\n\n",
+        "score": 2,
+        "ranking": "scan_heuristic",
+        "line_start": 11,
+        "line_end": 13,
+        "fields": {
+          "product": "Alpha",
+          "title": "日志与错误码",
+          "version": "1.2"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAxLW92ZXJ2aWV3Lm1kIiwiZSI6ImxvY2FsXzcyODIwMWY0NTUxMTUxZDBkNzg3ODMyMjhmNzE2MjQ0IiwiYyI6Ijk2NDYwMWUwLTE5MWYtYjZiNy1lNmUzLWU2ZTk3ZTc0OTY0YiIsImgiOiI0MzA2OWMwNDg1YmZmOTNkNzhhNTgxN2EyZDA2MTIwMTNmNmFjNzgwNTc2MjUzNjIyOTQwMDJhZTI1Mjc2NmE4In0",
+        "kb": "demo",
+        "path": "01-overview.md",
+        "edition_id": "local_728201f4551151d0d78783228f716244",
+        "chunk_id": "964601e0-191f-b6b7-e6e3-e6e97e74964b",
+        "chunk_key": "kd639d7bd61a7b71bbe764f3cd663e687",
+        "file_hash": "43069c0485bff93d78a5817a2d0612013f6ac78057625362294002ae252766a8",
+        "title": "XRAG 演示资料说明",
+        "text": "# XRAG 演示资料说明\n\n本目录都是合成资料，不代表真实产品或客户情况。\n\n你可以尝试搜索“E203”“日志丢失”“组件B”。图关系来自正文的显式标注，默认不是模型推断。\n\n",
+        "score": 1,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 10,
+        "fields": {
+          "product": "Demo",
+          "title": "XRAG 演示资料说明"
+        },
+        "text_available": true
+      }
+    ],
+    "returned": 3,
+    "total": {
+      "value": 3,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "short02": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA0LUYyLm1kIiwiZSI6ImxvY2FsX2EzYWQ4YjQ3OTc1NTdhOWY0Y2VkYWQzMmY2ZTFlYTMzIiwiYyI6IjY4MDIzNjEyLTQ2OWQtZGRlZC0yZjI5LThiN2MwYTBlYWQ4ZCIsImgiOiI0NWQ2MDY0YzY3YjQxMzI3MGIxYzc3NTZhN2Q3ODI1ZTY0M2YwMTAzMjIzOTg5Y2VjZjk2NjNlZjhhMjU1MTAyIn0",
+        "kb": "demo",
+        "path": "04-F2.md",
+        "edition_id": "local_a3ad8b4797557a9f4cedad32f6e1ea33",
+        "chunk_id": "68023612-469d-dded-2f29-8b7c0a0ead8d",
+        "chunk_key": "k5b5b93e7bd7dcd87d81da33f637c176b",
+        "file_hash": "45d6064c67b413270b1c7756a7d7825e643f0103223989cecf9663ef8a255102",
+        "title": "F2 设备与组件的明确关系",
+        "text": "# F2 设备与组件的明确关系\n\n以下是手工提供的关系标注，不是模型抽取结果。\n\n[[设备A]] --使用--> [[组件B]]\n\n[[组件B]] --记录--> [[日志事件]]\n\n[[部署甲]] --运行--> [[版本1.2]]\n\n[[版本1.2]] --包含修复--> [[修复F7]]\n\n出现日志丢失时可以参考这些关联，但“有关联”不等于“组件B导致了日志丢失”。\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 17,
+        "fields": {
+          "product": "Alpha",
+          "title": "F2 设备与组件的明确关系"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAyLWVycm9ycy5tZCIsImUiOiJsb2NhbF84MTQ4ZTU3MzdjMjBmOGIxYjQzMWYxNGQ5Mzg5Y2Q0ZCIsImMiOiJiZWI3YWFkNS1iNmE1LTVmOTktZTQ4Ni0zNDcwOTExZTBkZmMiLCJoIjoiMmI1ZGUyMTQwNWUxOGIyODk2NjUxNDRiMWE0M2FjMjJiNzBkZTNkOTA2OTJlOTQ2NTQwOTNhZTNiZjQ4ODA1MCJ9",
+        "kb": "demo",
+        "path": "02-errors.md",
+        "edition_id": "local_8148e5737c20f8b1b431f14d9389cd4d",
+        "chunk_id": "beb7aad5-b6a5-5f99-e486-3470911e0dfc",
+        "chunk_key": "kd98f6237f2dff58644d7553aed4b3119",
+        "file_hash": "2b5de21405e18b289665144b1a43ac22b70de3d90692e94654093ae3bf488050",
+        "title": "日志与错误码",
+        "text": "## 日志丢失\n日志丢失可能发生在队列满或应用未刷新缓冲区时。先读取事件时间、版本和完整上下文，再决定需要继续检查什么。\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 14,
+        "line_end": 15,
+        "fields": {
+          "product": "Alpha",
+          "title": "日志与错误码",
+          "version": "1.2"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA1LXByb2NlZHVyZS5tZCIsImUiOiJsb2NhbF80ZWE5M2Q3ZjFhNzViYzdlM2FmMjY4OWNmM2FmMTExOCIsImMiOiJiMWRjNDU0Yi1mYjcxLTIxYzYtNDk4MC04MzExNjdjZGQzMWQiLCJoIjoiOWNkY2MwZmZkZTAyNDY1MmI2MzBhOTM0ZmU4OWM1NTAwN2RmZGJiOTU3OTkwMDQ0NDg3NmFkZmNhMTlhMDg3YyJ9",
+        "kb": "demo",
+        "path": "05-procedure.md",
+        "edition_id": "local_4ea93d7f1a75bc7e3af2689cf3af1118",
+        "chunk_id": "b1dc454b-fb71-21c6-4980-831167cdd31d",
+        "chunk_key": "kc070381682e9bbcb17be7edc194dc55a",
+        "file_hash": "9cdcc0ffde024652b630a934fe89c55007dfdbb9579900444876adfca19a087c",
+        "title": "日志调查步骤",
+        "text": "## 再比较\n检查同一时间是否存在队列满的记录。某些日志丢失也可能来自采集链路，不能先入为主地确认共同根因。\n\n",
+        "score": 4,
+        "ranking": "scan_heuristic",
+        "line_start": 10,
+        "line_end": 12,
+        "fields": {
+          "product": "Alpha",
+          "title": "日志调查步骤"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAxLW92ZXJ2aWV3Lm1kIiwiZSI6ImxvY2FsXzcyODIwMWY0NTUxMTUxZDBkNzg3ODMyMjhmNzE2MjQ0IiwiYyI6Ijk2NDYwMWUwLTE5MWYtYjZiNy1lNmUzLWU2ZTk3ZTc0OTY0YiIsImgiOiI0MzA2OWMwNDg1YmZmOTNkNzhhNTgxN2EyZDA2MTIwMTNmNmFjNzgwNTc2MjUzNjIyOTQwMDJhZTI1Mjc2NmE4In0",
+        "kb": "demo",
+        "path": "01-overview.md",
+        "edition_id": "local_728201f4551151d0d78783228f716244",
+        "chunk_id": "964601e0-191f-b6b7-e6e3-e6e97e74964b",
+        "chunk_key": "kd639d7bd61a7b71bbe764f3cd663e687",
+        "file_hash": "43069c0485bff93d78a5817a2d0612013f6ac78057625362294002ae252766a8",
+        "title": "XRAG 演示资料说明",
+        "text": "# XRAG 演示资料说明\n\n本目录都是合成资料，不代表真实产品或客户情况。\n\n你可以尝试搜索“E203”“日志丢失”“组件B”。图关系来自正文的显式标注，默认不是模型推断。\n\n",
+        "score": 3,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 10,
+        "fields": {
+          "product": "Demo",
+          "title": "XRAG 演示资料说明"
+        },
+        "text_available": true
+      }
+    ],
+    "returned": 4,
+    "total": {
+      "value": 4,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "short03": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA0LUYyLm1kIiwiZSI6ImxvY2FsX2EzYWQ4YjQ3OTc1NTdhOWY0Y2VkYWQzMmY2ZTFlYTMzIiwiYyI6IjY4MDIzNjEyLTQ2OWQtZGRlZC0yZjI5LThiN2MwYTBlYWQ4ZCIsImgiOiI0NWQ2MDY0YzY3YjQxMzI3MGIxYzc3NTZhN2Q3ODI1ZTY0M2YwMTAzMjIzOTg5Y2VjZjk2NjNlZjhhMjU1MTAyIn0",
+        "kb": "demo",
+        "path": "04-F2.md",
+        "edition_id": "local_a3ad8b4797557a9f4cedad32f6e1ea33",
+        "chunk_id": "68023612-469d-dded-2f29-8b7c0a0ead8d",
+        "chunk_key": "k5b5b93e7bd7dcd87d81da33f637c176b",
+        "file_hash": "45d6064c67b413270b1c7756a7d7825e643f0103223989cecf9663ef8a255102",
+        "title": "F2 设备与组件的明确关系",
+        "text": "# F2 设备与组件的明确关系\n\n以下是手工提供的关系标注，不是模型抽取结果。\n\n[[设备A]] --使用--> [[组件B]]\n\n[[组件B]] --记录--> [[日志事件]]\n\n[[部署甲]] --运行--> [[版本1.2]]\n\n[[版本1.2]] --包含修复--> [[修复F7]]\n\n出现日志丢失时可以参考这些关联，但“有关联”不等于“组件B导致了日志丢失”。\n",
+        "score": 8,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 17,
+        "fields": {
+          "product": "Alpha",
+          "title": "F2 设备与组件的明确关系"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAzLUYxLm1kIiwiZSI6ImxvY2FsX2QzZGY0MjgyNjRhNjRjZWQ0NDBjMWEzY2IyMzU1Y2E2IiwiYyI6IjkwNDRmZWUzLWY1ODMtMjRjZC1iZjI3LTAyZmYwOWI5ZTFlZSIsImgiOiIyN2M4NTlhMTU4MWIwZjA1ODU2MWI3ZGM3NTZlYWU1MzUyZWYxYThkMGRiYzk2YmJjYTk1Y2RiZTRjOWQ2Njk0In0",
+        "kb": "demo",
+        "path": "03-F1.md",
+        "edition_id": "local_d3df428264a64ced440c1a3cb2355ca6",
+        "chunk_id": "9044fee3-f583-24cd-bf27-02ff09b9e1ee",
+        "chunk_key": "k8608137a7f9cd68d19244844af389413",
+        "file_hash": "27c859a1581b0f058561b7dc756eae5352ef1a8d0dbc96bbca95cdbe4c9d6694",
+        "title": "F1 仅提及两个对象",
+        "text": "# F1 仅提及两个对象\n\n这份资料提到了 [[设备A]] 和 [[组件B]]，但没有说明两者是否存在使用关系。\n\n在 F1 的范围里，不能把 F2 提供的关系当作 F1 的依据。\n",
+        "score": 2,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 9,
+        "fields": {
+          "product": "Alpha",
+          "title": "F1 仅提及两个对象"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA2LW5lZ2F0aXZlLm1kIiwiZSI6ImxvY2FsXzllZDI0Y2NiNGZlZjUxNzVlYzhlOWJhYjNkMmRhNzJiIiwiYyI6IjkxNDA1ZTNmLTZjMDctMGU1OC1jMmJhLTllZDY2ODIxMTEwMiIsImgiOiIwZjAxMzc5NDk5MDVmM2JiNWQxOTAwNjgwZTQwZGU4MWFjMGVjYjhhM2ZjMGQ3ZDBkYWJkNWEzZmFlNWRiYmNiIn0",
+        "kb": "demo",
+        "path": "06-negative.md",
+        "edition_id": "local_9ed24ccb4fef5175ec8e9bab3d2da72b",
+        "chunk_id": "91405e3f-6c07-0e58-c2ba-9ed668211102",
+        "chunk_key": "k5c001970f7aad90c50e28d11c5708a79",
+        "file_hash": "0f0137949905f3bb5d1900680e40de81ac0ecb8a3fc0d7d0dabd5a3fae5dbbcb",
+        "title": "反例与边界",
+        "text": "# 反例与边界\n\n设备A没有报告与组件B相关的故障。仅在文件中同时出现两个名称，并不能证明它们之间存在因果关系。\n\n没有检索命中，只说明在当前范围内没有找到相应内容，不表示现实世界不存在这个问题。\n",
+        "score": 2,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 9,
+        "fields": {
+          "product": "Beta",
+          "title": "反例与边界"
+        },
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjAxLW92ZXJ2aWV3Lm1kIiwiZSI6ImxvY2FsXzcyODIwMWY0NTUxMTUxZDBkNzg3ODMyMjhmNzE2MjQ0IiwiYyI6Ijk2NDYwMWUwLTE5MWYtYjZiNy1lNmUzLWU2ZTk3ZTc0OTY0YiIsImgiOiI0MzA2OWMwNDg1YmZmOTNkNzhhNTgxN2EyZDA2MTIwMTNmNmFjNzgwNTc2MjUzNjIyOTQwMDJhZTI1Mjc2NmE4In0",
+        "kb": "demo",
+        "path": "01-overview.md",
+        "edition_id": "local_728201f4551151d0d78783228f716244",
+        "chunk_id": "964601e0-191f-b6b7-e6e3-e6e97e74964b",
+        "chunk_key": "kd639d7bd61a7b71bbe764f3cd663e687",
+        "file_hash": "43069c0485bff93d78a5817a2d0612013f6ac78057625362294002ae252766a8",
+        "title": "XRAG 演示资料说明",
+        "text": "# XRAG 演示资料说明\n\n本目录都是合成资料，不代表真实产品或客户情况。\n\n你可以尝试搜索“E203”“日志丢失”“组件B”。图关系来自正文的显式标注，默认不是模型推断。\n\n",
+        "score": 2,
+        "ranking": "scan_heuristic",
+        "line_start": 5,
+        "line_end": 10,
+        "fields": {
+          "product": "Demo",
+          "title": "XRAG 演示资料说明"
+        },
+        "text_available": true
+      }
+    ],
+    "returned": 4,
+    "total": {
+      "value": 4,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": false,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  },
+  "short04": {
+    "schema_version": "0.7-demo",
+    "query_id": "",
+    "action": "search.keyword",
+    "mode": "local",
+    "kbs": [
+      "demo"
+    ],
+    "items": [
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA3LXBhZ2luYXRpb24ubWQiLCJlIjoibG9jYWxfZWQ2NWI0NGZkMWZkYzc3MzA4M2JkZTk4MmUxZDIwMGEiLCJjIjoiMDEwYzQyNjgtMzg5Ni0yZGUwLWIwOTQtYzk4NzNiMjlkMWQ4IiwiaCI6ImNiYmQ5YWM2NWUwMzdjNDZmNDk2NGM4MjNiYzk4ODU1MGYzODM1ZjFmODI4YTllOWM3OWE2MDc0YzIyMjMxZDkifQ",
+        "kb": "demo",
+        "path": "07-pagination.md",
+        "edition_id": "local_ed65b44fd1fdc773083bde982e1d200a",
+        "chunk_id": "010c4268-3896-2de0-b094-c9873b29d1d8",
+        "chunk_key": "kf26d6c8e64af6fd2895a2776cd5fe0bd",
+        "file_hash": "cbbd9ac65e037c46f4964c823bc988550f3835f1f828a9e9c79a6074c22231d9",
+        "title": "分页示例",
+        "text": "## 样本 21\n分页样本记录 21：用于验证完整总数与页面条数分离。\n\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 65,
+        "line_end": 67,
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA3LXBhZ2luYXRpb24ubWQiLCJlIjoibG9jYWxfZWQ2NWI0NGZkMWZkYzc3MzA4M2JkZTk4MmUxZDIwMGEiLCJjIjoiMWZhMTIzMzAtMTVkMy03Y2FmLTgyMzctZmU3OTk3NWE1ZGY2IiwiaCI6ImNiYmQ5YWM2NWUwMzdjNDZmNDk2NGM4MjNiYzk4ODU1MGYzODM1ZjFmODI4YTllOWM3OWE2MDc0YzIyMjMxZDkifQ",
+        "kb": "demo",
+        "path": "07-pagination.md",
+        "edition_id": "local_ed65b44fd1fdc773083bde982e1d200a",
+        "chunk_id": "1fa12330-15d3-7caf-8237-fe79975a5df6",
+        "chunk_key": "kd7dd577a135052ab71fb33e2b2c12c4c",
+        "file_hash": "cbbd9ac65e037c46f4964c823bc988550f3835f1f828a9e9c79a6074c22231d9",
+        "title": "分页示例",
+        "text": "## 样本 19\n分页样本记录 19：用于验证完整总数与页面条数分离。\n\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 59,
+        "line_end": 61,
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA3LXBhZ2luYXRpb24ubWQiLCJlIjoibG9jYWxfZWQ2NWI0NGZkMWZkYzc3MzA4M2JkZTk4MmUxZDIwMGEiLCJjIjoiMjRhYzUwMTUtNDg4MS0yNzc5LWIyODUtZWExM2JiMzkzMDMyIiwiaCI6ImNiYmQ5YWM2NWUwMzdjNDZmNDk2NGM4MjNiYzk4ODU1MGYzODM1ZjFmODI4YTllOWM3OWE2MDc0YzIyMjMxZDkifQ",
+        "kb": "demo",
+        "path": "07-pagination.md",
+        "edition_id": "local_ed65b44fd1fdc773083bde982e1d200a",
+        "chunk_id": "24ac5015-4881-2779-b285-ea13bb393032",
+        "chunk_key": "k82b6e1ad2615908f126eef3ee62a2424",
+        "file_hash": "cbbd9ac65e037c46f4964c823bc988550f3835f1f828a9e9c79a6074c22231d9",
+        "title": "分页示例",
+        "text": "## 样本 02\n分页样本记录 02：用于验证完整总数与页面条数分离。\n\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 8,
+        "line_end": 10,
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA3LXBhZ2luYXRpb24ubWQiLCJlIjoibG9jYWxfZWQ2NWI0NGZkMWZkYzc3MzA4M2JkZTk4MmUxZDIwMGEiLCJjIjoiMjUxZTU3ZGYtYTk4NS1jNmZlLWU1YjQtNzNhZTkwMTQ4MTA3IiwiaCI6ImNiYmQ5YWM2NWUwMzdjNDZmNDk2NGM4MjNiYzk4ODU1MGYzODM1ZjFmODI4YTllOWM3OWE2MDc0YzIyMjMxZDkifQ",
+        "kb": "demo",
+        "path": "07-pagination.md",
+        "edition_id": "local_ed65b44fd1fdc773083bde982e1d200a",
+        "chunk_id": "251e57df-a985-c6fe-e5b4-73ae90148107",
+        "chunk_key": "ka57cb172623b0374bba49f44fb30a5f2",
+        "file_hash": "cbbd9ac65e037c46f4964c823bc988550f3835f1f828a9e9c79a6074c22231d9",
+        "title": "分页示例",
+        "text": "## 样本 32\n分页样本记录 32：用于验证完整总数与页面条数分离。\n\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 98,
+        "line_end": 100,
+        "text_available": true
+      },
+      {
+        "kind": "chunk",
+        "ref": "xr1:eyJvIjoibG9jYWwtZXZhbCIsImsiOiJkZW1vIiwicCI6IjA3LXBhZ2luYXRpb24ubWQiLCJlIjoibG9jYWxfZWQ2NWI0NGZkMWZkYzc3MzA4M2JkZTk4MmUxZDIwMGEiLCJjIjoiMmI3YTcwMjEtZTUyYy1kYzcwLWY3ZmItZWZmZTA2YmQyYjk1IiwiaCI6ImNiYmQ5YWM2NWUwMzdjNDZmNDk2NGM4MjNiYzk4ODU1MGYzODM1ZjFmODI4YTllOWM3OWE2MDc0YzIyMjMxZDkifQ",
+        "kb": "demo",
+        "path": "07-pagination.md",
+        "edition_id": "local_ed65b44fd1fdc773083bde982e1d200a",
+        "chunk_id": "2b7a7021-e52c-dc70-f7fb-effe06bd2b95",
+        "chunk_key": "k318ae9419e5bfd5241f2e08bb53d089b",
+        "file_hash": "cbbd9ac65e037c46f4964c823bc988550f3835f1f828a9e9c79a6074c22231d9",
+        "title": "分页示例",
+        "text": "## 样本 16\n分页样本记录 16：用于验证完整总数与页面条数分离。\n\n",
+        "score": 7,
+        "ranking": "scan_heuristic",
+        "line_start": 50,
+        "line_end": 52,
+        "text_available": true
+      }
+    ],
+    "returned": 5,
+    "total": {
+      "value": 37,
+      "accuracy": "exact",
+      "unit": "chunks",
+      "calculation_complete": true,
+      "scope": "corpus"
+    },
+    "coverage": {
+      "execution_partial": false,
+      "display_truncated": true,
+      "approximate": false,
+      "consistency": "filesystem_live",
+      "scope_basis": "corpus"
+    },
+    "cache_complete": true,
+    "strategy": {
+      "external": false,
+      "graph": false,
+      "name": "search.keyword",
+      "rerank": false
+    },
+    "notes": []
+  }
+}
