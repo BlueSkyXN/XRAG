@@ -61,6 +61,7 @@ func (s scopedSemantic) Label() string { return "per_kb_model" }
 func (s scopedSemantic) Search(ctx context.Context, v core.View, q string) ([]core.Ranked, error) {
 	groups := map[string]core.View{}
 	cfgs := map[string]adapters.Config{}
+	collections := map[string]map[string]string{}
 	for _, d := range v.Documents {
 		byGen := map[string][]core.Chunk{}
 		for _, c := range d.Chunks {
@@ -81,6 +82,16 @@ func (s scopedSemantic) Search(ctx context.Context, v core.View, q string) ([]co
 				if cfg.Embedding == nil || cfg.Embedding.SemanticID() != g {
 					return nil, e
 				}
+			}
+			if cfg.Qdrant != nil {
+				physical, err := s.Builder.Store.VectorCollection(ctx, d.Edition, cfg)
+				if err != nil {
+					return nil, err
+				}
+				if collections[key] == nil {
+					collections[key] = map[string]string{}
+				}
+				collections[key][d.Edition] = physical
 			}
 			cfgs[key] = cfg
 			vv := groups[key]
@@ -118,7 +129,7 @@ func (s scopedSemantic) Search(ctx context.Context, v core.View, q string) ([]co
 		}
 		var sem core.Semantic = &adapters.ExactSemantic{Embed: &adapters.Embedder{Config: *cfg.Embedding}}
 		if cfg.Qdrant != nil {
-			sem = &adapters.Qdrant{Endpoint: *cfg.Qdrant, Embed: &adapters.Embedder{Config: *cfg.Embedding}, Origin: v.Origin}
+			sem = &adapters.Qdrant{Endpoint: *cfg.Qdrant, Embed: &adapters.Embedder{Config: *cfg.Embedding}, Origin: v.Origin, Collections: collections[key]}
 		}
 		var rs []core.Ranked
 		if vv.Compact && cfg.Qdrant == nil {
