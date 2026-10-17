@@ -1,71 +1,87 @@
-> 当前版本为 Demo.5。本文件保留对应模块的原操作说明；新增行为或冲突以 [DEMO5_OPERATIONS.md](DEMO5_OPERATIONS.md) 与 [STATUS.md](STATUS.md) 为准。不要求旧软件迁移。
+# 数据导出、备份与恢复
 
-# Demo.3：数据导出、数据库快照与恢复
+先按恢复目标选择产物。以下命令假定已有 `team` profile；管理快照和恢复需管理员操作。版本与存储兼容范围见 [STATUS.md](STATUS.md)。
 
-本文件对应实际程序，不承诺外部数据库的统一快照或完整灾备。
+## 选择备份范围
 
-> Demo.4继续保留本文既有命令；本轮新增能力与限制见[LIFECYCLE_AND_SOURCES](LIFECYCLE_AND_SOURCES.md)和[STATUS](STATUS.md)。
-
-## 1. 先选正确的产物
-
-| 产物 | 包含 | 不包含 |
+| 产物 | 包含 | 还需独立保存 |
 |---|---|---|
-| 已发布资料ZIP | 当前可见MD/TXT正文、来源/版本/ref清单 | 草稿、旧版、任务、Key、外部索引 |
-| SQLite快照 | 已入库正文、历史edition、知识草稿/发布、关系记录、元数据、任务、反馈、评测和Key摘要 | 来源目录、admin.key明文、外部providers.json、env/file引用的值、Qdrant/Neo4j |
-| 停机完整目录复制 | 本地目录中的文件 | 目录外来源/配置、环境变量、远端后端仍需单独处理 |
+| 已发布资料 ZIP | 当前 MD/TXT、来源、edition、hash、ref 清单 | 草稿、历史、任务、Key、模型/后端状态 |
+| SQLite 快照 | 入库正文、历史、知识修订、已存向量/关系、任务、配置引用、反馈、评测和 Key 摘要 | 来源目录、明文 Key、外部配置、env/file 秘密值、外部数据库实例 |
+| 停机完整数据目录副本 | 数据目录内全部文件 | 目录外来源/配置、环境变量和远端数据库 |
+| 外部数据库备份 | 由供应商工具决定 | 与 XRAG 发布状态的一致性需部署者协调 |
 
-备份中可能包含尚未物理清除的历史内容，因此只向管理员开放；应用层撤回不自动擦除已下载的旧快照。
+快照可能含历史和撤回内容，仅管理员可获取；已经下载的旧备份不受在线撤回控制。SQLite 快照固定数据库状态，来源与外部库需单独协调。
 
-## 2. 创建与下载数据库快照
+## 导出与创建快照
 
 ```bash
+# Maintainer/Admin：可读资料交接，输出文件必须不存在
+./bin/xrag kb export demo --profile team --out published.zip
+# Admin：可恢复的数据库快照
 ./bin/xrag backup create --profile team --confirm
 ./bin/xrag backup list --profile team
 ./bin/xrag backup download BACKUP_ID --profile team --out snapshot.sqlite
 ```
 
-也可在「设置与帮助 → 数据管理」完成。Server在自己的data_dir/backups写新文件，SQLite负责快照读取；完成后登记大小、SHA-256和创建时间。输出失败不会登记为成功备份。最多20份登记快照，不提供自动日备计划或上传云盘。
+资料 ZIP 最多 10,000 文件、64 MiB 正文，超限失败。快照在 Server 的 `backups/` 下生成并登记大小、SHA-256、时间，最多登记 20 份。手动快照不会被自动备份计划轮转。
 
-`xrag-server backup --data .xrag-demo --out NEW_FILE.sqlite`仍保留原本机命令，不进入Web登记列表。
+本机命令 `./bin/xrag-server backup --data .xrag --out NEW_FILE.sqlite` 也可创建快照，但不进入 Web 备份列表。创建/下载会占用 I/O 与数据库连接；大库在维护时段执行并调整客户端超时。自动计划见 [历史维护](HISTORY_MAINTENANCE.md)。
 
-在线快照是SQLite一致状态，不是来源文件、SQLite和外部数据库共同冻结。不要承诺跨后端原子备份。创建/下载会占用I/O，客户端默认请求上限120秒；大库应在维护时段使用本机命令。
+## 恢复到新目录
 
-## 3. 恢复只写新目录
+```mermaid
+flowchart TD
+    Snapshot["SQLite 快照"] --> Check["检查文件、完整性与存储版本"]
+    Check --> New["复制到尚不存在的新目录"]
+    New --> Safe["生成 recovery-admin，关闭自动动作和模型配置"]
+    Safe --> Text["先核对原文与固定引用"]
+    Safe --> Projection["按需恢复已存外部投影"]
+    Text --> Configure["配置新的连接、来源与执行器"]
+    Projection --> Configure
+    Configure --> Start["启动并验收恢复副本"]
+```
 
 ```bash
 ./bin/xrag-server restore --from snapshot.sqlite \
   --data /absolute/parent/restored-xrag --confirm
+./bin/xrag-server serve --data /absolute/parent/restored-xrag \
+  --listen 127.0.0.1:8766 --workers off
 ```
 
-要求：父目录已存在，restored-xrag目录**尚不存在**，输入为本Demo SQLite快照，最大2GiB。程序复制到新目录，检查SQLite完整性和必要XRAG表，再准备恢复运行状态。任何一步失败只清理由它新建的目标目录，不删除输入快照，不覆盖源数据。
+父目录须已存在，目标目录须不存在，输入最大 2 GiB 且符合当前存储布局。程序检查 SQLite 与 XRAG 表；失败只清理本次新建目标，不覆盖原库或输入快照。
 
-成功之后：
+恢复会保留 origin、KB、文件/edition、引用、知识与记录，同时：
 
-- **保持**origin、知识库、文件/edition、固定引用、知识条目与已有记录。
-- **禁用旧Key**，生成独立 `recovery-admin`，明文放新目录admin.key；旧调用方不能无意连到恢复副本。
-- **关闭来源自动扫描和Hook**，避免旧路径立即参与重建。
-- **清除保存的模型配置**，避免新机器无意调用旧端点；显式--config仍由操作者自行决定，恢复不会更改外部文件。
-- **未完成任务结束为failed**，发出但尚未知的调用标outcome_unknown，不宣称透明续跑。
-- **清除临时范围/分页缓存和旧快照列表**；静态旧文件引用仍可读。
-- 保存RESTORE_INFO.json说明恢复行为。
+- 停用旧 Key，生成 `recovery-admin`，明文写入新目录 `admin.key`。
+- 关闭来源扫描、Hook、维护计划等自动动作，清除保存的模型配置。
+- 将未完成任务置为失败，未知已发调用保留 outcome_unknown。
+- 清除临时范围、分页缓存和旧备份登记，保留静态历史引用。
+- 写入 `RESTORE_INFO.json`，使启动脚本和容器跳过自动构建。
 
-启动恢复副本：
+用恢复目录的 Key 登录，先核对原文和旧引用，再配置服务。来源路径可能在新机器不存在或指向其他内容，检查后才能启用构建。新旧副本保留相同 origin，应使用不同 profile、端口和明确的部署名称。
+
+## 恢复外部投影
+
+SQLite 保存过的数值向量与关系支撑可写入专用 Qdrant/Neo4j 恢复目标，无需重新调用模型：
 
 ```bash
-./bin/xrag-server serve --data /absolute/parent/restored-xrag \
-  --listen 127.0.0.1:8765 --workers off
+# 编辑模板中的专用目标，预览仅读取恢复副本
+./bin/xrag-server recover-projections --data /absolute/parent/restored-xrag \
+  --targets /absolute/path/recovery-targets.json
+# 确认目标与计划后执行
+./bin/xrag-server recover-projections --data /absolute/parent/restored-xrag \
+  --targets /absolute/path/recovery-targets.json --confirm
 ```
 
-先用恢复目录admin.key登录，读取旧引用并确认内容，再配置新的访问Key、来源路径、模型与构建。恢复数据目录存在RESTORE_INFO.json时，`demo.sh`和`run-linux.sh`不会像新演示库那样自动提交demo构建；直接serve默认也没有自动build参数。
+模板为 [recovery-targets.json](../examples/recovery-targets.json)。执行前停止该副本的 Server/Worker。仅带恢复标记的副本可执行；目标 Qdrant 物理集合须不存在，Neo4j 本 authority 下不能已有节点，恢复时应禁止其他写者。
 
-## 4. 外部能力需要单独恢复
+程序先登记恢复身份，再按确定的版身份写数据并保存进度。失败后副本不能提供服务，应以同一目标继续；完成后重复执行返回已有结果。最多处理 100,000 个可读物化版，排除撤回和未发布中间版。
 
-图和向量后端不在SQLite快照里，不能因为地址仍能连接，就认定它对应这份恢复数据。基础词法和已保存正文可以先运行。确认模型身份、外部库内容和来源后，再决定从保存资料/来源重建；缺失资料不能凭空恢复。
+这里只恢复 SQLite 已存的 XRAG 投影，缺失产物、模型权重、其他应用数据仍需原来源或供应商备份。恢复后查询还需要匹配的模型身份和凭据。真实专业后端恢复验证范围见 [STATUS.md](STATUS.md)。
 
-来源目录没有复制到备份。数据库中的旧路径只是登记信息：另一台机器可能不存在，或恰好有不同内容。不要在未检查前启用自动构建。restore不是跨域克隆产品，资料origin保留；并行运行旧、新副本时要明确命名连接，避免把恢复副本当原服务自动替换。
+## 升级和回退
 
-## 5. 升级与恢复不同
+当前磁盘标记为 `demo9`，不提供更早 Demo 存储的自动迁移。程序发行版本可以变化而保留此标记，升级前仍需阅读对应更新记录并保留停机副本。
 
-正常升级在同一个数据目录打开新程序，**保留旧Key及自动策略**。离线restore生成另一目录，主动停用旧运行身份和自动动作。升级回退使用升级前的完整停机备份，不直接用restore冒充“所有配置原样回去”。
-
-当前没有在原运行库上的Web一键覆盖恢复、定时快照、对象存储备份、自动清理旧正文、加密备份包或生产RPO/RTO承诺。
+同目录升级保留现有身份和策略；restore 创建隔离副本并关闭自动动作。需要原样回退时，使用升级前的完整停机备份与原程序版本。恢复、配置重启或换镜像都不代替实际的引用、检索与任务验收。

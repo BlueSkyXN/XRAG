@@ -22,6 +22,8 @@ type Qdrant struct {
 	Endpoint Endpoint
 	Embed    *Embedder
 	Origin   string
+	// Collections selects persisted physical bindings by edition for Server reads.
+	Collections map[string]string
 }
 
 func (q *Qdrant) headers() (map[string]string, error) {
@@ -108,21 +110,24 @@ func (q *Qdrant) searchCollection(ctx context.Context, v core.View, text, physic
 	if e != nil {
 		return nil, e
 	}
-	perKB := map[string][]string{}
+	perCollection := map[string][]string{}
 	for _, d := range v.Documents {
+		collection := physical
+		if collection == "" {
+			collection = q.Collections[d.Edition]
+		}
+		if collection == "" {
+			collection = q.Collection(d.KB)
+		}
 		for _, c := range d.Chunks {
 			if c.Generation != q.Embed.Config.SemanticID() {
 				return nil, core.Err("MODEL_MISMATCH", "active file uses a different embedding profile", 409)
 			}
-			perKB[d.KB] = append(perKB[d.KB], c.ID)
+			perCollection[collection] = append(perCollection[collection], c.ID)
 		}
 	}
 	out := []core.Ranked{}
-	for kb, ids := range perKB {
-		collection := physical
-		if collection == "" {
-			collection = q.Collection(kb)
-		}
+	for collection, ids := range perCollection {
 		for start := 0; start < len(ids); start += 500 {
 			end := start + 500
 			if end > len(ids) {

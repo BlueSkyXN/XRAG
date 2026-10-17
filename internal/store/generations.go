@@ -84,6 +84,37 @@ func (s *Store) VectorGenerations(ctx context.Context) ([]VectorGeneration, erro
 	return out, err
 }
 
+// VectorCollection reads the physical binding saved for this edition, including
+// collections created before the current naming schema.
+func (s *Store) VectorCollection(ctx context.Context, edition string, cfg adapters.Config) (string, error) {
+	physical := ""
+	if cfg.Qdrant == nil || cfg.Embedding == nil {
+		return physical, nil
+	}
+	err := s.DB.Do(ctx, func(c *db.Conn) error {
+		rows, err := c.Query(`SELECT g.physical,g.data FROM projection_generation p JOIN vector_registry g ON g.id=p.registry_id WHERE p.edition=? AND g.state<>'deleted'`, edition)
+		if err != nil {
+			return err
+		}
+		for _, row := range rows {
+			var bound adapters.Config
+			if err := json.Unmarshal([]byte(db.String(row, "data")), &bound); err != nil {
+				return err
+			}
+			if bound.Qdrant == nil || bound.Embedding == nil || bound.Embedding.SemanticID() != cfg.Embedding.SemanticID() || strings.TrimRight(bound.Qdrant.URL, "/") != strings.TrimRight(cfg.Qdrant.URL, "/") {
+				continue
+			}
+			name := db.String(row, "physical")
+			if physical != "" && physical != name {
+				return core.Err("MODEL_MISMATCH", "edition has conflicting vector collection bindings", 409)
+			}
+			physical = name
+		}
+		return nil
+	})
+	return physical, err
+}
+
 // Called only under the exclusive offline workspace lock. It also rejects
 // pending jobs because they can reference retired configuration after restart.
 func (s *Store) RequireNoPendingJobs(ctx context.Context) error {

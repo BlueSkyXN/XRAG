@@ -1,3 +1,5 @@
+> **历史归档**：本文保留原批次说明与当时验证记录。当前使用请阅读 [文档总览](../../README.md) 和 [当前状态](../../STATUS.md)。文中 checks 等报告路径可能仅存在于原执行环境。
+
 # XRAG 0.7.0-demo.3
 
 **可运行的 Go 知识检索 Demo。Server 建设知识，Client 查询；本版补齐配置、接入、反馈处理和数据恢复。**
@@ -69,7 +71,7 @@ Linux amd64 程序包使用 `bash run-linux.sh`。本轮在 Debian13 系统 SQLi
 
 保存会写入数据库，**不会立即切换运行模型，也不会探测/付费调用**。需要停止并重启Server和全部同机Worker。不带 `--config` 的进程读取保存设置；显式 `--config providers.json` 优先，此时Web设置只读。更换Embedding模型/前缀/维度需要显式重建，保存本身不重建。
 
-已有模型/专业后端代码仅用受控端点测试，本轮无真实商业模型或Qdrant/Neo4j实例联调。详见[连接说明](docs/CONNECTIONS.md)。
+已有模型/专业后端代码仅用受控端点测试，本轮无真实商业模型或Qdrant/Neo4j实例联调。详见[连接说明](../../CONNECTIONS.md)。
 
 ## 5. 访问 Key 与反馈
 
@@ -92,7 +94,7 @@ Linux amd64 程序包使用 `bash run-linux.sh`。本轮在 Debian13 系统 SQLi
 ./bin/xrag-server serve --data /absolute/new-xrag-data --listen 127.0.0.1:8765 --workers off
 ```
 
-原数据库不会被覆盖。恢复之后用新目录的admin.key；逐项确认来源和模型再重建。详见[恢复说明](docs/DATA_RECOVERY.md)。
+原数据库不会被覆盖。恢复之后用新目录的admin.key；逐项确认来源和模型再重建。详见[恢复说明](../../DATA_RECOVERY.md)。
 
 ## 7. 分开执行器与MCP
 
@@ -105,11 +107,11 @@ Linux amd64 程序包使用 `bash run-linux.sh`。本轮在 Debian13 系统 SQLi
 ./bin/xrag mcp --profile team --toolsets core,graph,files,utility
 ```
 
-模型配置变更要同时重启A/B。管理功能不会把Key、备份、设置编辑工具加入默认MCP工具集。MCP仍为固定2025-06-18 tools子集，非官方SDK完整实现；实际商业客户端未联调。外部说明：[SKILL.md](skills/xrag-retrieval/SKILL.md)。
+模型配置变更要同时重启A/B。管理功能不会把Key、备份、设置编辑工具加入默认MCP工具集。MCP仍为固定2025-06-18 tools子集，非官方SDK完整实现；实际商业客户端未联调。外部说明：[SKILL.md](../../../skills/xrag-retrieval/SKILL.md)。
 
 ## 8. 升级、开发和范围
 
-Demo.2原目录升级保持Key/引用，不等于上述“恢复到新目录”。操作见[升级说明](docs/UPGRADE.md)。
+Demo.2原目录升级保持Key/引用，不等于上述“恢复到新目录”。操作见[升级说明](docs_UPGRADE.md)。
 
 ```bash
 make build
@@ -124,8 +126,8 @@ python3 scripts/upgrade_smoke.py --old-source /path/to/XRAG_V0.7_Demo2_源码.zi
 python3 scripts/check_management.py
 ```
 
-[产品操作](docs/PRODUCT_OPERATIONS.md)｜[持续更新与评测](docs/OPERATIONS.md)｜[实际范围](docs/STATUS.md)｜[本轮报告](checks/REPORT.md)
+[产品操作](../../PRODUCT_OPERATIONS.md)｜[持续更新与评测](../../OPERATIONS.md)｜[实际范围](docs_STATUS.md)｜[本轮报告](checks_REPORT.md)
 
 当前仍是单机SQLite Demo：没有完整历史GC、生产级容量证明、OSS/WeKnora、Recipe/Research、完整模型账务。过期缓存清理不等于完整数据生命周期管理。单次已发布资料导出上限64MiB/10000文件；最多20份登记快照；恢复快照上限2GiB。
 
-本轮不修改用户仓库或发布许可证。见[LICENSE_NOTICE](LICENSE_NOTICE.md)。
+本轮不修改用户仓库或发布许可证。见[LICENSE_NOTICE](../../../LICENSE_NOTICE.md)。

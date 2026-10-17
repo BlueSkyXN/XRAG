@@ -99,7 +99,7 @@ func (a *App) serveMCP(w http.ResponseWriter, r *http.Request, p store.Principal
 		writeOK = writeOK && id.Scopes["xrag:write"]
 		tasksOK = id.Scopes["xrag:research"]
 	}
-	s := mcp.Server{Assets: true, AllowTasks: tasksOK, AllowWrite: writeOK, Semantic: semantic, Graph: true, Toolsets: groups,
+	s := mcp.Server{Assets: true, AllowImage: true, AllowTasks: tasksOK, AllowWrite: writeOK, Semantic: semantic, Graph: true, Toolsets: groups,
 		Execute: func(ctx context.Context, action string, b []byte) (any, error) {
 			if id != nil && !id.Scopes[mcpRequiredScope(action)] {
 				return nil, core.Err("INSUFFICIENT_SCOPE", mcpRequiredScope(action)+" scope required", 403)
