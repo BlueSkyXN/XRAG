@@ -1,3 +1,5 @@
+> **历史归档**：本文保留原批次说明与当时验证记录。当前使用请阅读 [文档总览](../../README.md) 和 [当前状态](../../STATUS.md)。文中 checks 等报告路径可能仅存在于原执行环境。
+
 # XRAG 0.7.0-demo.2
 
 **一个实际可运行的 Go Demo：Server 建设 MD/TXT 知识，Client 查询。**
@@ -11,7 +13,7 @@
 
 **先运行 `bash demo.sh`，再打开“资料与构建”和“检索评测”。不配置任何模型也能体验新增功能。**
 
-[新功能详细操作](docs/OPERATIONS.md) · [从demo.1升级](docs/UPGRADE.md) · [变更记录](docs/CHANGELOG.md) · [真实检查结果](checks/REPORT.md)
+[新功能详细操作](../../OPERATIONS.md) · [从demo.1升级](UPGRADE.md) · [变更记录](CHANGELOG.md) · 真实检查结果（原路径 `checks/REPORT.md`，未归档）
 
 Git源需要本机安装git；普通资料不需要。目录变化是显式轮询，不是OS事件监听。Qdrant、Neo4j、模型及公共HTTPS Git远程没有真实实例联调结论。
 
@@ -110,7 +112,7 @@ V0.7 要求两个程序。Server 默认含后台执行器；需要分开时：
 
 ## 6. 模型、Qdrant、Neo4j 与插件
 
-见 [可选连接说明](docs/CONNECTIONS.md)。只配置需要的字段，启动时用：
+见 [可选连接说明](../../CONNECTIONS.md)。只配置需要的字段，启动时用：
 
 ```bash
 XRAG_DEMO_CONFIG="$PWD/providers.json" bash demo.sh
@@ -132,7 +134,7 @@ XRAG_DEMO_CONFIG="$PWD/providers.json" bash demo.sh
 
 stdio 只输出 JSON-RPC。Server 的 `/mcp` 同时提供 Bearer Key 的 JSON POST tools 子集。输入、输出 Schema 与 HTTP 共用。
 
-协议固定 **MCP 2025-06-18 tools 子集**，没有官方 SDK、OAuth、流式 SSE、resources/prompts/Tasks；未在真实商业 Agent 客户端现场验证。不支持的能力明确说明。外部使用指南：[SKILL.md](skills/xrag-retrieval/SKILL.md)。
+协议固定 **MCP 2025-06-18 tools 子集**，没有官方 SDK、OAuth、流式 SSE、resources/prompts/Tasks；未在真实商业 Agent 客户端现场验证。不支持的能力明确说明。外部使用指南：[SKILL.md](../../../skills/xrag-retrieval/SKILL.md)。
 
 ## 8. 工程与复测
 
@@ -163,7 +165,7 @@ python3 scripts/smoke.py --browser
 python3 scripts/smoke_demo2.py --browser
 ```
 
-真实检查范围：[checks/REPORT.md](checks/REPORT.md)。完整差距：[docs/STATUS.md](docs/STATUS.md)。本轮没有宣称生产容量、完整 V0.7 兼容或独立子代理评审通过。
+真实检查范围：checks/REPORT.md（原路径 `checks/REPORT.md`，未归档）。完整差距：[docs/STATUS.md](STATUS.md)。本轮没有宣称生产容量、完整 V0.7 兼容或独立子代理评审通过。
 
 ## 9. 数据与后续交接
 
@@ -171,4 +173,4 @@ python3 scripts/smoke_demo2.py --browser
 
 `xrag-server backup --data .xrag-demo --out /新路径/backup.sqlite` 使用 SQLite 自身备份能力，包含已入库的正文、版本、配置记录和 Key 摘要。**不含原来源目录、admin.key、providers.json 或外部库。**完整迁移应停机复制整个数据目录和必要的外部配置；不要只复制打开的 `.sqlite` 文件而漏掉 WAL。
 
-许可证未在本 Demo 中擅自决定，见 [LICENSE_NOTICE.md](LICENSE_NOTICE.md)。
+许可证未在本 Demo 中擅自决定，见 [LICENSE_NOTICE.md](../../../LICENSE_NOTICE.md)。

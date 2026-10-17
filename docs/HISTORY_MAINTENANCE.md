@@ -1,53 +1,98 @@
-> 当前版本为 Demo.5。本文件保留对应模块的原操作说明；新增行为或冲突以 [DEMO5_OPERATIONS.md](DEMO5_OPERATIONS.md) 与 [STATUS.md](STATUS.md) 为准。不要求旧软件迁移。
+# 备份计划与历史维护
 
-# Demo.4：离线本地历史整理
+维护分为缓存、操作记录、历史内容版和退休向量集合四层。先选择目标、预览候选，并确认备份和引用保留要求。当前发布内容与有效持有者会保护相应版本。
 
-本功能为显式、同机、SQLite历史整理，不是在线全后端GC。只在新版本程序全部停止时运行；**旧版本Worker不认识新增runtime.lock，因此也必须手动停止所有旧Worker。**
+## 选择操作
 
-## 1. 先预览再执行
+| 目标 | 入口 | 执行方式 |
+|---|---|---|
+| 过期结果、handle、查询摘要 | `maintenance preview / clean` | 在线显式清理 |
+| 自动快照、任务/调用明细轮转 | `maintenance policy / records / run` | Worker 分批执行 |
+| 已退休且无人持有的内容版 | `maintenance content / run` | 在线批次，取得内容独占租约 |
+| 同类历史的停机整理 | `xrag-server prune` | 离线预览/确认，可显式清理外部版产物 |
+| 已登记且空置的退休 Qdrant 集合 | `xrag-server vector-gc` | 离线单独确认 |
 
-在程序机器上，先备份完整数据目录和必要外部材料，停止Server及所有Worker：
+清理不执行自动 VACUUM，不保证物理文件立即缩小，也不擦除已下载备份。删除后读取未受保护的旧 ref 可能返回 `REF_GONE`。
+
+## 自动计划与记录轮转
 
 ```bash
-./bin/xrag-server prune --data /绝对路径/数据目录 --keep-days 30
+./bin/xrag maintenance policy --profile team
+# 先更新模板 expected_revision 与需要启用的字段
+./bin/xrag maintenance policy --profile team --data @examples/maintenance-policy.json
+./bin/xrag maintenance records --profile team
+./bin/xrag maintenance runs --profile team
 ```
 
-默认dry_run=true，给出候选/被保护/可删edition和过期缓存数量，不删除历史正文。第一次打开旧数据库可能新增retirement元信息，但不把旧内容立即当作过期。
+| 字段 | 默认与范围 |
+|---|---|
+| `enabled` | false，总开关 |
+| `backup_every_seconds` / `records_every_seconds` | 0 关闭；启用为 60–604800 秒 |
+| `backup_keep` | 7，范围 1–15；只轮转维护流程创建的快照 |
+| `records_keep_days` | 30，范围 1–36500 |
+| `batch_size` | 200，范围 1–1000；内容版扫描每批另限 100 |
+| `content_every_seconds` | 0；启用为 60–604800 秒 |
+| `content_keep_days` | 30，按版本退休时间计算 |
+| `content_external` | false，需明确允许才清理外部版产物 |
 
-确认预览符合预期后：
+API-only 只保存策略和排队，内置或独立 Worker 执行。单次维护限时四分钟，租约最长十分钟。新自动快照成功后才删除超额的维护快照，手动快照保留；登记总数仍限 20，手动快照占满会使自动备份失败。
+
+操作记录清理包括已结束任务详情、构建详情、触发记录、已结算模型调用。已结算用量先归并汇总；sent/outcome_unknown/usage_unknown/cost_unknown 保留。精简任务仍保留身份与幂等关系，过期请求返回 `JOB_EXPIRED`。
+
+关闭计划取消尚未开始的自动任务，正在执行和显式提交的一次性任务需单独处理。
+
+## 在线内容版清理
 
 ```bash
-./bin/xrag-server prune --data /绝对路径/数据目录 --keep-days 30 --confirm
+./bin/xrag maintenance content --profile team
+./bin/xrag maintenance run --profile team \
+  --data '{"content":true,"confirm":true}' --confirm
+./bin/xrag maintenance runs --profile team
 ```
 
-keep-days范围1..36500。按退休时点而不是创建时点；旧版本没有记录退休时间的版，以第一次demo.4打开的时间开始保留，避免刚升级就删掉大量历史。
+```mermaid
+flowchart TD
+    Candidate["扫描退休内容版"] --> Age{"达到保留期？"}
+    Age -->|否| Keep["保留并推进扫描游标"]
+    Age -->|是| Owner{"仍为 active 或有持有者？"}
+    Owner -->|是| Keep
+    Owner -->|否| Lease["取得内容独占租约"]
+    Lease --> External{"存在外部投影？"}
+    External -->|是且允许 external| Remote["按原绑定删除版产物"]
+    External -->|是但未允许| Keep
+    External -->|否| Delete["删除本地版"]
+    Remote -->|成功| Delete
+    Remote -->|失败| Keep
+```
 
-## 2. 保留什么
+普通查询、建设和任务持共享租约，清理等待已有操作完成，新的内容操作可能等待。它只协调同机且遵守该数据目录租约的进程，不能感知 direct 客户端持有的外部版本。
 
-当前发布版永不进入候选。以下所有者提到的旧版保持：
+当前 active、知识修订、反馈、题集、任务、有效结果/范围及保留期内的版本均受保护。扫描游标持续推进，避免总停在首批受保护版本。外部删除失败保留本地状态，不能通过清空配置绕过外部依赖。
 
-- 知识条目的所有已保存修订和其ref；
-- 反馈所引用的edition；
-- 题集里的明确引用；
-- 任务payload、非build任务结果中的引用；
-- 尚未到期的句柄、结果页和查询摘要。
+## 离线 prune
 
-这些检查采取保守扫描，不是无限扩展的引用反向索引。超过所有者数量/大小上限、遇到无法解释的存储内容或仍存在待执行任务时，停止而不删除。旧知识修订一直持有原文时，旧版会一直受保护；本版没有擅自删除这些所有者。
+停止该资料域所有 Server 和 Worker，备份后预览：
 
-不在保留期且没有上述持有者的普通历史引用，显式整理后可能返回REF_GONE。**原先Demo“永久留所有历史”不再是执行prune后的承诺**；不执行prune时行为不变。
+```bash
+./bin/xrag-server prune --data /absolute/path/to/data --keep-days 30
+# 包含已登记外部版产物时，显式选择外部清理并传原运行配置
+./bin/xrag-server prune --data /absolute/path/to/data \
+  --config /absolute/path/providers.json --external --keep-days 30
+```
 
-## 3. 不会做什么
+确认候选后，对选定命令增加 `--confirm` 执行。keep-days 为 1–36500；按退休时间计算。持有者数量/内容超限、存在无法解释的记录或待执行任务时停止。`--drop-model-cache` 另删除可重建模型缓存，后续可能重新收费调用。
 
-- 不回收Qdrant点、Neo4j节点或物理向量代号。
-- 当前配置包含外部后端，或候选有向量generation，apply会拒绝（EXTERNAL_CLEANUP_REQUIRED）。
-- 过去用过Neo4j但已清除配置，且没有generation标记的资料无法完整推断其远端副本。因此本命令只面向确认一直使用本地后端的实验数据；不要把清空配置作为绕过方式。
-- 不做VACUUM、不保证文件立刻缩小、不承诺物理擦除介质或备份中的内容。
-- 不删除任务/评测全历史、不自动执行、不做透明任务恢复。
+运行锁必须覆盖所有同目录进程；旧程序或不遵守本机锁的外部写者需人为停止。外部版产物先清理，再删除本地版；跨系统操作失败可能需要继续完成远端步骤。
 
-可额外选择 `--drop-model-cache`，删除可重建模型缓存；后续构建可能重新调用模型并增加费用。默认不删除。
+## 退休向量集合
 
-## 4. 互斥和恢复
+先用内容版清理解除旧 edition 持有，再预览集合：
 
-demo.4 Server/Worker持共享runtime.lock，prune持排他锁；API运行时不能偷偷执行整理。计划和删除在同一离线SQLite事务内，出错回滚。另检查旧server.lock，但不能代替停止旧Worker。
+```bash
+./bin/xrag-server vector-gc --data /absolute/path/to/data \
+  --config /absolute/path/providers.json --keep-days 30
+```
 
-若需要回退恢复内容，使用整理之前的备份。强制撤回的原语义不变；为引用保留数据不等于允许返回已撤回内容。
+确认后增加 `--confirm`。默认预览只读取本地登记，不连接 Qdrant。执行需要同时满足：无 active/历史版持有、当前默认/KB 模型不再选择它、退休保留期已到、没有 queued/running 构建、无别名、descriptor 身份匹配且远端精确点数为 0。
+
+只删除本资料域登记的空集合，不发现或清理未知孤儿集合。执行前需协调 direct 使用者停止读取该退休集合。备份和模型投影恢复见 [DATA_RECOVERY.md](DATA_RECOVERY.md)。

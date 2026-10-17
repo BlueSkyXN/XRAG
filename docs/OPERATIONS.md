@@ -1,157 +1,127 @@
-> 当前版本为 Demo.5。本文件保留对应模块的原操作说明；新增行为或冲突以 [DEMO5_OPERATIONS.md](DEMO5_OPERATIONS.md) 与 [STATUS.md](STATUS.md) 为准。不要求旧软件迁移。
+# 来源、构建与效果比较
 
-# 持续更新与效果比较（Demo.2引入，Demo.3保留）
+本指南使用当前 Server 与 `team` profile。首次启动见 [README](../README.md)，模型和后端见 [连接配置](CONNECTIONS.md)。操作来源、构建、评测需 Maintainer 或 Admin。
 
-本文件描述Demo.2引入并在Demo.3继续工作的接口。新增管理功能见[产品操作](PRODUCT_OPERATIONS.md)。默认不配置模型；`+ask` 是检索组合，不是回答生成或 Research。
+## 准备资料
 
-> Demo.4继续保留本文既有命令；本轮新增能力与限制见[LIFECYCLE_AND_SOURCES](LIFECYCLE_AND_SOURCES.md)和[STATUS](STATUS.md)。
-
-## 1. 启动与连接
+工作台“资料与来源”可上传 MD/Markdown/TXT、登记来源并查看已发布文件。远程上传传文件内容；登记 `root` 则指 Server/Worker 所在机器能读取的位置。
 
 ```bash
-bash demo.sh
-# 另一个终端；仍在项目根目录
-./bin/xrag profile add team --server http://127.0.0.1:8765 \
-  --key-file "$PWD/.xrag-demo/admin.key" --kb demo
-```
-
-服务端登记的路径属于 Server 所在机器。远程 Client 上传资料时传文件内容；不能将用户电脑路径当作服务器路径。
-
-## 2. 本地目录和 Git 来源
-
-```bash
+./bin/xrag source upload ./examples/docs/02-errors.md --profile team
 ./bin/xrag source add --profile team --id handbook \
   --kind path --root /absolute/path/to/notes --mount handbook
-
 ./bin/xrag source add --profile team --id project \
   --kind git --root /absolute/path/to/repository --git-ref main --mount project
-
 ./bin/xrag source list --profile team
 ./bin/xrag build run demo --profile team --mode incremental --wait
-./bin/xrag jobs details JOB_ID --profile team
 ```
 
-把实际返回的任务编号填入 `JOB_ID`。管理参数 `--kb` 选择知识库，不会被错误地塞进来源/策略的 JSON。
+示例默认操作 `demo`。创建独立库可用 `./bin/xrag kb create handbook --name 使用手册 --profile team`；随后为来源命令加 `--kb handbook`，构建使用 `build run handbook`，或另建默认库为 handbook 的 profile。
 
-Git：每次先解析 branch/tag/SHA 到一个 commit，再用该提交的完整文件树与 blob 读取。没有 checkout、不看未提交修改、不执行仓库 hooks、不取子模块、不读取符号链接。改名按移除旧路径和新增路径处理，已经签发的旧引用仍指向旧文件版。
+来源的 kind/root/mount 是固定绑定；编辑可调整 include/exclude/disabled，改变地址或挂载需新 ID。停用停止扫描和 Hook，保留已发布内容；移除来源退出当前查询视图，允许保留的旧引用仍可阅读。
 
-`--root` 也可以是无用户名、密码、query 的公共 HTTPS Git URL。程序使用自己的 mirror cache，禁用交互登录；这一分支代码存在，但本轮只实际测试了本机 Git 仓库。SSH、HTTPS 私有仓凭据助手、Git LFS 内容展开未实现。私人仓可先在服务器上自行 clone，再登记为本机 Git 来源。
+## 目录与 Git 的读取方式
 
-需要 git 命令的只有 Git 来源。普通 MD/TXT 上传、目录、查询不依赖 Git。
+| 来源 | 读取语义 |
+|---|---|
+| path / builtin | 完整枚举支持的文件并读取；普通目录没有瞬时快照 |
+| 本机 Git | 将 branch/tag/SHA 固定为 commit，读取该提交的树与 blob |
+| 公共 HTTPS Git | 使用独立 mirror cache，禁用交互登录；URL 不携带用户、密码或 query |
+| S3 / WeKnora | 受限接口的完整分页与一致性检查，见 [外部来源](LIFECYCLE_AND_SOURCES.md) |
 
-**读取上限**：每来源最多 5,000 个支持的文件、单文件 5 MiB、总正文 64 MiB。先完整读取成功才做缺席移除；任何读取/枚举失败、超限、分支不存在都不把它解释为空目录。不承诺文件系统目录瞬时快照；Git 才固定提交。Git 扫描为逐 blob 读取，尚未做大仓性能优化。
+Git 不 checkout，不读取未提交修改，不执行仓库 hooks，不展开子模块或符号链接；Git LFS 和私有 SSH/凭据助手未集成。私有仓可由管理员在 Server 机器准备本机副本，再登记路径。
 
-`full` 会为全部支持文件重新物化版；健康的模型输入缓存仍可复用。与正在排队的 incremental 合并时不丢 full 意图。所有触发当前都构建整个 KB，而不只构建通知来源；后台仍有同 KB 运行互斥。
+每个 Server 来源最多 5,000 个支持文件、单文件 5 MiB、合计正文 64 MiB。超限、读取失败或 Git ref 不存在时保留该来源旧发布内容。较大语料可拆为多个来源在同一 KB 构建。local Client 的扫描限额另见 [连接说明](CONNECTIONS.md)。
 
-## 3. 显式自动检查
+## 构建模式
 
-### Git 定时检查
+| 模式 | 读取对象 | 适用场景 |
+|---|---|---|
+| `incremental` | 当前来源、内容与配置差异 | 日常更新、补齐失败的 optional 投影 |
+| `full` | 当前全部来源 | 重新解析并物化所有支持文件；有效模型缓存可复用 |
+| `vectors_only` | 已发布原文与块 | 更换向量配置或生成新的词法/向量集合；不扫描来源 |
+| `graph_only` | 已发布内容 | 更新图范围/抽取器；复用已有向量 |
 
 ```bash
-./bin/xrag source policy --profile team --id project \
-  --data '{"every_seconds":60,"watch_seconds":0,"debounce_seconds":10}'
+./bin/xrag build run demo --profile team --mode vectors_only --wait
+./bin/xrag build run demo --profile team --mode graph_only --wait
+./bin/xrag jobs list --profile team
+./bin/xrag jobs details JOB_ID --profile team
+./bin/xrag jobs cancel JOB_ID --profile team
 ```
 
-### 本地目录变化轮询
+构建按 KB 互斥；触发来源通知后构建的是整个 KB。配置模型后，这些操作可能产生外部调用。`--wait` 超时只结束客户端等待，需另行取消后台任务。详情包含文件结果、edition、Git commit、触发原因与用量；最多 1,000 项文件详情和 100 条触发记录。
+
+## 持续更新
+
+```mermaid
+flowchart LR
+    Policy["定时 / cron / watch / Hook"] --> Check["检查已登记来源"]
+    Check --> Changed{"指纹变化或待修复？"}
+    Changed -->|否| Wait["等待下次检查"]
+    Changed -->|是| Merge["去抖与待执行任务合并"]
+    Merge --> Queue["KB 构建队列"]
+    Queue --> Worker["Worker 执行"]
+    Worker --> Publish["发布结果与任务详情"]
+```
+
+来源策略默认关闭。保存策略后，Server 负责检查与入队，Worker 负责执行；只有 Worker 的进程不运行来源检查器。API-only Server 也可继续排队。
 
 ```bash
 ./bin/xrag source policy --profile team --id handbook \
   --data '{"every_seconds":0,"watch_seconds":5,"debounce_seconds":10}'
+./bin/xrag source policy --profile team --id project \
+  --data '{"every_seconds":60,"watch_seconds":0,"debounce_seconds":10}'
 ```
 
-`every_seconds`：0 关闭；正值范围 10～604800 秒。`watch_seconds`：0 关闭；正值 2～3600 秒，仅 path/builtin。`debounce_seconds`：1～300，0 或省略采用 10 秒。
+`every_seconds` 为 0 或 10–604800；`watch_seconds` 为 0 或 2–3600，只用于 path/builtin；debounce 为 1–300，0/省略采用 10 秒。文件指纹轮询会读取内容，频率越高 I/O 越多。
 
-这是**读取文件指纹的轮询**，不是 fsnotify/inotify，也不是 cron 表达式。每次读取支持文件计算强指纹，能发现相同 size/mtime 的正文修改；因此频率越高，I/O 越多。来源逐个检查，慢来源会延迟其他来源，暂无分布式采集或并发扫描池。
+还可配置五字段 cron 与 IANA 时区、原生 watch。cron 接受数字列表、范围和步长；Linux watch 使用 inotify，其他平台与网络挂载依赖周期兜底。完整字段见 [source-policy.schema.json](../contracts/management/source-policy.schema.json)。旧 `--scan-every` 会定期直接排库构建，避免与来源策略重复使用。
 
-配置默认全部关闭。Server 运行时负责检查并入队，不在检查器里构建或调用模型；开启 `--workers off` 后仍可入队，由外部同机 Worker 执行。只运行 Worker 没有来源检查器。与旧 `--scan-every` 共存，但不建议同时启用；旧参数每隔一段时间直接排整个库，本版按来源策略则先检查是否变化。
+关闭策略需把定时/watch/cron 等实际启用项关闭；清空 `hook_secret_ref` 关闭 Hook。已有任务须单独取消。
 
-同一来源指纹未变化且已成功建设，不创建新任务；已排队/运行的相同指纹不反复创建 successor。新变化会合并到最多一个待执行任务。部分构建失败后，后续检查会按配置间隔再尝试；这不是精细指数退避计划，配置付费模型时应选择合理间隔。
+### Git 推送与自定义 Hook
 
-```bash
-# 关闭自动检查；若已有任务在执行，需单独取消
-./bin/xrag source policy --profile team --id handbook \
-  --data '{"every_seconds":0,"watch_seconds":0,"debounce_seconds":10}'
-```
-
-配置保存在数据库，重启后保留。关闭轮询不关闭已经登记的 Hook；需要禁用 Hook 将 `hook_secret_ref` 清空。来源地址/挂载在当前界面中不提供原地编辑，避免旧引用被重新解释。
-
-## 4. 自定义签名 Hook v1
-
-Hook **只通知重新检查来源**，不传资料内容。此协议不是 GitHub/GitLab 原生 Webhook；接原生通知需要额外适配/转发。
-
-在 Server 启动前设置独立秘密值（示例为占位符，至少32字符）：
-
-```bash
-export XRAG_HOOK_SECRET='replace-with-your-own-random-secret-at-least-32-characters'
-bash demo.sh
-```
-
-为来源启用，然后发送：
+入口为 `POST /v1/hooks/{kb}/{source}`。GitHub/GitLab/Gitea 仅对 Git 来源使用，显式设置 provider、精确仓库名、ref 和 Server 可解析的密钥引用：
 
 ```bash
 ./bin/xrag source policy --profile team --id project \
-  --data '{"every_seconds":0,"watch_seconds":0,"debounce_seconds":10,"hook_secret_ref":"env:XRAG_HOOK_SECRET"}'
-
-python3 scripts/send_hook.py \
-  --url http://127.0.0.1:8765/v1/hooks/demo/project \
-  --secret-env XRAG_HOOK_SECRET --event commit-001 --reason 'docs changed'
+  --data @examples/source-policy-github.json
 ```
 
-发送端和 Server 都需要相同的值，`env:` 在各自机器分别解析，不会自动传递。也支持 `file:/absolute/path`，不要将值写入 Git。源策略中保存的是引用，普通 Key 不被透传。
+| provider | 验证方式 |
+|---|---|
+| github | 原始 body HMAC-SHA256；`X-Hub-Signature-256`；delivery ID 去重 |
+| gitlab | `X-Gitlab-Token`；事件类型一致性；Idempotency-Key 或 Webhook UUID 去重 |
+| gitea | 原始 body HMAC-SHA256；无前缀 hex 签名；delivery ID 去重 |
+| custom | XRAG 时间戳、事件 ID、HMAC-SHA256 协议 |
 
-协议：
+通知只安排重新读取已登记来源，消息中的 URL/文件列表不能替换来源配置。相同交付 ID 与相同 body 返回原任务；复用 ID 改内容会冲突。202 表示已接受通知，随后检查任务结果。
 
-```text
-POST /v1/hooks/{kb}/{source}
-Content-Type: application/json
-X-XRAG-Timestamp: Unix秒
-X-XRAG-Event: 1..128字符，无换行
-X-XRAG-Signature: sha256=<HMAC-SHA256十六进制>
+自定义 Hook 以 `timestamp + "\n" + event + "\n" + body` 签名，允许前后 300 秒，body 最大 64 KiB，密钥至少 32 字符。发送示例见 [send_hook.py](../scripts/send_hook.py)，原生通知细节保留在 [Demo.7 历史记录](DEMO7_OPERATIONS.md)。
 
-签名原文 = timestamp + "\n" + event + "\n" + 请求body原始字节
-body = {"reason":"可选说明"}
-```
-
-接受当前时间前后300秒，body最大64KiB。同来源、相同 event 和同 body返回原任务；不同 body重用 event返回409。签名错误返回401。重新发送可以更新时间戳和签名，但 event/body应保持相同。返回202只代表入队，不代表构建完成。关闭 Server 时 Hook 不会替你启动服务。
-
-## 5. 同题比较
-
-界面「检索评测」可以载入内置合成题集，也可以导入自建 JSON。
+## 同题比较与反馈
 
 ```bash
 ./bin/xrag eval import --profile team --data @examples/eval-demo.json
 ./bin/xrag eval list --profile team
-# SET_ID 用导入返回的 id；最多 100 题、5 种策略
 ./bin/xrag eval run SET_ID --profile team --wait --timeout 10m \
   --data '{"strategies":["keyword","ask","ask_graph"],"k":5}'
 ./bin/xrag eval report JOB_ID --profile team
 ```
 
-默认 k=5，可设1～50。策略：keyword、semantic、ask、ask_graph、ask_rerank。graph/rerank/external 不采用现场 auto；external始终关闭，只有选定 graph/rerank策略才启用相应开关。纯语义或重排没有模型时在提交阶段拒绝。
+题集最多 100 题、5 个策略，k 为 1–50，默认 5。支持 keyword、semantic、ask、ask_graph、ask_rerank；模型策略需对应配置。正例有 expected 路径及可选 anchor，负例显式 `expected_empty=true`。运行前检查路径和锚点，失效返回 `EVAL_DATASET_INVALID`。
 
-在 Server 上，`ask` 使用宽松词法召回（OR、BM25），`keyword` 保持严格匹配（AND）和精确计数；不配置模型时，两者的结果也可能明显不同。报告仍记录实际 strategy。题集用于合成语料回归，业务效果需结合真实语料和自建题集评估。
+一次任务使用固定文件版视图，阻止同 KB 构建/知识发布并行。其他库的 FTS 词频和外部模型仍可能变化，精细比较应控制这些变量。Hit@K、Recall@K、MRR 按正例计算，负例单独统计；错误计入分母并使任务 partial。p50/p95 是本次题集耗时。评测模型调用纳入任务预算记录。
 
-每个正例必须有至少一个预期路径及可选 anchor；负例必须显式 `expected_empty=true`。未写 expected 不会自动当负例。重复目标拒绝。题集重新导入生成新 ID/内容修订，不原地修改旧报告所用题集。
-
-运行前检查预期路径/原文锚点存在，失效题使任务报 `EVAL_DATASET_INVALID`，不跳过难题。一个任务中的所有策略使用固定文件版清单，并阻止同KB构建/知识发布并行。其他库对共享FTS全局词频的影响、远端模型变化或后端被外部改动，不能由这个锁冻结。精细排名对照应在停止其他写入的实例中执行。
-
-**指标**：Hit@K、Recall@K、MRR按正例计算；重复文本块不会将同一目标多算。负例单独统计正确率。执行错误计入分母、不当成正确负例；有错误行任务为partial。p50/p95只是这一小题集本次耗时，不是吞吐压测。报告列“仅A命中/仅B命中”、逐题遗漏、实际策略和步骤。
-
-报告保留 items身份与来源、过程摘要，不存完整候选原文。来源发生明确撤回时，旧报告不再返回；普通新版本发布仍可查看历史报告。没有图数据库或模型时不会虚构它们的效果。
-
-当前评测复用固定10分钟任务执行上限，模型型评测真实发起付费调用。评测中的查询尚未接入完整token/金额账务，也未复用构建的每次调用200次限制；100题×5策略是最大动作数量，建议先用5～10题。客户端 `--wait` 超时不取消后台任务，可另查 jobs。
-
-## 6. 实际过程与构建细节
-
-```bash
-./bin/xrag search keyword E203 --profile team --trace
-./bin/xrag trace list --profile team
-./bin/xrag trace show QUERY_ID --profile team
-./bin/xrag jobs details JOB_ID --profile team
+```mermaid
+flowchart LR
+    F["用户反馈"] --> D["维护者整理问题草稿"]
+    D --> A["确认问题与预期结果"]
+    A --> S["发布不可变题集"]
+    S --> E["同题运行多个策略"]
+    E --> R["逐题结果与诊断"]
+    R --> C["修改资料或检索配置"]
 ```
 
-`--dry-run`/explain不执行；trace是实际执行后的信息。查看历史不会再次调用模型。查询历史最多2,000条、7天；过程最多30个步骤、每步200个ID、100个返回条目，不默认复制全文。它不是完整全路径重放，不能从没保存的候选推断“某文档肯定没有召回”。
-
-构建详情提供来源、路径、变更/未变/移除/失败、前后edition、Git提交、触发原因及已有用量记录。接口最多返回1,000项文件详情、100条触发；暂无详情分页，API带上限说明，不把它称完整无限导出。
-
-工作台「知识沉淀」新增编辑已有草稿；未发布修改不会覆盖上一发布正文。Wiki重新生成、来源写回和自动主题发现仍未实现。
+反馈不会自动成为真值。可用 `feedback test-case`、`eval drafts`、`eval approve`、`eval from-drafts`，对应模板见 [examples/](../examples/)。同 family 的 development/holdout 集合检查规范化问题的字面重复；当前没有语义去重或强制盲评。
