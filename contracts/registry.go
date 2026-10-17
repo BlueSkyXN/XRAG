@@ -4,13 +4,13 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/BlueSkyXN/XRAG/core"
 	"math"
 	"strings"
 	"unicode/utf8"
-	"github.com/BlueSkyXN/XRAG/core"
 )
 
-//go:embed registry.json response.schema.json actions/*.json
+//go:embed registry.json response.schema.json image-response.schema.json actions/*.json
 var FS embed.FS
 
 type Action struct {
@@ -50,6 +50,13 @@ func Input(a Action) map[string]any {
 }
 func Output() map[string]any {
 	b, _ := FS.ReadFile("response.schema.json")
+	m := map[string]any{}
+	_ = json.Unmarshal(b, &m)
+	return m
+}
+
+func ImageOutput() map[string]any {
+	b, _ := FS.ReadFile("image-response.schema.json")
 	m := map[string]any{}
 	_ = json.Unmarshal(b, &m)
 	return m

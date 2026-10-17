@@ -5,9 +5,9 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"github.com/BlueSkyXN/XRAG/contracts"
 	"github.com/BlueSkyXN/XRAG/core"
+	"strings"
 )
 
 type Executor func(context.Context, string, []byte) (any, error)
@@ -15,6 +15,7 @@ type Server struct {
 	Execute    Executor
 	AllowWrite bool
 	AllowTasks bool
+	AllowImage bool
 	Semantic   bool
 	Graph      bool
 	Toolsets   string
@@ -44,7 +45,14 @@ func (s Server) Tools() []map[string]any {
 		if (strings.HasPrefix(a.Action, "graph.") || a.Action == "+context") && !s.Graph {
 			continue
 		}
-		ts = append(ts, map[string]any{"name": a.Tool, "description": a.Description, "inputSchema": contracts.Input(a), "outputSchema": contracts.Output(), "annotations": map[string]any{"readOnlyHint": true, "openWorldHint": true}})
+		output := contracts.Output()
+		if a.Action == "image.describe" {
+			if !s.AllowImage {
+				continue
+			}
+			output = contracts.ImageOutput()
+		}
+		ts = append(ts, map[string]any{"name": a.Tool, "description": a.Description, "inputSchema": contracts.Input(a), "outputSchema": output, "annotations": map[string]any{"readOnlyHint": true, "openWorldHint": true}})
 	}
 	if s.AllowWrite && strings.Contains(groups, ",write,") {
 		for _, a := range contracts.WriteActions {

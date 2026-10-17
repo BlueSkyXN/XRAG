@@ -176,6 +176,9 @@ func (a *App) Execute(ctx context.Context, p store.Principal, action string, b [
 	if v, handled, err := a.ExecuteWrite(ctx, p, action, b); handled {
 		return v, err
 	}
+	if action == "image.describe" {
+		return a.executeImageDescribe(ctx, p, b)
+	}
 	ctx = adapters.WithRequestID(ctx, core.ID("query_"))
 	ctx = store.WithActor(ctx, p.ID)
 	spec, ok := contracts.Find(action)

@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -393,6 +392,13 @@ func Main(args []string, out, errout io.Writer) error {
 		if !ok {
 			return nil, core.Err("MODE_UNSUPPORTED", "unknown action", 422)
 		}
+		if a.Action == "image.describe" {
+			payload, e := imagePayload(p, b)
+			if e != nil {
+				return nil, e
+			}
+			return Remote(ctx, p, "POST", a.Path, payload, "")
+		}
 		req, e := contracts.Decode(a, b)
 		if e != nil {
 			return nil, e
@@ -423,7 +429,7 @@ func Main(args []string, out, errout io.Writer) error {
 		if *dry {
 			return print(out, map[string]any{"mode": p.Type, "toolsets": *toolsets})
 		}
-		m := mcp.Server{Assets: true, AllowTasks: p.Type == "server", AllowWrite: p.Type == "server", Execute: execAction, Semantic: p.Embedding != nil, Graph: p.Type == "server" || p.Neo4j != nil, Toolsets: *toolsets}
+		m := mcp.Server{Assets: true, AllowImage: p.Type == "server", AllowTasks: p.Type == "server", AllowWrite: p.Type == "server", Execute: execAction, Semantic: p.Embedding != nil, Graph: p.Type == "server" || p.Neo4j != nil, Toolsets: *toolsets}
 		if p.Type != "server" {
 			engine, e = LocalEngine(p, cacheDir)
 			if e != nil {
@@ -453,6 +459,9 @@ func Main(args []string, out, errout io.Writer) error {
 		if e = json.Unmarshal(b, &opts); e != nil {
 			return e
 		}
+		if opts == nil {
+			return core.Err("INVALID_ARGUMENT", "--data must contain a JSON object", 400)
+		}
 	}
 	visited := map[string]bool{}
 	f.Visit(func(fl *flag.Flag) { visited[fl.Name] = true })
@@ -467,60 +476,18 @@ func Main(args []string, out, errout io.Writer) error {
 			used = 2
 		}
 	}
-		if a, ok := contracts.Find(command); ok {
-			if a.Action == "image.describe" {
-				if p.Type != "server" {
-					return core.Err("MODE_UNSUPPORTED", "image describe requires a Server profile", 422)
+	if a, ok := contracts.Find(command); ok {
+		if a.Action == "image.describe" {
+			if visited["kb"] {
+				delete(opts, "kbs")
+				if len(p.KBs) != 1 {
+					return core.Err("INVALID_ARGUMENT", "image describe requires exactly one --kb", 400)
 				}
-				if *imageFiles == "" {
-					return core.Err("INVALID_ARGUMENT", "--images file1[,file2...] is required for image describe", 400)
-				}
-				images := []map[string]any{}
-				for _, fp := range strings.Split(*imageFiles, ",") {
-					fp = strings.TrimSpace(fp)
-					if fp == "" {
-						continue
-					}
-					b, e := os.ReadFile(fp)
-					if e != nil {
-						return e
-					}
-					if len(b) > 4<<20 {
-						return core.Err("SOURCE_LIMIT", filepath.Base(fp)+" exceeds 4 MiB", 422)
-					}
-					mime := "image/png"
-					switch strings.ToLower(filepath.Ext(fp)) {
-					case ".jpg", ".jpeg":
-						mime = "image/jpeg"
-					case ".webp":
-						mime = "image/webp"
-					case ".gif":
-						mime = "image/gif"
-					}
-					images = append(images, map[string]any{"mime": mime, "data_base64": base64.StdEncoding.EncodeToString(b)})
-				}
-				if len(images) == 0 {
-					return core.Err("INVALID_ARGUMENT", "no readable image files", 400)
-				}
-				opts["images"] = images
-				if len(rest) > used {
-					opts["prompt"] = strings.Join(rest[used:], " ")
-				}
-				if *dry {
-					return print(out, map[string]any{"action": a.Action, "mode": p.Type, "images": len(images), "will_execute": false, "endpoint": p.URL})
-				}
-				var payload map[string]any
-				if b, e := json.Marshal(opts); e == nil {
-					_ = json.Unmarshal(b, &payload)
-				}
-				payload["kb"] = p.KBs[0]
-				v, e := Remote(ctx, p, "POST", a.Path, payload, "")
-				if e != nil {
-					return e
-				}
-				return print(out, v)
+				opts["kb"] = p.KBs[0]
 			}
-			args := rest[used:]
+			return describeImage(ctx, p, opts, *imageFiles, rest[used:], *dry, out)
+		}
+		args := rest[used:]
 		set := func(k string, v any, flag string) {
 			if visited[flag] {
 				opts[k] = v
