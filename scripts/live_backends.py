@@ -8,7 +8,6 @@ External test data is retained for inspection; the report identifies its origin.
 from __future__ import annotations
 import argparse
 import base64
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -22,6 +21,43 @@ import urllib.request
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_collection(config: dict, reference: dict) -> str:
+    """按测试引用的资料域、KB 和模型身份读取 Qdrant descriptor。"""
+    identity = {"origin_id": reference["o"], "kb": reference["k"], "model_identity": reference["g"]}
+    if any(not isinstance(value, str) or not value for value in identity.values()):
+        raise ValueError("Semantic reference is missing its origin, KB or model identity")
+    headers = {"Content-Type": "application/json"}
+    key_ref = config["qdrant"].get("key", "")
+    if key_ref:
+        if key_ref.startswith("env:"):
+            key = os.environ.get(key_ref[4:], "").strip()
+        elif key_ref.startswith("file:"):
+            key = Path(key_ref[5:]).read_text().strip()
+        else:
+            raise ValueError("Qdrant credentials require an env: or file: reference")
+        if not key:
+            raise ValueError("Qdrant credential reference is empty or unavailable")
+        headers["api-key"] = key
+    body = {"filter": {"must": [{"key": key, "match": {"value": value}} for key, value in identity.items()]},
+            "limit": 2, "with_payload": True, "with_vector": False}
+    request = urllib.request.Request(config["qdrant"]["url"].rstrip("/") + "/collections/xrag_demo_meta/points/scroll",
+                                     data=json.dumps(body).encode(), headers=headers)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        result = json.load(response)["result"]
+    points = result.get("points", [])
+    # 本脚本创建随机 KB，当前模型应有且仅有一个 descriptor；不能任取同名模型的集合。
+    if len(points) != 1 or result.get("next_page_offset") is not None:
+        raise ValueError("Expected exactly one Qdrant descriptor for the test origin, KB and model")
+    descriptor = points[0].get("payload", {})
+    expected = {**identity, "model": config["embedding"]["model"], "dimension": config["embedding"]["dimension"]}
+    if any(descriptor.get(key) != value for key, value in expected.items()):
+        raise ValueError("Qdrant descriptor does not match the test reference and embedding configuration")
+    collection = descriptor.get("physical_collection")
+    if not isinstance(collection, str) or not collection.strip():
+        raise ValueError("Qdrant descriptor is missing physical_collection")
+    return collection
 
 
 def run(config_path: Path, report_path: Path, confirmed: bool) -> int:
@@ -110,10 +146,9 @@ def run(config_path: Path, report_path: Path, confirmed: bool) -> int:
                 encoded = raw_ref.split(":", 1)[1]
                 ref = json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
                 origin = ref["o"]
-                # Match Go core.Hash(string): canonical JSON string, UTF-8, then SHA-256.
-                origin_hash = hashlib.sha256(json.dumps(origin, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()[:8]
-                generation = ref["g"]
-                collection = f"xrag_demo_{origin_hash}_{kb}_{generation[:12]}"
+                report["origin"] = origin
+                check("semantic reference belongs to the test KB", ref["k"] == kb)
+                collection = resolve_collection(cfg, ref)
                 report.update({"origin": origin, "physical_collection": collection,
                     "cleanup_note": "Only remove this test collection and graph nodes matching this exact origin after inspection. Never delete the shared xrag_demo_meta collection."})
                 read = api("/v1/files/read", {"kbs": [kb], "ref": raw_ref})
@@ -125,7 +160,7 @@ def run(config_path: Path, report_path: Path, confirmed: bool) -> int:
 
                 p = root / "direct.json"
                 p.write_text(json.dumps({"default_profile": "live", "profiles": {"live": {
-                    "profile_id": "p_live", "type": "direct", "default_kbs": [kb],
+                    "profile_id": "p_live", "type": "direct", "default_kbs": [kb], "origin_id": origin,
                     "physical_collection": collection, **cfg}}}))
                 os.chmod(p, 0o600)
                 proc.terminate(); proc.wait(timeout=20); proc = None

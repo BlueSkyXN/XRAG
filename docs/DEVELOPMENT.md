@@ -30,18 +30,23 @@ Vite 在 5173 提供页面，`/v1` 代理到 8765；需另行运行 Server。只
 
 ## 按改动选择检查
 
+完整检查依赖安装到项目自己的虚拟环境，随后在该环境运行测试：
+
+```bash
+python3 -m venv local/checks-venv
+source local/checks-venv/bin/activate
+python3 -m pip install -r scripts/requirements-checks.txt
+python3 -m playwright install chromium
+```
+
+Linux 浏览器缺少系统库时使用 `python3 -m playwright install --with-deps chromium`。CI 显式选用该 Playwright 版本安装的 Chromium；本机可用 `XRAG_CHROMIUM` 指定浏览器。
+
 ```bash
 make test
 make race
 make vet
 python3 scripts/check_management.py
 python3 -m unittest discover -s scripts -p 'test_*.py'
-```
-
-需要 CommonMark 测试时先安装对应依赖：
-
-```bash
-python3 -m pip install -r plugins/commonmark/requirements.txt
 ```
 
 前端/部署或打包改动再做：
@@ -54,6 +59,8 @@ bash scripts/static-check.sh
 ```
 
 浏览器验收入口为 `scripts/smoke_demo9.py --browser` 和 `scripts/smoke_workbench.py --browser`。更早批次脚本的非浏览器检查仍用于回归，Demo.8 及以前的 `--browser` 面向已移除的经典界面。脚本编号表示加入批次，运行的程序和数据是当前版本与新临时库。
+
+`tests/testdata/retrieval-boundaries.json` 提供合成词法边界题集，Go 测试在 Server/local 上检查单字词、精确编号、未知词、字段过滤和固定引用阅读；direct 的单字查询词另有稀疏向量回归。这些检查不调用商业模型。`scripts/test_live_backends.py` 用本机受控 HTTP 端点检查 descriptor 选择与身份，不写真实 Qdrant。
 
 文档改动重点核对路径/链接、命令参数、JSON 和 Mermaid，运行涉及的无外部副作用示例即可。模型、发布、部署、删除与外部写入示例需在明确选定的测试目标上执行。
 
@@ -109,7 +116,7 @@ flowchart LR
     Pin --> Verify["等待重建并核对 healthz commit"]
 ```
 
-- [ci.yml](../.github/workflows/ci.yml)：Go/Python、前端、工作台 HTTP 契约、静态检查、包解压运行。
+- [ci.yml](../.github/workflows/ci.yml)：Go race/vet、Python、前端、工作台 HTTP/Chromium、Schema 示例、静态检查与包解压运行；工作台日志和截图上传为 `workbench-checks` artifact。
 - [image.yml](../.github/workflows/image.yml)：镜像构建、容器登录/检索/Git、HF 包装层、digest 提交检查；PR 不推镜像。
 - [release.yml](../.github/workflows/release.yml)：检查 tag 与版本一致、提交属于 main、Release 不存在；构建并上传 7 附件后发布。
 - [publish-space.yml](../.github/workflows/publish-space.yml)：从 main 手动执行，指定目标 Space/digest，等待并核对线上 commit。

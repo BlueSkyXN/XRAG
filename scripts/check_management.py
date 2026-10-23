@@ -20,4 +20,5 @@ for ex,schema in action_pairs:
  d=json.loads((r/'contracts/actions'/schema).read_text());Draft202012Validator(d).validate(json.loads((r/ex).read_text()))
 pairs += action_pairs
 a={'schemas':len(results),'example_requests':len(pairs),'scope':'JSON Schema documents and request examples; runtime behavior separately tested in Go','files':results}
+(r/'checks').mkdir(parents=True,exist_ok=True)
 (r/'checks/management-contracts.json').write_text(json.dumps(a,ensure_ascii=False,indent=2));print(json.dumps(a,ensure_ascii=False))

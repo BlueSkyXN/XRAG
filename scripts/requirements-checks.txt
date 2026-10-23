@@ -1,0 +1,4 @@
+# 自动化检查依赖；Server/Client 运行不需要这些包。
+-r ../plugins/commonmark/requirements.txt
+jsonschema==4.26.0
+playwright==1.58.0

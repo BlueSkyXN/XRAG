@@ -11,4 +11,4 @@
 | M5 知识与生命周期 | 草稿/Wiki/写回、在线版本清理、离线集合回收、已存投影恢复 | 真实模型/S3/后端恢复、孤儿发现、供应商联合备份 | [知识生命周期](LIFECYCLE_AND_SOURCES.md) |
 | M6 Research/Recipe | 有界任务、固定依据、预算、检查点、明确续跑与状态 SSE | 真实调查质量、未知收费调用处理边界 | [调查与配方](RESEARCH.md) |
 
-主线额外加入图片描述，提供 HTTP、CLI、MCP 入口与预算控制，见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md)。功能实现、自动化检查和实际环境验收分别记录，不给出整体完成百分比。
+`0.10.4` 加入图片描述，提供 HTTP、CLI、MCP 入口与预算控制，见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md)。功能实现、自动化检查和实际环境验收分别记录，不给出整体完成百分比。

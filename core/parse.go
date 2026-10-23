@@ -357,25 +357,8 @@ func RelaxedDictionaryQuery(q string, words []string) (string, error) {
 	if len(terms) == 0 {
 		return "", Err("INVALID_ARGUMENT", "query needs 1..48 terms", 400)
 	}
-	hasMultiRune := false
-	for _, term := range terms {
-		if utf8.RuneCountInString(term) > 1 {
-			hasMultiRune = true
-			break
-		}
-	}
-	if hasMultiRune {
-		// 多字词元已能限定内容时，移除容易扩大 OR 召回的单个汉字。
-		filtered := terms[:0]
-		for _, term := range terms {
-			r, size := utf8.DecodeRuneInString(term)
-			if size == len(term) && unicode.Is(unicode.Han, r) {
-				continue
-			}
-			filtered = append(filtered, term)
-		}
-		terms = filtered
-	}
+	// Terms 已将连续中文转成双字词元；孤立的“泵、阀、锁”仍是有效查询词。
+	// 保留它们，与 local/direct 的问句召回一致。
 	if len(terms) > 48 {
 		terms = terms[:48]
 	}

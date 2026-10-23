@@ -1,0 +1,34 @@
+{
+  "description": "完全合成的词法检索边界语料；不包含业务数据，不评价模型语义效果。",
+  "documents": [
+    {"path": "lock.md", "body": "# 机械件甲\n锁用于固定柜门。\n"},
+    {"path": "pump.md", "body": "# 机械件乙\n泵用于输送液体。\n"},
+    {"path": "valve.md", "body": "# 机械件丙\n阀用于调节流量。\n"},
+    {"path": "e203.md", "body": "# 编号甲\nE203 表示队列已满。\n"},
+    {"path": "e2030.md", "body": "# 编号乙\nE2030 表示连接中断。\n"},
+    {"path": "r1.md", "body": "---\nrelease: R1\n---\n# 版本甲\n恢复操作仅适用于 R1，禁止用于 R2。\n"},
+    {"path": "r2.md", "body": "---\nrelease: R2\n---\n# 版本乙\n恢复操作仅适用于 R2，禁止用于 R1。\n"}
+  ],
+  "cases": [
+    {"id": "lock-with-question", "q": "锁的异常怎么排查", "action": "+ask", "expected": "lock.md"},
+    {"id": "pump-with-question", "q": "泵的噪声如何排查", "action": "+ask", "expected": "pump.md"},
+    {"id": "valve-with-question", "q": "阀的卡滞怎么处理", "action": "+ask", "expected": "valve.md"},
+    {"id": "single-han-with-latin", "q": "锁 unknownword", "action": "+ask", "expected": "lock.md"},
+    {"id": "single-han-with-number", "q": "泵 99887766", "action": "+ask", "expected": "pump.md"},
+    {"id": "single-han-with-identifier", "q": "阀 ZXQ884422VOID", "action": "+ask", "expected": "valve.md"},
+    {"id": "lock-alone", "q": "锁", "action": "+ask", "expected": "lock.md"},
+    {"id": "pump-alone", "q": "泵", "action": "+ask", "expected": "pump.md"},
+    {"id": "valve-alone", "q": "阀", "action": "+ask", "expected": "valve.md"},
+    {"id": "identifier-question", "q": "E203 是什么", "action": "+ask", "expected": "e203.md", "excluded": "e2030.md"},
+    {"id": "identifier-longer", "q": "E2030 是什么", "action": "+ask", "expected": "e2030.md", "excluded": "e203.md"},
+    {"id": "identifier-case", "q": "What is e203", "action": "+ask", "expected": "e203.md", "excluded": "e2030.md"},
+    {"id": "unknown-identifier", "q": "ZXQ884422VOID 是什么", "action": "+ask", "empty": true},
+    {"id": "unknown-word", "q": "unseenwordxyz", "action": "+ask", "empty": true},
+    {"id": "strict-identifier", "q": "E203", "action": "search.keyword", "expected": "e203.md", "excluded": "e2030.md"},
+    {"id": "strict-longer-identifier", "q": "E2030", "action": "search.keyword", "expected": "e2030.md", "excluded": "e203.md"},
+    {"id": "strict-keeps-and", "q": "锁 异常", "action": "search.keyword", "empty": true},
+    {"id": "strict-unknown", "q": "ZXQ884422VOID", "action": "search.keyword", "empty": true},
+    {"id": "filtered-r1", "q": "恢复操作", "action": "+ask", "expected": "r1.md", "excluded": "r2.md", "release": "R1", "read_contains": "禁止用于 R2"},
+    {"id": "filtered-r2", "q": "恢复操作", "action": "+ask", "expected": "r2.md", "excluded": "r1.md", "release": "R2", "read_contains": "禁止用于 R1"}
+  ]
+}

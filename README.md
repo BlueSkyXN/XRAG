@@ -2,7 +2,7 @@
 
 XRAG 把 Markdown/TXT 资料组织成可持续更新的知识库，提供关键词、语义和关系检索，保留可回读的文件版本，并支持知识草稿、Wiki、反馈评测与有界调查。工作台、CLI、HTTP 和 MCP 共用检索与任务能力；不配模型也能从文本检索开始使用。
 
-当前发布版为 [0.10.3](https://github.com/BlueSkyXN/XRAG/releases/tag/v0.10.3)。`main` 另含尚未发版的图片描述功能。项目处于实验阶段，功能与验证边界统一见 [当前状态](docs/STATUS.md)。
+当前版本为 [0.10.4](https://github.com/BlueSkyXN/XRAG/releases/tag/v0.10.4)，包含图片描述、单字关键词召回和 Qdrant 升级兼容修复。项目处于实验阶段，功能与验证边界统一见 [当前状态](docs/STATUS.md)。
 
 ```mermaid
 flowchart LR
@@ -43,7 +43,7 @@ bash demo.sh
 
 ```bash
 docker run -d --name xrag -p 8765:8765 \
-  -v xrag-data:/data ghcr.io/blueskyxn/xrag:0.10.3
+  -v xrag-data:/data ghcr.io/blueskyxn/xrag:0.10.4
 docker exec xrag cat /data/xrag/admin.key
 ```
 
