@@ -55,3 +55,20 @@ func TestLexicalSparseQueryTerms(t *testing.T) {
 		}
 	}
 }
+
+func TestLexicalSparseStandaloneHan(t *testing.T) {
+	for _, query := range []struct{ word, text string }{
+		{"锁", "锁的异常怎么排查"},
+		{"泵", "泵的噪声如何排查"},
+		{"阀", "阀 ZXQ884422VOID"},
+	} {
+		want := LexicalSparse(query.word, true).Indices[0]
+		found := false
+		for _, id := range LexicalSparse(query.text, true).Indices {
+			found = found || id == want
+		}
+		if !found {
+			t.Fatalf("direct lexical query dropped %q in %q", query.word, query.text)
+		}
+	}
+}

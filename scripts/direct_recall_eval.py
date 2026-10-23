@@ -17,6 +17,8 @@ import time
 import urllib.error
 import urllib.request
 
+from live_backends import resolve_collection
+
 ROOT = Path(__file__).resolve().parents[1]
 DIMENSION = 32
 
@@ -139,12 +141,7 @@ def evaluate(qdrant, report_path, baseline_server=None, baseline_client=None, ve
             origin = ref['o']
             origin_hash = hashlib.sha256(json.dumps(origin, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()[:8]
             legacy_collection = f'xrag_demo_{origin_hash}_demo_{ref["g"][:12]}'
-            collections = http_json(qdrant + '/collections')['result']['collections']
-            candidates = [c['name'] for c in collections if c['name'] == legacy_collection
-                          or c['name'].startswith(legacy_collection + '_')]
-            if len(candidates) != 1:
-                raise RuntimeError('expected one physical collection for the fixture generation')
-            collection = candidates[0]
+            collection = resolve_collection(cfg, ref)
             info = http_json(qdrant + '/collections/' + collection)
             report['collection'] = collection
             report['payload_schema'] = info['result']['payload_schema']

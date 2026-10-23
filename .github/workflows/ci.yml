@@ -15,6 +15,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -26,6 +27,14 @@ jobs:
           node-version: "22.x"
           cache: npm
           cache-dependency-path: webapp/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            scripts/requirements-checks.txt
+            plugins/commonmark/requirements.txt
+      - run: python3 -m pip install -r scripts/requirements-checks.txt
       - run: npm ci
         working-directory: webapp
       - run: npm run build
@@ -33,9 +42,24 @@ jobs:
       - run: npm audit --omit=dev
         working-directory: webapp
       - run: sudo apt-get update && sudo apt-get install -y gcc libsqlite3-dev
-      - run: CGO_ENABLED=1 go test ./...
+      - run: CGO_ENABLED=1 go test -race -count=1 ./...
+      - run: go vet ./...
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
-      - run: make build && python3 scripts/smoke_workbench.py
+      - run: python3 -m playwright install --with-deps chromium
+      - name: Build and check the workbench in Chromium
+        run: |
+          make build
+          XRAG_CHROMIUM="$(python3 -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
+          export XRAG_CHROMIUM
+          python3 scripts/smoke_workbench.py --browser
+      - name: Retain workbench results and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-checks
+          path: checks/workbench/
+          if-no-files-found: ignore
+      - run: python3 scripts/check_management.py
       - run: bash scripts/static-check.sh
       - name: Check Linux GLIBC requirement before release
         run: |

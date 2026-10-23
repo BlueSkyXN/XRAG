@@ -43,6 +43,8 @@ flowchart LR
 
 该脚本覆盖连接、身份、发布与直连流程。业务效果还需自建题集、代表性语料、相关性标注和成本测量；两份合成资料不足以估算业务质量。
 
+direct 使用的物理集合从 Qdrant `xrag_demo_meta` descriptor 读取，并核对本次 origin、KB、模型身份、名称和维度。脚本使用随机 KB；若匹配到零个或多个 descriptor，会停止验证并保留报告，不根据集合名称猜测绑定。读取 descriptor 沿用配置中的 Qdrant `env:` / `file:` 凭据引用。
+
 ## 记录与清理
 
 报告应保留：程序 commit、后端版本、模型标识/修订、步骤结果、origin、KB、physical_collection、请求错误和实际费用。共享报告前检查凭据与业务正文是否需要脱敏。

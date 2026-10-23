@@ -12,6 +12,8 @@ on:
       - 'examples/eval-questions.json'
       - '.github/workflows/direct-recall.yml'
       - 'scripts/direct_recall_eval.py'
+      - 'scripts/live_backends.py'
+      - 'scripts/test_live_backends.py'
 
 permissions:
   contents: read

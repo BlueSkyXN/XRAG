@@ -23,11 +23,11 @@ func TestRelaxedDictionaryQuery(t *testing.T) {
 		{"unknown identifier question", "ZXQ884422VOID 是什么", `"zxq884422void"`, nil},
 		{"single Han question", "锁是什么", `"锁"`, nil},
 		{"only single Han terms", "锁 门是什么", `"锁" OR "门"`, nil},
-		{"Han bigram removes single Han", "锁 日志", `"日志"`, nil},
-		{"identifier removes single Han", "锁 E203", `"e203"`, nil},
-		{"number removes single Han", "锁 203", `"203"`, nil},
-		{"keep single Latin and digit", "锁 X 7 日志", `"x" OR "7" OR "日志"`, nil},
-		{"dictionary removes single Han", "锁 泵", `"domain` + Hash("锁")[:24] + `"`, []string{"锁"}},
+		{"Han bigram preserves single Han", "锁 日志", `"锁" OR "日志"`, nil},
+		{"identifier preserves single Han", "锁 E203", `"锁" OR "e203"`, nil},
+		{"number preserves single Han", "锁 203", `"锁" OR "203"`, nil},
+		{"keep single Han Latin and digit", "锁 X 7 日志", `"锁" OR "x" OR "7" OR "日志"`, nil},
+		{"dictionary preserves single Han", "锁 泵", `"domain` + Hash("锁")[:24] + `" OR "泵"`, []string{"锁"}},
 		{"copula fallback", "是", `"是"`, nil},
 	}
 	for _, tc := range cases {
