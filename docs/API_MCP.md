@@ -1,6 +1,6 @@
 # HTTP、CLI 与 MCP 接入
 
-多数读取动作共享 [contracts/registry.json](../contracts/registry.json) 的名称、路径和输入 Schema。管理、草稿与持久任务有独立处理器。图片描述提供专用 HTTP、CLI 与 MCP 入口，尚未发版，使用方式见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md)。
+多数读取动作共享 [contracts/registry.json](../contracts/registry.json) 的名称、路径和输入 Schema。管理、草稿与持久任务有独立处理器。图片描述从 `0.10.4` 起提供专用 HTTP、CLI 与 MCP 入口，使用方式见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md)。
 
 ## 身份与请求
 

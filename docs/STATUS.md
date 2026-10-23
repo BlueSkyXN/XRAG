@@ -1,14 +1,14 @@
 # 当前版本、验证范围与已知问题
 
-文档核对日期：2026-10-18。本轮从 `79e74c2` 核对近期改动，补齐图片描述的 CLI、MCP 与预算接入，并修复 Server 读取旧 Qdrant 集合的兼容问题。发行版本、存储格式和主线未发布内容分别列出，供升级和接入时判断。
+文档核对日期：2026-10-24。`0.10.4` 纳入图片描述 HTTP/CLI/MCP 与预算接入、旧 Qdrant 集合兼容修复、单字词召回修复和工程检查改进。发行产物见对应 Release，自动化结果按具体提交和运行记录核对。
 
 ## 版本与兼容范围
 
 | 项目 | 当前值 / 含义 |
 |---|---|
-| 已发布版本 | [v0.10.3](https://github.com/BlueSkyXN/XRAG/releases/tag/v0.10.3)，2026-10-16 发布，7 个附件 |
-| 源码版本常量 | `core.Version=0.10.3`；主线可含版本常量尚未增加的变更 |
-| 主线未发布功能 | 图片描述 HTTP/CLI/MCP 路径与预算用量，见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md) |
+| 发行版本 | [v0.10.4](https://github.com/BlueSkyXN/XRAG/releases/tag/v0.10.4)，发布日期与 7 个附件以 Release 为准 |
+| 源码版本常量 | `core.Version=0.10.4`；构建提交另由 `core.Commit` 标识 |
+| 本版图片功能 | HTTP/CLI/MCP 路径与预算用量，见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md) |
 | SQLite 存储标记 | `store_schema=demo9`；更早 Demo 存储无自动迁移 |
 | 常规检索响应 | `schema_version=0.7-demo`；不是发行号 |
 | MCP 协议 | 2025-11-25 / 2025-06-18 / 2025-03-26 的已实现能力 |
@@ -31,12 +31,16 @@
 
 | 对象 | 可核验依据 | 覆盖边界 |
 |---|---|---|
+| 工程改进本地基线（2026-10-24） | `17e1530` 的 Go race/vet、20 项 Python、55 项工作台 HTTP/Chromium、48 份 Schema/39 份示例检查通过；可重跑入口见 [开发指南](DEVELOPMENT.md) | macOS arm64，Go 1.27.2；404 个顶层 Go 测试通过，Linux 原生监听和两个 opt-in 资源实验跳过；使用合成语料和受控端点 |
+| 自动化发布检查 | [ci](https://github.com/BlueSkyXN/XRAG/actions/workflows/ci.yml)、[image](https://github.com/BlueSkyXN/XRAG/actions/workflows/image.yml)、[release](https://github.com/BlueSkyXN/XRAG/actions/workflows/release.yml) | 以所选提交/tag 的最终运行结果为准；分别覆盖 Linux 测试与打包、镜像、7 个发行附件 |
+| Qdrant 专项基线 | [direct-recall，3bb4b4c](https://github.com/BlueSkyXN/XRAG/actions/runs/39051075098)，核查为成功 | Qdrant 1.13.6 与固定 hash 向量的 Server/direct 流程；商业模型语义质量未测 |
 | 图片功能首次合入的 CI 基线 | [ci，79e74c2](https://github.com/BlueSkyXN/XRAG/actions/runs/38907271155)，2026-10-18 核查为成功 | Go 测试、前端构建、Python 检查、工作台 HTTP 契约、打包/解包等 workflow 内检查 |
 | 图片功能首次合入的容器基线 | [image，79e74c2](https://github.com/BlueSkyXN/XRAG/actions/runs/38907270878)，核查为成功 | 容器启动、登录模式、示例/Git 检索、HF 包装入口与镜像提交检查 |
-| 发布附件 | v0.10.3 的源码、Linux amd64、4 个 Client 包、SHA256SUMS | Client 交叉构建与附件存在；其他平台实机仍需分别验收 |
+| 发行附件结构 | 源码、Linux amd64 完整包、4 个 Client 包、SHA256SUMS | 下载对应版本后校验 SHA256SUMS；Client 交叉构建与各平台实机验收分别记录 |
 | 最近可见 HF 部署记录 | [publish-space，b42e6f3](https://github.com/BlueSkyXN/XRAG/actions/runs/38881263085)，核查为成功 | 该次部署的镜像提交核对；新主线图片功能未由这条记录覆盖 |
 | 文档示例（2026-10-17） | 临时本机实例记录覆盖关键词、ask、文件树、原文、Recipe、local 与图片专用 HTTP/CLI | 合成语料；图片模型为受控端点，真实模型效果未测 |
 | 大语料流程 | [corpus-eval，b42e6f3](https://github.com/BlueSkyXN/XRAG/actions/runs/38880277810)，核查为成功 | 可复现合成语料基线；不能推算业务召回率或容量 SLA |
+| 单字词修复后的合成回归（2026-10-24） | 新增 20 个边界问题在 Server/local 上均通过；1,000/10,000 篇干扰资料下，原有 20 题各模式均保持 20/20 | 检查单字词、编号、空结果、字段过滤与引用；无商业模型调用 |
 | 专业后端/商业模型 | 适配代码、协议测试、[联调脚本](LIVE_INTEGRATION.md) | 仍需记录目标版本、真实数据、凭据环境和联合运行结果 |
 
 本机原始检查记录保存在忽略的 `local/`；公开源码附带可重跑脚本，历史 `checks/REPORT.md` 等路径不作为当前交付必需文件。
@@ -58,7 +62,7 @@
 | 生命周期 | 本机锁/租约；无多机 direct 读租约、孤儿集合自动发现或跨后端原子快照 |
 | 调查 | 单 KB、固定范围/预算/期限；未知收费调用拒绝重放；无通用 DAG/业务写工具 |
 | MCP / OAuth | 无 sampling/Tasks/subscriptions/完整会话重放；OAuth 只验证外部 token，第三方 Agent/IdP 需实际联调 |
-| 部署 | Linux 完整包与容器有 CI 路线；macOS/Windows Server、其他架构和生产并发需各自验证 |
+| 部署 | Linux 完整包与容器有 CI 路线；macOS arm64 有本地编译和受测流程记录；Windows Server、其他架构和生产并发需专门验收 |
 
 ## 后续验证入口
 

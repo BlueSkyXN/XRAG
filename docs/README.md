@@ -1,6 +1,6 @@
 # XRAG 文档总览
 
-本目录面向当前主线：发布版 `0.10.3`，以及 `main` 中标注为未发布的功能。版本、存储标记、现场验证和已知问题集中在 [STATUS.md](STATUS.md)。首次运行从 [项目 README](../README.md) 开始。
+本目录面向 `0.10.4`。版本、存储标记、现场验证和已知问题集中在 [STATUS.md](STATUS.md)。首次运行从 [项目 README](../README.md) 开始。
 
 ## 按任务找文档
 
@@ -12,7 +12,7 @@
 | 连接模型或数据库 | [连接与配置](CONNECTIONS.md) | 配置优先级、Embedding/Chat/Rerank、direct |
 | 给脚本或 Agent 接入 | [API 与 MCP](API_MCP.md) | 动作映射、身份、工具组、OAuth、协议边界 |
 | 执行多步调查 | [Research 与 Recipe](RESEARCH.md) | 任务、预算、固定范围、检查点与续跑 |
-| 描述图片内容 | [图片描述](IMAGE_DESCRIBE.md) | 未发布 HTTP/CLI/MCP 功能、大小限制与用量 |
+| 描述图片内容 | [图片描述](IMAGE_DESCRIBE.md) | HTTP/CLI/MCP 功能、大小限制与用量 |
 | 整理与发布知识 | [知识生命周期与外部来源](LIFECYCLE_AND_SOURCES.md) | 草稿、Wiki、依据、写回、S3/WeKnora |
 | 管理服务 | [日常管理](PRODUCT_OPERATIONS.md) | 工作台、登录、角色、Key、配置、容器 |
 | 备份和恢复 | [数据恢复](DATA_RECOVERY.md) | 导出、SQLite 快照、新目录恢复、外部投影 |

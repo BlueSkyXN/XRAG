@@ -1,6 +1,6 @@
 # 当前功能索引
 
-保留原 F01–F66 编号，补充主线未发布的 F67。表格描述当前实现和操作边界；版本、测试环境与已知问题统一见 [STATUS.md](STATUS.md)。
+保留原 F01–F66 编号，F67 为 `0.10.4` 新增的图片描述。表格描述当前实现和操作边界；版本、测试环境与已知问题统一见 [STATUS.md](STATUS.md)。
 
 ## 资料与构建
 
@@ -86,6 +86,6 @@
 | F64 | 维护 | 备份计划、记录轮转、在线内容批次、离线 prune/集合 GC |
 | F65 | 构建交付 | Linux amd64 完整包、4 个纯 Client 包、源码、校验和、GHCR/HF workflow |
 | F66 | Research/Recipe | 单 KB 有界任务、依据/数字绑定、检查点、明确续跑与任务 SSE |
-| F67 | 图片描述（未发布） | 专用 HTTP、CLI 与 MCP；单 KB 权限、大小校验与预算用量见图片指南 |
+| F67 | 图片描述 | 专用 HTTP、CLI 与 MCP；单 KB 权限、大小校验与预算用量见图片指南 |
 
 操作见 [知识生命周期](LIFECYCLE_AND_SOURCES.md)、[日常管理](PRODUCT_OPERATIONS.md)、[数据恢复](DATA_RECOVERY.md)、[历史维护](HISTORY_MAINTENANCE.md)、[调查](RESEARCH.md) 和 [图片描述](IMAGE_DESCRIBE.md)。

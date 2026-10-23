@@ -34,7 +34,7 @@ flowchart TD
 | 配置 | 接口 | 用途 |
 |---|---|---|
 | `embedding` | API 根追加 `/embeddings` | 构建文档向量与语义查询；需 model、dimension、模型修订声明 |
-| `chat` | API 根追加 `/chat/completions` | Wiki、Research、可选图抽取；未发布图片描述另需模型支持视觉 |
+| `chat` | API 根追加 `/chat/completions` | Wiki、Research、可选图抽取；图片描述另需模型支持视觉 |
 | `rerank` | API 根追加 `/rerank` | 请求 `{model,query,documents,top_n}`，结果含 index 与 relevance_score |
 
 Embedding 最小示例：
