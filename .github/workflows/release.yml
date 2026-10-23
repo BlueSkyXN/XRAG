@@ -59,9 +59,11 @@ jobs:
       - name: Build and verify source, Linux, and Client packages
         run: |
           set -euo pipefail
-          python3 scripts/package.py --out dist
-          python3 scripts/check_release.py --source dist/*-source.zip --linux dist/*-linux-amd64.tar.gz
-          python3 scripts/package_clients.py --out dist
+          python3 scripts/package.py --out "$RUNNER_TEMP/xrag-release"
+          python3 scripts/check_release.py --source "$RUNNER_TEMP/xrag-release/"*-source.zip --linux "$RUNNER_TEMP/xrag-release/"*-linux-amd64.tar.gz
+          test -z "$(git status --porcelain=v1)"
+          python3 scripts/package_clients.py --out "$RUNNER_TEMP/xrag-release"
+          test -z "$(git status --porcelain=v1)"
       - name: Check required GLIBC version
         run: |
           set -euo pipefail
@@ -70,7 +72,7 @@ jobs:
           echo "Linux amd64 requires GLIBC >= ${required}" >> "$GITHUB_STEP_SUMMARY"
           test "$(printf '%s\n' "$required" 2.35 | sort -V | tail -1)" = 2.35
       - name: Generate and verify checksums
-        working-directory: dist
+        working-directory: ${{ runner.temp }}/xrag-release
         run: |
           set -euo pipefail
           test "$(find . -maxdepth 1 -type f | wc -l)" -eq 6
@@ -108,7 +110,7 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "$TAG" --draft --verify-tag --title "XRAG ${TAG#v}" --notes-file "$RUNNER_TEMP/release-notes.md"
-          gh release upload "$TAG" dist/*.zip dist/*.tar.gz dist/SHA256SUMS
+          gh release upload "$TAG" "$RUNNER_TEMP/xrag-release/"*.zip "$RUNNER_TEMP/xrag-release/"*.tar.gz "$RUNNER_TEMP/xrag-release/SHA256SUMS"
           count="$(gh release view "$TAG" --json assets --jq '.assets | length')"
           test "$count" -eq 7
           gh release edit "$TAG" --draft=false --latest
