@@ -212,7 +212,8 @@ export default function SearchPage() {
   useEffect(() => {
     function onKey(event: globalThis.KeyboardEvent) {
       const target = event.target as HTMLElement | null
-      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return
+      // 输入法组词时的 '/' 是待上屏内容，不能抢走
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return
       if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return
       event.preventDefault()
       inputRef.current?.focus()

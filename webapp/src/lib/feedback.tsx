@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import { ApiError } from './api'
 import { cn } from './utils'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogTitle } from '../components/dialog'
@@ -16,17 +17,107 @@ type FeedbackValue = {
 const FeedbackContext = createContext<FeedbackValue | null>(null)
 const ExpireContext = createContext<() => void>(() => undefined)
 
+const toastLife = (tone: Tone) => (tone === 'err' ? 7000 : 4000)
+
+/** 每条 toast 的自动消失计时；remaining 在悬停/聚焦暂停后保存剩余毫秒。 */
+type ToastTimer = { timer?: ReturnType<typeof setTimeout>; expiresAt: number; remaining?: number }
+
+function ToastItem({
+  toast: t,
+  onDismiss,
+  onPause,
+  onResume
+}: {
+  toast: Toast
+  onDismiss: (id: number) => void
+  onPause: (id: number) => void
+  onResume: (id: number) => void
+}) {
+  return (
+    <div
+      data-toast-id={t.id}
+      onMouseEnter={() => onPause(t.id)}
+      onMouseLeave={() => onResume(t.id)}
+      onFocus={() => onPause(t.id)}
+      onBlur={() => onResume(t.id)}
+      className={cn(
+        'pointer-events-auto flex animate-fade-in items-start gap-2.5 rounded-lg border bg-raised px-3.5 py-2.5 text-[13px] text-fg shadow-xl shadow-shadow',
+        t.tone === 'err' ? 'border-err/50' : t.tone === 'ok' ? 'border-ok/40' : 'border-line-strong'
+      )}
+    >
+      <span className={cn('mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full', t.tone === 'err' ? 'bg-err' : t.tone === 'ok' ? 'bg-ok' : 'bg-dim')} />
+      <span className="min-w-0 flex-1 leading-relaxed">{t.text}</span>
+      <button
+        type="button"
+        data-toast-close
+        aria-label="关闭这条通知"
+        onClick={() => onDismiss(t.id)}
+        className="-mr-1 mt-0.5 shrink-0 rounded p-0.5 text-faint hover:bg-hover hover:text-fg"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
+}
+
 export function FeedbackProvider({ children, onExpire }: { children: ReactNode; onExpire: () => void }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [pending, setPending] = useState<(ConfirmOptions & { resolve: (ok: boolean) => void }) | null>(null)
   const [typed, setTyped] = useState('')
   const seq = useRef(0)
+  const regionRef = useRef<HTMLDivElement>(null)
+  const timers = useRef(new Map<number, ToastTimer>())
 
-  const toast = useCallback((text: string, tone: Tone = 'info') => {
-    const id = ++seq.current
-    setToasts(list => [...list.slice(-3), { id, tone, text }])
-    setTimeout(() => setToasts(list => list.filter(t => t.id !== id)), tone === 'err' ? 7000 : 4000)
+  useEffect(
+    () => () => {
+      for (const entry of timers.current.values()) if (entry.timer) clearTimeout(entry.timer)
+    },
+    []
+  )
+
+  const dismiss = useCallback((id: number) => {
+    const entry = timers.current.get(id)
+    if (entry?.timer) clearTimeout(entry.timer)
+    timers.current.delete(id)
+    // 键盘关掉正聚焦的 toast 时，把焦点交给剩下的第一条，避免焦点掉回页面开头
+    const active = document.activeElement as HTMLElement | null
+    const restoring = Boolean(active?.closest?.(`[data-toast-id="${id}"]`))
+    setToasts(list => list.filter(t => t.id !== id))
+    if (restoring) requestAnimationFrame(() => regionRef.current?.querySelector<HTMLElement>('[data-toast-close]')?.focus())
   }, [])
+
+  const pause = useCallback((id: number) => {
+    const entry = timers.current.get(id)
+    if (!entry?.timer) return
+    clearTimeout(entry.timer)
+    entry.timer = undefined
+    entry.remaining = Math.max(0, entry.expiresAt - Date.now())
+  }, [])
+
+  const resume = useCallback(
+    (id: number) => {
+      const entry = timers.current.get(id)
+      if (!entry || entry.timer !== undefined || entry.remaining === undefined) return
+      if (entry.remaining <= 0) {
+        dismiss(id)
+        return
+      }
+      entry.timer = setTimeout(() => dismiss(id), entry.remaining)
+      entry.expiresAt = Date.now() + entry.remaining
+      entry.remaining = undefined
+    },
+    [dismiss]
+  )
+
+  const toast = useCallback(
+    (text: string, tone: Tone = 'info') => {
+      const id = ++seq.current
+      setToasts(list => [...list.slice(-3), { id, tone, text }])
+      const life = toastLife(tone)
+      timers.current.set(id, { timer: setTimeout(() => dismiss(id), life), expiresAt: Date.now() + life })
+    },
+    [dismiss]
+  )
 
   const confirm = useCallback((options: ConfirmOptions) => {
     setTyped('')
@@ -39,24 +130,30 @@ export function FeedbackProvider({ children, onExpire }: { children: ReactNode; 
   }
 
   const blocked = Boolean(pending?.requireText) && typed !== pending?.requireText
+  // 错误用 assertive 播报、其余用 polite；两个区域常驻 DOM，读屏器才能在内容出现时播报
+  const errs = toasts.filter(t => t.tone === 'err')
+  const others = toasts.filter(t => t.tone !== 'err')
 
   return (
     <FeedbackContext.Provider value={{ toast, confirm }}>
       <ExpireContext.Provider value={onExpire}>
         {children}
-        <div className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(420px,calc(100vw-2rem))] flex-col gap-2" role="status" aria-live="polite">
-          {toasts.map(t => (
-            <div
-              key={t.id}
-              className={cn(
-                'pointer-events-auto animate-fade-in rounded-lg border bg-raised px-3.5 py-2.5 text-[13px] shadow-xl shadow-shadow',
-                t.tone === 'err' ? 'border-err/50 text-fg' : t.tone === 'ok' ? 'border-ok/40 text-fg' : 'border-line-strong text-fg'
-              )}
-            >
-              <span className={cn('mr-2 inline-block h-1.5 w-1.5 rounded-full align-middle', t.tone === 'err' ? 'bg-err' : t.tone === 'ok' ? 'bg-ok' : 'bg-dim')} />
-              {t.text}
-            </div>
-          ))}
+        <div
+          ref={regionRef}
+          role="region"
+          aria-label="通知"
+          className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
+        >
+          <div className="flex flex-col gap-2" aria-live="assertive">
+            {errs.map(t => (
+              <ToastItem key={t.id} toast={t} onDismiss={dismiss} onPause={pause} onResume={resume} />
+            ))}
+          </div>
+          <div className="flex flex-col gap-2" role="status" aria-live="polite">
+            {others.map(t => (
+              <ToastItem key={t.id} toast={t} onDismiss={dismiss} onPause={pause} onResume={resume} />
+            ))}
+          </div>
         </div>
         <Dialog open={Boolean(pending)} onOpenChange={open => !open && close(false)}>
           <DialogContent className="max-w-md">
