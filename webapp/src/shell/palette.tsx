@@ -139,6 +139,8 @@ export function Palette({
   }
 
   function onKeyDown(event: KeyboardEvent) {
+    // 输入法组词时的按键属于候选词操作，不当成面板快捷键
+    if (event.nativeEvent.isComposing) return
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
       const step = event.key === 'ArrowDown' ? 1 : -1
