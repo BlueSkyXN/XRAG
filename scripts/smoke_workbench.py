@@ -119,7 +119,8 @@ def browser_checks(base, key, op):
         p.get_by_role('menuitem', name='停用', exact=True).click()
         with p.expect_response(lambda r: '/v1/keys/' in r.url and r.request.method == 'DELETE') as disabled:
             p.get_by_role('dialog').get_by_role('button', name='停用', exact=True).click()
-        toast = p.get_by_role('status').filter(has_text='LAST_ADMIN')
+        # 错误通知在 assertive live region 里，普通通知在 polite 区；两处都可能承载 toast 文本
+        toast = p.get_by_role('region', name='通知').get_by_text('LAST_ADMIN')
         toast.wait_for(timeout=10000)
         ck('last permanent admin stays active with a Chinese error toast', disabled.value.status == 409 and any('\u4e00' <= c <= '\u9fff' for c in toast.inner_text()) and not op('/v1/keys')['items'][0]['disabled'], None, 'browser')
         p.screenshot(path=str(CHECKS / 'last-admin.png'))
