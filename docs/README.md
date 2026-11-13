@@ -1,6 +1,6 @@
 # XRAG 文档总览
 
-本目录面向 `0.10.4`。版本、存储标记、现场验证和已知问题集中在 [STATUS.md](STATUS.md)。首次运行从 [项目 README](../README.md) 开始。
+本目录面向 `0.10.5`。版本、存储标记、现场验证和已知问题集中在 [STATUS.md](STATUS.md)。首次运行从 [项目 README](../README.md) 开始。
 
 ## 按任务找文档
 

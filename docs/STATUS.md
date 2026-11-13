@@ -1,13 +1,13 @@
 # 当前版本、验证范围与已知问题
 
-文档核对日期：2026-10-24。`0.10.4` 纳入图片描述 HTTP/CLI/MCP 与预算接入、旧 Qdrant 集合兼容修复、单字词召回修复和工程检查改进。发行产物见对应 Release，自动化结果按具体提交和运行记录核对。
+文档核对日期：2026-11-13。`0.10.5` 纳入工作台修复：命令面板与 `/` 快捷键兼容输入法组词（`isComposing`），通知可手动关闭并按错误/普通分档播报。发行产物见对应 Release，自动化结果按具体提交和运行记录核对。
 
 ## 版本与兼容范围
 
 | 项目 | 当前值 / 含义 |
 |---|---|
-| 发行版本 | [v0.10.4](https://github.com/BlueSkyXN/XRAG/releases/tag/v0.10.4)，发布日期与 7 个附件以 Release 为准 |
-| 源码版本常量 | `core.Version=0.10.4`；构建提交另由 `core.Commit` 标识 |
+| 发行版本 | [v0.10.5](https://github.com/BlueSkyXN/XRAG/releases/tag/v0.10.5)，发布日期与 7 个附件以 Release 为准 |
+| 源码版本常量 | `core.Version=0.10.5`；构建提交另由 `core.Commit` 标识 |
 | 本版图片功能 | HTTP/CLI/MCP 路径与预算用量，见 [IMAGE_DESCRIBE.md](IMAGE_DESCRIBE.md) |
 | SQLite 存储标记 | `store_schema=demo9`；更早 Demo 存储无自动迁移 |
 | 常规检索响应 | `schema_version=0.7-demo`；不是发行号 |
@@ -31,6 +31,7 @@
 
 | 对象 | 可核验依据 | 覆盖边界 |
 |---|---|---|
+| 工作台可用性修复基线（2026-11-13） | [ci，557bf3f](https://github.com/BlueSkyXN/XRAG/actions/runs/43382353873) 核查为成功；本机 Chromium 实测输入法组词按键被忽略、通知可关闭 | macOS arm64 本机 + CI Linux；合成 `isComposing` 事件与真实通知操作，未接物理输入法逐一测试 |
 | 工程改进本地基线（2026-10-24） | `17e1530` 的 Go race/vet、20 项 Python、55 项工作台 HTTP/Chromium、48 份 Schema/39 份示例检查通过；可重跑入口见 [开发指南](DEVELOPMENT.md) | macOS arm64，Go 1.27.2；404 个顶层 Go 测试通过，Linux 原生监听和两个 opt-in 资源实验跳过；使用合成语料和受控端点 |
 | 自动化发布检查 | [ci](https://github.com/BlueSkyXN/XRAG/actions/workflows/ci.yml)、[image](https://github.com/BlueSkyXN/XRAG/actions/workflows/image.yml)、[release](https://github.com/BlueSkyXN/XRAG/actions/workflows/release.yml) | 以所选提交/tag 的最终运行结果为准；分别覆盖 Linux 测试与打包、镜像、7 个发行附件 |
 | Qdrant 专项基线 | [direct-recall，3bb4b4c](https://github.com/BlueSkyXN/XRAG/actions/runs/39051075098)，核查为成功 | Qdrant 1.13.6 与固定 hash 向量的 Server/direct 流程；商业模型语义质量未测 |

@@ -1,6 +1,6 @@
 # 图片描述
 
-`image.describe` 从 `0.10.4` 起提供，使用所选知识库的 Chat 模型识别图片，返回文本描述与上游 usage。需要支持 OpenAI Chat Completions 图片 content parts 的视觉模型。
+`image.describe` 从 `0.10.5` 起提供，使用所选知识库的 Chat 模型识别图片，返回文本描述与上游 usage。需要支持 OpenAI Chat Completions 图片 content parts 的视觉模型。
 
 图片描述不会存为来源、知识条目或向量索引。需要把识别结果纳入知识库时，先核对文本，再按普通 MD/TXT 上传或知识草稿流程提交。
 
